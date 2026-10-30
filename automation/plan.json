@@ -1,0 +1,61 @@
+{
+  "version": "2026-10-31-batch-1",
+  "enabled": true,
+  "description": "Project4 VLM controlled temporal benchmark, LoRA, heldout comparison; WAN feasibility separately",
+  "stages": [
+    {
+      "id": "B1_temporal_baseline",
+      "gpu": true,
+      "min_free_mib": 11000,
+      "timeout_seconds": 1200,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/temporal_batch.py",
+        "baseline",
+        "--config",
+        "configs/round1.json"
+      ]
+    },
+    {
+      "id": "B2_lora_training",
+      "gpu": true,
+      "min_free_mib": 11000,
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/temporal_batch.py",
+        "train",
+        "--config",
+        "configs/round1.json"
+      ]
+    },
+    {
+      "id": "B3_heldout_comparison",
+      "gpu": true,
+      "min_free_mib": 11000,
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/temporal_batch.py",
+        "report",
+        "--config",
+        "configs/round1.json"
+      ]
+    },
+    {
+      "id": "B4_wan_feasibility",
+      "gpu": false,
+      "timeout_seconds": 180,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/wan_preflight.py",
+        "--config",
+        "configs/round1.json"
+      ]
+    }
+  ]
+}
