@@ -1,0 +1,29 @@
+{
+  "seed": 20261031,
+  "model_local_path": "models/SmolVLM2-500M-Video-Instruct",
+  "dataset_dir": "data/temporal_round1",
+  "output_dir": "outputs/temporal_round1",
+  "video_fps": 6,
+  "seconds_per_color": 1,
+  "frame_size": [
+    320,
+    240
+  ],
+  "split_sizes": {
+    "train": 48,
+    "val": 12,
+    "test": 18
+  },
+  "max_test_samples": 18,
+  "eval_frame_counts": [
+    1,
+    3,
+    5
+  ],
+  "max_new_tokens": 54,
+  "train_steps": 32,
+  "train_learning_rate": 0.00015,
+  "lora_rank": 4,
+  "lora_alpha": 8,
+  "max_eval_seconds": 1800
+}
