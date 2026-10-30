@@ -1,0 +1,17 @@
+__pycache__/
+.pytest_cache/
+.venv/
+*.py[cod]
+*.log
+.automation/
+models/
+outputs/
+data/
+*.mov
+*.mp4
+*.safetensors
+*.pt
+*.pth
+*.ckpt
+*.env
+.DS_Store
