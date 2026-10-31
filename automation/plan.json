@@ -1,95 +1,81 @@
 {
-  "version": "2026-10-31-batch-12",
+  "version": "2026-10-31-batch-13",
   "enabled": true,
-  "description": "CRITICAL data-leakage remediation: full MP4 SHA256 groups, 193 contents, no cross-split duplicates; 120/40/40 fresh real VLM LoRA across seeds, validation-only choice, new heldout test, fail-closed reporting and tests.",
+  "description": "Post SHA-grouped STAR SFT cross-task external validation on 200 official MVBench scene_transition clips, full-byte SHA overlap exclusion, no external training/model selection, 3/5-frame base vs grouped LoRA paired CIs.",
   "stages": [
     {
-      "id": "B55_content_SHA_grouped_split_and_200_video_preflight",
+      "id": "B61_scene_external_200_video_preflight_and_hash_audit",
       "gpu": false,
       "timeout_seconds": 1500,
       "max_attempts": 1,
       "requires_files": [
-        "data/mvbench_star/provenance.json",
-        "data/mvbench_star/text/action_sequence.json",
-        "models/SmolVLM2-500M-Video-Instruct/model.safetensors"
+        "outputs/star_grouped_sft_v1/AUTHORITATIVE_RESULTS.json",
+        "data/mvbench_scene_transition/provenance.json",
+        "data/mvbench_scene_transition/text/scene_transition.json"
       ],
       "argv": [
         "{python}",
-        "experiments/star_content_grouped_sft.py",
+        "experiments/mvbench_scene_external.py",
         "prepare",
         "--config",
-        "configs/star_grouped_sft_v1.json"
+        "configs/mvbench_scene_external_v1.json"
       ]
     },
     {
-      "id": "B56_fresh_content_disjoint_two_seed_real_SFT",
+      "id": "B62_scene_external_base_3and5_inference",
       "gpu": true,
       "min_free_mib": 11000,
       "timeout_seconds": 3600,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/star_grouped_sft_v1/manifest.json"
+        "outputs/mvbench_scene_external_v1/manifest.json",
+        "models/SmolVLM2-500M-Video-Instruct/model.safetensors"
       ],
       "argv": [
         "{python}",
-        "experiments/star_content_grouped_sft.py",
-        "train",
+        "experiments/mvbench_scene_external.py",
+        "base",
         "--config",
-        "configs/star_grouped_sft_v1.json"
+        "configs/mvbench_scene_external_v1.json"
       ]
     },
     {
-      "id": "B57_validation_only_select_seed",
+      "id": "B63_scene_external_SHA_grouped_adapter_3and5",
       "gpu": true,
       "min_free_mib": 11000,
-      "timeout_seconds": 1800,
+      "timeout_seconds": 3600,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/star_grouped_sft_v1/adapter_19/adapter_model.safetensors",
-        "outputs/star_grouped_sft_v1/adapter_37/adapter_model.safetensors"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/star_content_grouped_sft.py",
-        "validate",
-        "--config",
-        "configs/star_grouped_sft_v1.json"
-      ]
-    },
-    {
-      "id": "B58_content_disjoint_heldout_test_once",
-      "gpu": true,
-      "min_free_mib": 11000,
-      "timeout_seconds": 2100,
-      "max_attempts": 1,
-      "requires_files": [
+        "outputs/mvbench_scene_external_v1/base.json",
         "outputs/star_grouped_sft_v1/chosen_seed.json"
       ],
       "argv": [
         "{python}",
-        "experiments/star_content_grouped_sft.py",
-        "test",
+        "experiments/mvbench_scene_external.py",
+        "grouped_lora",
         "--config",
-        "configs/star_grouped_sft_v1.json"
+        "configs/mvbench_scene_external_v1.json"
       ]
     },
     {
-      "id": "B59_SHA_grouped_authoritative_final_report",
+      "id": "B64_external_paired_cross_task_report",
       "gpu": false,
       "timeout_seconds": 180,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/star_grouped_sft_v1/test_comparison.json"
+        "outputs/mvbench_scene_external_v1/grouped_lora.json",
+        "outputs/mvbench_scene_external_v1/base.json"
       ],
       "argv": [
         "{python}",
-        "experiments/star_grouped_report.py",
-        "--run-dir",
-        "outputs/star_grouped_sft_v1"
+        "experiments/mvbench_scene_external.py",
+        "compare",
+        "--config",
+        "configs/mvbench_scene_external_v1.json"
       ]
     },
     {
-      "id": "B60_frozen_source_tests",
+      "id": "B65_full_github_source_tests",
       "gpu": false,
       "timeout_seconds": 240,
       "max_attempts": 1,
