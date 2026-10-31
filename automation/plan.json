@@ -1,12 +1,12 @@
 {
-  "version": "2026-10-31-batch-7",
+  "version": "2026-10-31-batch-8",
   "enabled": true,
-  "description": "First label-blind adaptive temporal frame sampler experiment: real STAR frozen 40-video test. Same 3/5 frame budget, base and validation-selected LoRA, paired CI, fail-closed.",
+  "description": "Freeze label-blind adaptive visual sampling after integer endpoint regression fix; 40 independent STAR test videos; matched 3/5 frame budget; compare Base and validation-selected LoRA; preserve negative results.",
   "stages": [
     {
-      "id": "B30_labelblind_frame_selection",
+      "id": "B35_frozen_sampler_and_full_40_video_preflight",
       "gpu": false,
-      "timeout_seconds": 900,
+      "timeout_seconds": 1200,
       "max_attempts": 1,
       "requires_files": [
         "outputs/star_sft_round2/manifest.json",
@@ -17,17 +17,17 @@
         "experiments/adaptive_temporal_sampling.py",
         "prepare",
         "--config",
-        "configs/adaptive_sampling_v1.json"
+        "configs/adaptive_sampling_v2.json"
       ]
     },
     {
-      "id": "B31_adaptive_base_inference",
+      "id": "B36_adaptive_base_3and5_frame_inference",
       "gpu": true,
       "min_free_mib": 11000,
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/adaptive_sampling_v1/sampling_plan.json",
+        "outputs/adaptive_sampling_v2/sampling_plan.json",
         "outputs/star_sft_round2/test_base.json"
       ],
       "argv": [
@@ -35,17 +35,17 @@
         "experiments/adaptive_temporal_sampling.py",
         "base",
         "--config",
-        "configs/adaptive_sampling_v1.json"
+        "configs/adaptive_sampling_v2.json"
       ]
     },
     {
-      "id": "B32_adaptive_lora_inference",
+      "id": "B37_adaptive_selected_real_video_lora",
       "gpu": true,
       "min_free_mib": 11000,
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/adaptive_sampling_v1/base.json",
+        "outputs/adaptive_sampling_v2/base.json",
         "outputs/star_sft_round2/adapter_37/adapter_model.safetensors"
       ],
       "argv": [
@@ -53,30 +53,30 @@
         "experiments/adaptive_temporal_sampling.py",
         "selected_lora",
         "--config",
-        "configs/adaptive_sampling_v1.json"
+        "configs/adaptive_sampling_v2.json"
       ]
     },
     {
-      "id": "B33_paired_adaptive_ablation",
+      "id": "B38_paired_40_video_sampling_ablation",
       "gpu": false,
       "timeout_seconds": 180,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/adaptive_sampling_v1/selected_lora.json",
-        "outputs/adaptive_sampling_v1/base.json"
+        "outputs/adaptive_sampling_v2/selected_lora.json",
+        "outputs/adaptive_sampling_v2/base.json"
       ],
       "argv": [
         "{python}",
         "experiments/adaptive_temporal_sampling.py",
         "compare",
         "--config",
-        "configs/adaptive_sampling_v1.json"
+        "configs/adaptive_sampling_v2.json"
       ]
     },
     {
-      "id": "B34_release_tests",
+      "id": "B39_all_tests_and_regressions",
       "gpu": false,
-      "timeout_seconds": 180,
+      "timeout_seconds": 240,
       "max_attempts": 1,
       "argv": [
         "{python}",
