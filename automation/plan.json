@@ -1,82 +1,118 @@
 {
-  "version": "2026-10-31-batch-2",
+  "version": "2026-10-31-batch-3",
   "enabled": true,
-  "description": "No-crop 1/3/5 frame baseline, real LoRA, frozen heldout comparison, Wan full-weight preflight, safe safetensors-only ZeroScope video generation",
+  "description": "Real annotated video evaluation-only, synthetic LoRA generalization probe, multi-seed synthetic replication, Diffusion integrity+blind review, consolidated report",
   "stages": [
     {
-      "id": "B1_temporal_baseline",
-      "gpu": true,
-      "min_free_mib": 11000,
-      "timeout_seconds": 1200,
-      "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/temporal_batch.py",
-        "baseline",
-        "--config",
-        "configs/round2.json"
-      ]
-    },
-    {
-      "id": "B2_lora_training",
+      "id": "B6_real_video_base",
       "gpu": true,
       "min_free_mib": 11000,
       "timeout_seconds": 1800,
       "max_attempts": 1,
+      "requires_files": [
+        "data/mvbench_public/text/action_antonym.json",
+        "data/mvbench_public/dataset_provenance.json",
+        "models/SmolVLM2-500M-Video-Instruct/model.safetensors"
+      ],
       "argv": [
         "{python}",
-        "experiments/temporal_batch.py",
-        "train",
+        "experiments/mvbench_real_eval.py",
+        "base",
         "--config",
-        "configs/round2.json"
+        "configs/mvbench_round1.json"
       ]
     },
     {
-      "id": "B3_heldout_comparison",
+      "id": "B7_real_video_transfer",
       "gpu": true,
       "min_free_mib": 11000,
       "timeout_seconds": 1800,
       "max_attempts": 1,
+      "requires_files": [
+        "outputs/mvbench_round1/base.json",
+        "outputs/temporal_round2/adapter/adapter_model.safetensors"
+      ],
       "argv": [
         "{python}",
-        "experiments/temporal_batch.py",
-        "report",
+        "experiments/mvbench_real_eval.py",
+        "synthetic_lora",
         "--config",
-        "configs/round2.json"
+        "configs/mvbench_round1.json"
       ]
     },
     {
-      "id": "B4_wan_feasibility",
+      "id": "B8_paired_real_video_report",
+      "gpu": false,
+      "timeout_seconds": 180,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/mvbench_round1/base.json",
+        "outputs/mvbench_round1/synthetic_lora.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/mvbench_real_eval.py",
+        "compare",
+        "--config",
+        "configs/mvbench_round1.json"
+      ]
+    },
+    {
+      "id": "B9_multi_seed_synthetic_replication",
+      "gpu": true,
+      "min_free_mib": 11000,
+      "timeout_seconds": 2200,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/temporal_round2/baseline.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/multi_seed_round.py",
+        "run"
+      ]
+    },
+    {
+      "id": "B10_video_generation_review",
+      "gpu": false,
+      "timeout_seconds": 180,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/diffusion_round1/generation_report.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/generation_review.py",
+        "prepare"
+      ]
+    },
+    {
+      "id": "B11_consolidated_project_report",
+      "gpu": false,
+      "timeout_seconds": 180,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/mvbench_round1/comparison.json",
+        "outputs/multi_seed/REPLICATION.json",
+        "outputs/diffusion_round1/generation_report.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/project_report.py",
+        "build"
+      ]
+    },
+    {
+      "id": "B12_full_code_tests",
       "gpu": false,
       "timeout_seconds": 180,
       "max_attempts": 1,
       "argv": [
         "{python}",
-        "experiments/wan_preflight.py",
-        "--config",
-        "configs/round2.json"
-      ]
-    },
-    {
-      "id": "B5_zeroscope_diffusion_video",
-      "gpu": true,
-      "min_free_mib": 11000,
-      "timeout_seconds": 3000,
-      "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/zeroscope_generate.py",
-        "--model",
-        "models/zeroscope_v2_576w_safe",
-        "--steps",
-        "14",
-        "--frames",
-        "12"
-      ],
-      "requires_files": [
-        "models/zeroscope_v2_576w_safe/text_encoder/model.safetensors",
-        "models/zeroscope_v2_576w_safe/unet/diffusion_pytorch_model.safetensors",
-        "models/zeroscope_v2_576w_safe/vae/diffusion_pytorch_model.safetensors"
+        "-m",
+        "pytest",
+        "-q",
+        "tests"
       ]
     }
   ]
