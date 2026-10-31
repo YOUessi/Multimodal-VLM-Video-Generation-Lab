@@ -1,0 +1,53 @@
+{
+  "version": "2026-11-01-capacity-temporal-v1",
+  "description": "400 complete original MVBench MCQs, no video task training, text-only / uniform 3-frame / uniform 5-frame; 500M vs 2.2B model capacity; paired bootstrap results",
+  "tasks": {
+    "moving_direction": {
+      "data_dir": "data/mvbench_moving_direction",
+      "label_file": "text/moving_direction.json",
+      "label_sha256": "81379646d91fb078a8b38de897f40977eeeebd946ca1c6ef0f58e4bde9d21209",
+      "archive_sha256": "21cf33736bb6e2b477f205b47c3dae3c3329726e646035d1cc6dc9de86adabc0",
+      "nature": "CLEVRER simulated moving object videos; not natural camera footage"
+    },
+    "scene_transition": {
+      "data_dir": "data/mvbench_scene_transition",
+      "label_file": "text/scene_transition.json",
+      "label_sha256": "edab8a7992851061cac170f7e50782961ec21826f99e70ee72ae73a9dafb79f9",
+      "archive_sha256": "1215b6f2e69820089320baa1e3f6fc8b73be4b4e3ee3948fe4b15a34cec22690",
+      "nature": "Public Moments in Time / scene-change video benchmark; camera footage"
+    }
+  },
+  "star_manifest": "outputs/star_perceptual_grouped_sft_v1/manifest.json",
+  "models": {
+    "500m": {
+      "model_dir": "models/SmolVLM2-500M-Video-Instruct",
+      "revision": "7b375e1b73b11138ff12fe22c8f2822d8fe03467",
+      "weight_files": {
+        "model.safetensors": 2029990624
+      }
+    },
+    "2b": {
+      "model_dir": "models/SmolVLM2-2.2B-Instruct",
+      "revision": "482adb537c021c86670beed01cd58990d01e72e4",
+      "weight_files": {
+        "model-00001-of-00002.safetensors": 4959390584,
+        "model-00002-of-00002.safetensors": 4027833472
+      }
+    }
+  },
+  "frame_counts": [
+    0,
+    3,
+    5
+  ],
+  "max_new_tokens": 40,
+  "output_dir": "outputs/capacity_temporal_v1",
+  "comparison_order": [
+    "500m",
+    "2b"
+  ],
+  "bootstrap_seed": 20261101,
+  "sampling_policy": "0 frames question-only; n3/n5 5%-95% uniformly spaced actual decoded frame indices, 640x480 max, no image splitting",
+  "leakage_policy": "All 200 source examples per task, exact source/video SHA pinning, both tasks disjoint from STAR full-video SHA, evaluation ONLY",
+  "test_time_tuning": false
+}
