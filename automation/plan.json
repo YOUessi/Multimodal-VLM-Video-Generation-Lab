@@ -1,84 +1,128 @@
 {
-  "version": "2026-11-01-batch-23",
+  "version": "2026-11-01-batch-24",
   "enabled": true,
-  "description": "Exploratory visual-only motion-saliency 12-probe (0.7 grayscale-diff +0.3 hue-diff, time-diverse endpoint guard) under fixed 3/5 frame budgets, two frozen VLM models, paired to prior uniform baseline on 400 publicly already inspected MVBench videos. No question labels in frame selection or hyperparameter tuning; report CPU cost and confidence intervals.",
+  "description": "New counterfactual question-grounded object-motion study: frozen 20 dev and 120 test scene pairs, each original/reverse; 5 balanced motion classes with distractors. Pixel-only color tracker, classical CV baseline, 500M and 2.2B VLM matched text-only/RGB/number trajectory/conflicting-order controls. No tuning to test; cluster bootstrap per independent scene pair; raw source and model weights remain local.",
   "stages": [
     {
-      "id": "F1_frozen_400_video_label_blind_motion_probe_selection",
+      "id": "G1_generate_280_counterfactual_video_pairs",
       "gpu": false,
-      "timeout_seconds": 1500,
+      "timeout_seconds": 500,
       "max_attempts": 1,
-      "requires_files": [
-        "outputs/capacity_temporal_v1/manifest.json"
-      ],
       "argv": [
         "{python}",
-        "experiments/motion_salient_sampling.py",
-        "prepare",
+        "experiments/object_motion_counterfactual_data.py",
         "--config",
-        "configs/motion_sampling_v1.json"
+        "configs/object_motion_v1.json"
       ]
     },
     {
-      "id": "F2_500m_motion_selected_3and5_frame_inference",
-      "gpu": true,
-      "min_free_mib": 11000,
-      "timeout_seconds": 3900,
+      "id": "G2_dev_only_query_grounded_tracker_sanity",
+      "gpu": false,
+      "timeout_seconds": 300,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/motion_sampling_v1/frame_plan.json",
-        "models/SmolVLM2-500M-Video-Instruct/model.safetensors"
+        "data/object_motion_counterfactual_v1/manifest.json"
       ],
       "argv": [
         "{python}",
-        "experiments/motion_salient_sampling.py",
-        "evaluate",
-        "--model",
-        "500m",
+        "experiments/target_motion_tracking.py",
         "--config",
-        "configs/motion_sampling_v1.json"
+        "configs/object_motion_v1.json"
       ]
     },
     {
-      "id": "F3_2b_motion_selected_3and5_frame_inference",
+      "id": "G3_validate_all_source_video_hashes_and_opposite_pairs",
+      "gpu": false,
+      "timeout_seconds": 450,
+      "max_attempts": 1,
+      "requires_files": [
+        "data/object_motion_counterfactual_v1/manifest.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/object_motion_counterfactual_eval.py",
+        "audit",
+        "--config",
+        "configs/object_motion_v1.json"
+      ]
+    },
+    {
+      "id": "G4_2_model_5_condition_dev_execution_smoke",
       "gpu": true,
       "min_free_mib": 12000,
-      "timeout_seconds": 4200,
+      "timeout_seconds": 900,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/motion_sampling_v1/500m.json",
         "models/SmolVLM2-2.2B-Instruct/model-00001-of-00002.safetensors",
         "models/SmolVLM2-2.2B-Instruct/model-00002-of-00002.safetensors"
       ],
       "argv": [
         "{python}",
-        "experiments/motion_salient_sampling.py",
+        "experiments/object_motion_counterfactual_eval.py",
+        "preflight",
+        "--config",
+        "configs/object_motion_v1.json"
+      ]
+    },
+    {
+      "id": "G5_500M_five_condition_1200_real_GPU_inferences",
+      "gpu": true,
+      "min_free_mib": 11000,
+      "timeout_seconds": 3600,
+      "max_attempts": 1,
+      "requires_files": [
+        "data/object_motion_counterfactual_v1/manifest.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/object_motion_counterfactual_eval.py",
+        "evaluate",
+        "--model",
+        "500m",
+        "--config",
+        "configs/object_motion_v1.json"
+      ]
+    },
+    {
+      "id": "G6_2B_five_condition_1200_real_GPU_inferences",
+      "gpu": true,
+      "min_free_mib": 12000,
+      "timeout_seconds": 3600,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/object_motion_counterfactual_v1/500m.json",
+        "models/SmolVLM2-2.2B-Instruct/model-00001-of-00002.safetensors",
+        "models/SmolVLM2-2.2B-Instruct/model-00002-of-00002.safetensors"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/object_motion_counterfactual_eval.py",
         "evaluate",
         "--model",
         "2b",
         "--config",
-        "configs/motion_sampling_v1.json"
+        "configs/object_motion_v1.json"
       ]
     },
     {
-      "id": "F4_paired_accuracy_and_cpu_cost_ablations",
+      "id": "G7_clustered_paired_counterfactual_report_with_CV_baseline",
       "gpu": false,
-      "timeout_seconds": 180,
+      "timeout_seconds": 600,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/motion_sampling_v1/500m.json",
-        "outputs/motion_sampling_v1/2b.json"
+        "outputs/object_motion_counterfactual_v1/500m.json",
+        "outputs/object_motion_counterfactual_v1/2b.json"
       ],
       "argv": [
         "{python}",
-        "experiments/motion_salient_sampling.py",
+        "experiments/object_motion_counterfactual_eval.py",
         "report",
         "--config",
-        "configs/motion_sampling_v1.json"
+        "configs/object_motion_v1.json"
       ]
     },
     {
-      "id": "F5_full_source_regression_tests",
+      "id": "G8_full_source_regression_tests",
       "gpu": false,
       "timeout_seconds": 300,
       "max_attempts": 1,
@@ -91,7 +135,7 @@
       ]
     },
     {
-      "id": "F6_publication_and_no_model_media_binary_guard",
+      "id": "G9_no_models_video_media_committed_security",
       "gpu": false,
       "timeout_seconds": 120,
       "max_attempts": 1,
