@@ -1,8 +1,23 @@
 {
   "version": "2026-11-01-batch-20",
   "enabled": true,
-  "description": "Actual ZeroScope pretrained 3D UNet PEFT LoRA training on 12 synthetic paired motion videos, 4 heldout validation videos. Frozen noise/timestep epsilon denoising MSE before/after; save adapter, matched base/LoRA generated MP4, pixel-only movement proxy, anonymous human review UI, fail closed, never claim general video quality.",
+  "description": "Finalize frozen capacity/temporal benchmark evidence-use diagnostics, then perform actual pretrained ZeroScope UNet3D LoRA on paired synthetic moving-square clips, before/after denoising validation and matched generated videos, anonymous human review, tests and source safety.",
   "stages": [
+    {
+      "id": "C0_external_frame_evidence_and_answer_bias_diagnostics",
+      "gpu": false,
+      "timeout_seconds": 180,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/capacity_temporal_v1/comparison.json",
+        "outputs/capacity_temporal_v1/500m.json",
+        "outputs/capacity_temporal_v1/2b.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/evidence_use_diagnostics.py"
+      ]
+    },
     {
       "id": "C1_synthetic_12train_4val_paired_video_caption_generator",
       "gpu": false,
