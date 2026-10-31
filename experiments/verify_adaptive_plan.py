@@ -16,7 +16,7 @@ def validate(config):
     plan=json.loads(plan_path.read_text(encoding="utf8"))
     star=json.loads((ROOT/cfg["star_manifest"]).read_text(encoding="utf8"))
     assert plan["selection_is_label_blind"] is True
-    assert plan["star_manifest_sha256"]==star["sha256"]
+    assert plan["star_manifest_sha256"]==star.get("rows_sha256",star.get("sha256"))
     test_rows={r["source_index"]:r for r in star["rows"] if r["split"]=="test"}
     assert len(test_rows)==40 and len(plan["records"])==40
     digest=hashlib.sha256(json.dumps(plan["records"],sort_keys=True).encode()).hexdigest()
@@ -42,7 +42,7 @@ def validate(config):
                 raise RuntimeError("CHOSEN_FRAME_NOT_IN_FROZEN_PROBE_SET")
     assert received==expected
     print("ADAPTIVE_MANIFEST_VERIFIED",len(received),
-          "frozen_star_sha",star["sha256"],"sampling_sha",digest,flush=True)
+          "frozen_star_sha",star.get("rows_sha256",star.get("sha256")),"sampling_sha",digest,flush=True)
 
 def main():
     p=argparse.ArgumentParser()
