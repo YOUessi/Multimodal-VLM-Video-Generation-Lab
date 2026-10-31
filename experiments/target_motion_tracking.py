@@ -115,7 +115,7 @@ def assert_blind_tracking_interface():
 
 def run_preflight(config,dev_only=True):
     cfg=json.loads((ROOT/config).read_text(encoding="utf8"))
-    manifest=json.loads((ROOT/cfg["data_dir"]/"manifest.json").read_text(encoding="utf8"))
+    manifest=json.loads((ROOT/cfg["dataset_dir"]/"manifest.json").read_text(encoding="utf8"))
     if manifest["config_version"]!=cfg["version"]:raise RuntimeError("MOTION_MANIFEST_VERSION_DRIFT")
     rows=[r for r in manifest["rows"] if r["split"]=="dev"] if dev_only else manifest["rows"]
     missing=0;wrong=[];stats=[]
