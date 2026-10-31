@@ -5,7 +5,7 @@ MP4s, not the other same-name files in the STAR zip. No test labels seen during
 training/validation model selection. All raw media stay on Tang.
 """
 from __future__ import annotations
-import argparse,hashlib,json,random,re,statistics,time
+import argparse,hashlib,json,random,re,statistics,time,subprocess
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 LETTERS="ABCD"
@@ -17,6 +17,23 @@ def save(path,obj):
 
 def get_config(path):
     return json.loads((ROOT/path).read_text(encoding="utf8"))
+
+def decoded_frame_count(path):
+    """ffprobe counts actual decodable frames; MP4 metadata may overstate count.
+
+    The optimized STAR clips can report CAP_PROP_FRAME_COUNT=595 despite only
+    437 frames actually decoding. Never sample near the metadata-reported end.
+    """
+    result=subprocess.run(
+        ["ffprobe","-v","error","-count_frames","-select_streams","v:0",
+         "-show_entries","stream=nb_read_frames",
+         "-of","default=noprint_wrappers=1:nokey=1",str(path)],
+        capture_output=True,text=True,check=True,timeout=40)
+    values=[line.strip() for line in result.stdout.splitlines()
+            if line.strip().isdigit()]
+    if len(values)!=1 or int(values[0])<3:
+        raise RuntimeError("INVALID_DECODED_FRAME_COUNT: "+str(path)+" raw="+repr(result.stdout))
+    return int(values[0])
 
 def manifest(cfg):
     data=ROOT/cfg["data_dir"]
@@ -32,44 +49,65 @@ def manifest(cfg):
     for split,count in sizes.items():
         splits[split]=sorted(indices[offset:offset+count]);offset+=count
     assert not(set(splits["train"])&set(splits["val"])) and not(set(splits["train"])&set(splits["test"]))
+    target=ROOT/cfg["output_dir"]/"manifest.json"
+    if target.is_file():
+        saved=json.loads(target.read_text(encoding="utf8"))
+        if (saved.get("format_version")!=2 or
+            saved.get("split_seed")!=cfg["split_seed"] or
+            saved.get("split_sizes")!=sizes or
+            saved.get("video_archive_sha256")!=cfg["star_archive_sha256"] or
+            saved.get("source_video_manifest_sha256")!=prov["video_manifest_sha256"]):
+            raise RuntimeError("FROZEN_STAR_MANIFEST_CONFIG_OR_SOURCE_DRIFT")
+        expected=hashlib.sha256(json.dumps(saved["rows"],sort_keys=True).encode()).hexdigest()
+        if expected!=saved["sha256"] or len(saved["rows"])!=200:
+            raise RuntimeError("FROZEN_STAR_MANIFEST_CONTENT_DRIFT")
+        for entry in saved["rows"]:
+            if not (ROOT/entry["video"]).is_file() or int(entry["decoded_frames"])<3:
+                raise RuntimeError("FROZEN_STAR_VIDEO_MISSING_OR_CORRUPT: "+str(entry["video"]))
+        return expected,saved["rows"]
     rows=[]
     for split,ids in splits.items():
         for i in ids:
             x=ann[i];path=data/"clips"/x["video"]
             if not path.exists():raise FileNotFoundError(str(path))
             if len(x["candidates"])!=4 or x["answer"] not in x["candidates"]:raise RuntimeError("Invalid official answer")
+            count=decoded_frame_count(path)
             rows.append({"source_index":i,"split":split,"video":str(path.relative_to(ROOT)),
+                         "decoded_frames":count,
                          "question":x["question"],"choices":x["candidates"],
                          "answer":LETTERS[x["candidates"].index(x["answer"])],
                          "original_start":x.get("start"),"original_end":x.get("end")})
     digest=hashlib.sha256(json.dumps(rows,sort_keys=True).encode()).hexdigest()
-    target=ROOT/cfg["output_dir"]/"manifest.json"
-    if target.exists():
-        prev=json.loads(target.read_text(encoding="utf8"));assert prev["sha256"]==digest,"STAR_SPLIT_DRIFT"
-    else:save(target,{"sha256":digest,"source":"MVBench action_sequence from STAR",
+    save(target,{"format_version":2,"sha256":digest,"source":"MVBench action_sequence from STAR",
             "revision":cfg["source_revision"],"video_archive_sha256":cfg["star_archive_sha256"],
             "source_video_manifest_sha256":prov["video_manifest_sha256"],
             "split_seed":cfg["split_seed"],"split_sizes":sizes,"rows":rows,
-            "note":"The optimized MP4s are already trimmed; original_start/end are metadata, not absolute offsets for recropping."})
+            "note":"Decode counts measured with ffprobe -count_frames; STAR clips are already trimmed, so original_start/end only metadata."})
     return digest,rows
 
-def extract_frames(path,n):
+def extract_frames(path,n,decoded_frames):
     import cv2
     from PIL import Image
     cap=cv2.VideoCapture(str(path))
     if not cap.isOpened():raise RuntimeError("Failed to open "+str(path))
-    length=int(cap.get(cv2.CAP_PROP_FRAME_COUNT)); assert length>=2
+    length=int(decoded_frames)
+    if length<3:raise RuntimeError("Not enough truly decoded frames: "+str(path))
     ts=[.5] if n==1 else [.05+.9*i/(n-1) for i in range(n)]
     imgs=[]
-    for fraction in ts:
-        ix=min(length-1,max(0,round(fraction*(length-1))))
-        cap.set(cv2.CAP_PROP_POS_FRAMES,ix)
-        ok,bgr=cap.read()
-        if not ok:raise RuntimeError("Failed video frame "+str(ix))
-        im=Image.fromarray(cv2.cvtColor(bgr,cv2.COLOR_BGR2RGB))
-        im.thumbnail((640,480))
-        imgs.append(im)
-    cap.release();return imgs
+    try:
+        for fraction in ts:
+            ix=min(length-1,max(0,round(fraction*(length-1))))
+            cap.set(cv2.CAP_PROP_POS_FRAMES,ix)
+            ok,bgr=cap.read()
+            if not ok:
+                raise RuntimeError("DECODE_FRAME_FAIL path="+str(path)+
+                                   " actual_frames="+str(length)+" index="+str(ix))
+            im=Image.fromarray(cv2.cvtColor(bgr,cv2.COLOR_BGR2RGB))
+            im.thumbnail((640,480))
+            imgs.append(im)
+    finally:
+        cap.release()
+    return imgs
 
 def prompt(row,images):
     items=[{"type":"text","text":"Observe these chronological frames of an already trimmed video. Answer the action sequence multiple choice question."}]
@@ -111,7 +149,7 @@ def run_eval(cfg,rows,split,tag,adapter=None,counts=(3,)):
     results=[]
     for frames in counts:
         for i,row in enumerate(data):
-            imgs=extract_frames(ROOT/row["video"],frames)
+            imgs=extract_frames(ROOT/row["video"],frames,row["decoded_frames"])
             batch=proc.apply_chat_template(prompt(row,imgs),add_generation_prompt=True,
                tokenize=True,return_tensors="pt",return_dict=True).to("cuda",dtype=dtype)
             torch.cuda.synchronize();start=time.perf_counter()
@@ -154,7 +192,7 @@ def train(cfg,rows,seed):
     trace=[]
     for step in range(cfg["train_steps"]):
         row=examples[step%len(examples)]
-        imgs=extract_frames(ROOT/row["video"],cfg["training_frames"])
+        imgs=extract_frames(ROOT/row["video"],cfg["training_frames"],row["decoded_frames"])
         user=prompt(row,imgs)
         full=user+[{"role":"assistant","content":[{"type":"text","text":"ANSWER: "+row["answer"]}]}]
         start_batch=proc.apply_chat_template(user,add_generation_prompt=True,
@@ -236,7 +274,12 @@ def main():
     p.add_argument("--config",default="configs/star_real_sft_round1.json")
     a=p.parse_args();cfg=get_config(a.config)
     digest,rows=manifest(cfg)
-    if a.stage=="prepare":print("STAR_SPLIT_FROZEN",digest,flush=True)
+    if a.stage=="prepare":
+        print("STAR_MANIFEST_FROZEN",digest,"sample_count",len(rows),flush=True)
+        for i,row in enumerate(rows):
+            extract_frames(ROOT/row["video"],cfg["training_frames"],row["decoded_frames"])
+            if (i+1)%40==0:print("STAR_DECODE_VERIFIED",i+1,"/",len(rows),flush=True)
+        print("STAR_SPLIT_AND_ALL_FRAMES_VERIFIED",len(rows),flush=True)
     elif a.stage=="train":
         for seed in cfg["training_seeds"]:train(cfg,rows,seed)
     elif a.stage=="validate":validate(cfg,rows)
