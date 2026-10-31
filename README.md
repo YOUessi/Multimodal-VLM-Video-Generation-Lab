@@ -1,5 +1,17 @@
 # Multimodal VLM & Video Generation Lab
 
+## 2026-10-31: staged automation and measured VLM work
+
+The complete batch-2 **synthetic** experiment finished real GPU work:
+- 48 training, 12 validation and 18 heldout procedural three-scene MP4 samples (unique sequence splits).
+- With identical no-image-splitting preprocessing, the base model scored 18/18 for single-frame color classification, 4/18 for 3-frame first/last color, and 4/18 for 5-frame first/last color.
+- After 48 actual LoRA steps, the same frozen heldout synthetic test scored 18/18 in all three cases. **This is not proof of real-world temporal reasoning improvement**; the benchmark is simple and uses one seed.
+- Full-precision Wan 1.3B preflight failed the conservative RAM gate; no Wan generation claimed.
+- Safe-safetensors ZeroScope Diffusion baseline is the next true video-generation stage and will only run once all weights are present.
+
+See [detailed measured results](docs/BATCH_2_RESULTS_2026-10-31.md) and [Tang 10-minute local runner with safety gates](automation/README.md). Tang's 10-minute Linux cron cannot proactively post to the ChatGPT conversation, and the approved batch does not autonomously write new source code.
+
+
 Research-oriented project for **visual question answering, temporal video reasoning, VLM LoRA adaptation, video generation, and evaluation**. The work is split into two independent tracks:
 
 - **Track A: VLM / Video Understanding:** frame sampling, image and multi-image inference, temporal QA, LoRA fine-tuning, split-safe benchmarking.
