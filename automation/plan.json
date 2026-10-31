@@ -1,28 +1,42 @@
 {
-  "version": "2026-11-01-batch-29",
+  "version": "2026-11-01-batch-30",
   "enabled": true,
-  "description": "Untuned external domain transfer check: unchanged query-grounded RGB pixel tracker on ALL 200 previously inspected public CLEVRER Moving Direction examples. Count every unsupported color and tracking failure as abstention, use predeclared strong-motion gate >=20px per axis and frozen 500M/2.2B 3/5-frame predictions for fallback. No extra GPU, no selection/tuning on these scored labels.",
+  "description": "Generic named HSV+component-association tracker, no calibration from CLEVRER labels, 40/40 synthetic dev preflight, full 200 public CLEVRER moving-direction source videos, conservative high-delta gate, preserved frozen 500M/2.2B baseline predictions. All errors/abstentions included; exploratory domain transfer only.",
   "stages": [
     {
-      "id": "L1_full200_CLEVRER_untuned_tracking_and_frozen_VLM_gating",
+      "id": "M1_generic_HSV_dev_only_40_video_sanity",
+      "gpu": false,
+      "timeout_seconds": 200,
+      "max_attempts": 1,
+      "requires_files": [
+        "data/object_motion_counterfactual_v1/manifest.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/appearance_hsv_tracker.py",
+        "--config",
+        "configs/appearance_hsv_transfer_v1.json"
+      ]
+    },
+    {
+      "id": "M2_all200_untuned_HSV_CLEVRER_transfer_and_frozen_gated_VLM",
       "gpu": false,
       "timeout_seconds": 1500,
       "max_attempts": 1,
       "requires_files": [
         "outputs/capacity_temporal_v1/manifest.json",
-        "outputs/capacity_temporal_v1/500m.json",
         "outputs/capacity_temporal_v1/2b.json",
-        "data/mvbench_moving_direction/text/moving_direction.json"
+        "outputs/capacity_temporal_v1/500m.json"
       ],
       "argv": [
         "{python}",
-        "experiments/clevrer_untuned_tracker_transfer.py",
+        "experiments/appearance_hsv_transfer.py",
         "--config",
-        "configs/clevrer_untuned_tracker_v1.json"
+        "configs/appearance_hsv_transfer_v1.json"
       ]
     },
     {
-      "id": "L2_complete_source_regression_tests",
+      "id": "M3_full_source_regression_suite",
       "gpu": false,
       "timeout_seconds": 300,
       "max_attempts": 1,
@@ -35,7 +49,7 @@
       ]
     },
     {
-      "id": "L3_source_guard",
+      "id": "M4_no_weight_or_private_video_commit_guard",
       "gpu": false,
       "timeout_seconds": 120,
       "max_attempts": 1,
