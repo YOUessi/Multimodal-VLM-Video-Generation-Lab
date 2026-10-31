@@ -1,42 +1,29 @@
 {
-  "version": "2026-11-01-batch-20",
+  "version": "2026-11-01-batch-21",
   "enabled": true,
-  "description": "Finalize frozen capacity/temporal benchmark evidence-use diagnostics, then perform actual pretrained ZeroScope UNet3D LoRA on paired synthetic moving-square clips, before/after denoising validation and matched generated videos, anonymous human review, tests and source safety.",
+  "description": "Fix confirmed Diffusers 0.37.1 3D UNet gradient_checkpointing unsupported exception. Same 12/4 paired synthetic video-caption manifest, new output dir and fresh CPU features, actual 12-step LoRA optimizer, matched pretrained/tuned local video generation, MSE and blind review, fail-closed.",
   "stages": [
     {
-      "id": "C0_external_frame_evidence_and_answer_bias_diagnostics",
+      "id": "D0_verify_frozen_video_caption_pair_manifest",
       "gpu": false,
       "timeout_seconds": 180,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/capacity_temporal_v1/comparison.json",
-        "outputs/capacity_temporal_v1/500m.json",
-        "outputs/capacity_temporal_v1/2b.json"
+        "data/zeroscope_paired_motion_v1/manifest.json"
       ],
-      "argv": [
-        "{python}",
-        "experiments/evidence_use_diagnostics.py"
-      ]
-    },
-    {
-      "id": "C1_synthetic_12train_4val_paired_video_caption_generator",
-      "gpu": false,
-      "timeout_seconds": 240,
-      "max_attempts": 1,
       "argv": [
         "{python}",
         "experiments/diffusion_paired_motion_data.py",
         "--config",
-        "configs/zeroscope_lora_smoke.json"
+        "configs/zeroscope_lora_smoke_nockpt.json"
       ]
     },
     {
-      "id": "C2_frozen_vae_and_clip_cpu_latent_feature_cache",
+      "id": "D1_cpu_precompute_frozen_VAE_CLIP_features",
       "gpu": false,
-      "timeout_seconds": 1800,
+      "timeout_seconds": 1200,
       "max_attempts": 1,
       "requires_files": [
-        "data/zeroscope_paired_motion_v1/manifest.json",
         "models/zeroscope_v2_576w_safe/vae/diffusion_pytorch_model.safetensors"
       ],
       "argv": [
@@ -44,17 +31,17 @@
         "experiments/zeroscope_video_lora.py",
         "cache",
         "--config",
-        "configs/zeroscope_lora_smoke.json"
+        "configs/zeroscope_lora_smoke_nockpt.json"
       ]
     },
     {
-      "id": "C3_actual_bf16_peft_3D_UNet_video_diffusion_LoRA_optimizer",
+      "id": "D2_actual_GPU_3D_UNet_Peft_LoRA_training",
       "gpu": true,
       "min_free_mib": 12000,
-      "timeout_seconds": 2400,
+      "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/zeroscope_video_lora_v1/feature_cache_manifest.json",
+        "outputs/zeroscope_video_lora_v2/feature_cache_manifest.json",
         "models/zeroscope_v2_576w_safe/unet/diffusion_pytorch_model.safetensors"
       ],
       "argv": [
@@ -62,45 +49,45 @@
         "experiments/zeroscope_video_lora.py",
         "train",
         "--config",
-        "configs/zeroscope_lora_smoke.json"
+        "configs/zeroscope_lora_smoke_nockpt.json"
       ]
     },
     {
-      "id": "C4_matched_pretrained_vs_tuned_video_generation",
+      "id": "D3_matched_pretrained_and_LoRA_video_inference",
       "gpu": true,
       "min_free_mib": 12000,
-      "timeout_seconds": 2400,
+      "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/zeroscope_video_lora_v1/training_report.json",
-        "outputs/zeroscope_video_lora_v1/adapter/adapter_model.safetensors"
+        "outputs/zeroscope_video_lora_v2/adapter/adapter_model.safetensors",
+        "outputs/zeroscope_video_lora_v2/training_report.json"
       ],
       "argv": [
         "{python}",
         "experiments/zeroscope_lora_generate.py",
         "--config",
-        "configs/zeroscope_lora_smoke.json"
+        "configs/zeroscope_lora_smoke_nockpt.json"
       ]
     },
     {
-      "id": "C5_quality_unscored_blinded_clip_review_and_evidence_report",
+      "id": "D4_anonymous_independent_video_review_and_results",
       "gpu": false,
-      "timeout_seconds": 240,
+      "timeout_seconds": 180,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/zeroscope_video_lora_v1/generated_comparison/generation_report.json"
+        "outputs/zeroscope_video_lora_v2/generated_comparison/generation_report.json"
       ],
       "argv": [
         "{python}",
         "experiments/zeroscope_lora_report.py",
         "--config",
-        "configs/zeroscope_lora_smoke.json"
+        "configs/zeroscope_lora_smoke_nockpt.json"
       ]
     },
     {
-      "id": "C6_all_source_regression_tests",
+      "id": "D5_all_regression_tests",
       "gpu": false,
-      "timeout_seconds": 300,
+      "timeout_seconds": 240,
       "max_attempts": 1,
       "argv": [
         "{python}",
@@ -111,7 +98,7 @@
       ]
     },
     {
-      "id": "C7_publication_security_guard",
+      "id": "D6_publication_security_gate",
       "gpu": false,
       "timeout_seconds": 120,
       "max_attempts": 1,
