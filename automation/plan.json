@@ -72,6 +72,11 @@
         "14",
         "--frames",
         "12"
+      ],
+      "requires_files": [
+        "models/zeroscope_v2_576w_safe/text_encoder/model.safetensors",
+        "models/zeroscope_v2_576w_safe/unet/diffusion_pytorch_model.safetensors",
+        "models/zeroscope_v2_576w_safe/vae/diffusion_pytorch_model.safetensors"
       ]
     }
   ]
