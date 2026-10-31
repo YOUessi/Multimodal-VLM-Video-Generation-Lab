@@ -1,26 +1,92 @@
 {
-  "version": "2026-10-31-batch-16",
+  "version": "2026-10-31-batch-17",
   "enabled": true,
-  "description": "Non-destructive perceptual near-duplicate audit of SHA-grouped 200 STAR MP4 videos. Three aligned frames, 64-bit DCT pHash+dHash strict predeclared threshold, flag cross split candidates for manual review; NEVER edit historic test labels/split. Preserve release.",
+  "description": "Retrospective near-duplicate remediation on STAR: connected components from all 7 exact MP4 SHA duplicate groups + 2 strict pHash/dHash near-candidate edges, never cross split; fresh 2-seed LoRA and test; explicitly not new blind external benchmark.",
   "stages": [
     {
-      "id": "B74_full_STAR_phash_and_dhash_audit_200_videos",
+      "id": "B77_SHA_and_perceptual_connected_component_data_preflight",
       "gpu": false,
-      "timeout_seconds": 1500,
+      "timeout_seconds": 1300,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/star_grouped_sft_v1/manifest.json",
-        "data/mvbench_star/provenance.json"
+        "outputs/perceptual_near_duplicate_v1/NEAR_DUP_AUDIT.json",
+        "outputs/star_grouped_sft_v1/manifest.json"
       ],
       "argv": [
         "{python}",
-        "experiments/perceptual_duplicate_audit.py",
+        "experiments/star_perceptual_grouped_sft.py",
+        "prepare",
         "--config",
-        "configs/perceptual_near_dup_v1.json"
+        "configs/star_perceptual_grouped_v1.json"
       ]
     },
     {
-      "id": "B75_perceptual_audit_regression_suite",
+      "id": "B78_fresh_perceptual_grouped_two_seed_SFT",
+      "gpu": true,
+      "min_free_mib": 11000,
+      "timeout_seconds": 3600,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/star_perceptual_grouped_sft_v1/manifest.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/star_perceptual_grouped_sft.py",
+        "train",
+        "--config",
+        "configs/star_perceptual_grouped_v1.json"
+      ]
+    },
+    {
+      "id": "B79_validation_select_perceptual_grouped_seed",
+      "gpu": true,
+      "min_free_mib": 11000,
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/star_perceptual_grouped_sft_v1/adapter_19/adapter_model.safetensors",
+        "outputs/star_perceptual_grouped_sft_v1/adapter_37/adapter_model.safetensors"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/star_perceptual_grouped_sft.py",
+        "validate",
+        "--config",
+        "configs/star_perceptual_grouped_v1.json"
+      ]
+    },
+    {
+      "id": "B80_retro_heldout_perceptual_grouped_test",
+      "gpu": true,
+      "min_free_mib": 11000,
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/star_perceptual_grouped_sft_v1/chosen_seed.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/star_perceptual_grouped_sft.py",
+        "test",
+        "--config",
+        "configs/star_perceptual_grouped_v1.json"
+      ]
+    },
+    {
+      "id": "B81_retrospective_report_with_zero_cross_edges",
+      "gpu": false,
+      "timeout_seconds": 180,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/star_perceptual_grouped_sft_v1/test_comparison.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/star_perceptual_report.py"
+      ]
+    },
+    {
+      "id": "B82_full_regression_suite",
       "gpu": false,
       "timeout_seconds": 240,
       "max_attempts": 1,
@@ -30,16 +96,6 @@
         "pytest",
         "-q",
         "tests"
-      ]
-    },
-    {
-      "id": "B76_source_security_guard_repeat",
-      "gpu": false,
-      "timeout_seconds": 120,
-      "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/source_security_guard.py"
       ]
     }
   ]
