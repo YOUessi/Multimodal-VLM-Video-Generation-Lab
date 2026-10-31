@@ -88,7 +88,7 @@ def test_complete_video_manifest_generation_and_counterfactual_pairs(tmp_path,mo
     # creation, frozen manifest and both counterfactual time directions.
     monkeypatch.setattr(data,"ROOT",tmp_path)
     cfg={"version":"unit-counterfactual-motion-v1",
-         "data_dir":"generated","dev_pairs":5,"test_pairs":5,
+         "dataset_dir":"generated","dev_pairs":5,"test_pairs":5,
          "dev_seed":123,"test_seed":456,
          "width":224,"height":224,"frames":10,"fps":5}
     doc=data.make_dataset(cfg)
