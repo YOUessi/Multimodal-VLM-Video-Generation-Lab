@@ -5,7 +5,7 @@ Identical selection algorithm to frozen adaptive_v2: motion(.65) + hue(.35),
 extraction and repeated frame decoding are cached. No labels in input/output.
 """
 from __future__ import annotations
-import argparse,hashlib,json,random,statistics,time
+import argparse,hashlib,json,random,statistics,time,tempfile
 from pathlib import Path
 import cv2,numpy as np
 from PIL import Image
@@ -112,7 +112,7 @@ def run(config):
     cfg=json.loads((ROOT/config).read_text())
     manifest=json.loads((ROOT/cfg["star_manifest"]).read_text())
     plan=json.loads((ROOT/cfg["adaptive_plan"]).read_text())
-    assert manifest["sha256"]==plan["star_manifest_sha256"]
+    assert manifest.get("rows_sha256",manifest.get("sha256"))==plan["star_manifest_sha256"]
     frozen={x["id"]:x for x in plan["records"]}
     test=[r for r in manifest["rows"] if r["split"]=="test"]
     assert len(test)==40 and len(frozen)==40
@@ -126,28 +126,39 @@ def run(config):
         def naive():
             t=time.perf_counter();choice,imgs=naive_pair(video,count,cfg["probe_count"])
             return time.perf_counter()-t,choice,imgs,None
-        def cached():
-            t=time.perf_counter();choice,imgs,hit=cached_pair(video,count,cfg["probe_count"],cache)
-            return time.perf_counter()-t,choice,imgs,hit
-        steps=[("naive",naive),("cached_cold",cached)]
-        if index%2:steps.reverse()
-        runs={}
-        for name,fn in steps:
-            latency,selected,frames,hit=fn()
-            if selected!=tuple(expected):raise RuntimeError("SHARED_CACHE_CHANGED_FROZEN_FRAME_SELECTION")
-            runs[name]={"wall_seconds":round(latency,6),"images":frames,
-                        "cached":hit}
-        if runs["cached_cold"]["cached"] is True:raise RuntimeError("Expected a cold feature miss")
-        for branch in (0,1):
-            left=runs["naive"]["images"][branch]
-            right=runs["cached_cold"]["images"][branch]
-            if len(left)!=len(right):raise RuntimeError("Frame count changed")
-            for a,b in zip(left,right):
-                if a.size!=b.size or a.tobytes()!=b.tobytes():
-                    raise RuntimeError("PIL_INPUT_PIXELS_CHANGED")
+        # One fresh isolated temp cache per SOURCE ROW: a SHA-identical
+        # video under a second filename must not turn a cold trial into a hit.
+        # Warm trials intentionally use the shared cross-file SHA-keyed cache.
+        with tempfile.TemporaryDirectory(prefix="sample_cold_",dir=str(cache)) as tmp_cold:
+            def cached_cold():
+                t=time.perf_counter()
+                choice,imgs,hit=cached_pair(video,count,cfg["probe_count"],Path(tmp_cold))
+                return time.perf_counter()-t,choice,imgs,hit
+            steps=[("naive",naive),("cached_cold",cached_cold)]
+            if index%2:steps.reverse()
+            runs={}
+            for name,fn in steps:
+                latency,selected,frames,hit=fn()
+                if selected!=tuple(expected):raise RuntimeError("SHARED_CACHE_CHANGED_FROZEN_FRAME_SELECTION")
+                runs[name]={"wall_seconds":round(latency,6),"images":frames,
+                            "cached":hit}
+            if runs["cached_cold"]["cached"] is True:raise RuntimeError("COLD_SAMPLE_CACHE_UNEXPECTED_HIT")
+            for branch in (0,1):
+                left=runs["naive"]["images"][branch]
+                right=runs["cached_cold"]["images"][branch]
+                if len(left)!=len(right):raise RuntimeError("Frame count changed")
+                for a,b in zip(left,right):
+                    if a.size!=b.size or a.tobytes()!=b.tobytes():
+                        raise RuntimeError("PIL_INPUT_PIXELS_CHANGED")
+        shared=cache/"shared_by_content_SHA"
+        shared.mkdir(exist_ok=True)
+        # Prewarm once; exclude this from the measured hot-cache trials.
+        _,_ = read_or_build(video,count,cfg["probe_count"],shared)
         warm=[]
         for repeat in range(cfg["warm_repeats"]):
-            latency,choice,_,hit=cached()
+            t=time.perf_counter()
+            choice,_,hit=cached_pair(video,count,cfg["probe_count"],shared)
+            latency=time.perf_counter()-t
             assert hit is True and choice==tuple(expected)
             warm.append(round(latency,6))
         raw.append({"id":row["source_index"],"video":relative_or_abs(video),
