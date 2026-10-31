@@ -43,7 +43,7 @@ def sha256(file):
     return h.hexdigest()
 
 def check_dataset(cfg,strict_sha=False):
-    dataset=ROOT/cfg["data_dir"]
+    dataset=ROOT/cfg["dataset_dir"]
     manifest=json.loads((dataset/"manifest.json").read_text(encoding="utf8"))
     if manifest["config_version"]!=cfg["version"]:
         raise RuntimeError("DATASET_CONFIG_VERSION_DRIFT")
@@ -112,7 +112,7 @@ def make_prompt(row,mode,images,hint):
 
 def validate_tracker_and_models(cfg):
     run_preflight("configs/object_motion_v1.json",dev_only=True)
-    dev=[r for r in json.loads((ROOT/cfg["data_dir"]/"manifest.json").read_text())["rows"]
+    dev=[r for r in json.loads((ROOT/cfg["dataset_dir"]/"manifest.json").read_text())["rows"]
          if r["split"]=="dev"]
     assert len(dev)==2*cfg["dev_pairs"]
     for name,details in cfg["models"].items():
