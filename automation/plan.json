@@ -1,93 +1,63 @@
 {
-  "version": "2026-11-01-batch-21",
+  "version": "2026-11-01-batch-22",
   "enabled": true,
-  "description": "Fix confirmed Diffusers 0.37.1 3D UNet gradient_checkpointing unsupported exception. Same 12/4 paired synthetic video-caption manifest, new output dir and fresh CPU features, actual 12-step LoRA optimizer, matched pretrained/tuned local video generation, MSE and blind review, fail-closed.",
+  "description": "Posthoc mechanistic diagnostic of video temporal evidence without training or test-driven prompting. Strong SmolVLM2-2.2B on the same frozen 400 video tasks: repeat middle frame with N=3/5 and reverse the original N frames. Keep original gold only for repeated static frames; never score reversed frames against original gold. Paired bootstrap CIs and choice-change rates.",
   "stages": [
     {
-      "id": "D0_verify_frozen_video_caption_pair_manifest",
+      "id": "E1_frozen_400_video_temporal_control_protocol_audit",
       "gpu": false,
       "timeout_seconds": 180,
       "max_attempts": 1,
       "requires_files": [
-        "data/zeroscope_paired_motion_v1/manifest.json"
+        "outputs/capacity_temporal_v1/manifest.json",
+        "outputs/capacity_temporal_v1/2b.json"
       ],
       "argv": [
         "{python}",
-        "experiments/diffusion_paired_motion_data.py",
+        "experiments/temporal_order_controls.py",
+        "preflight",
         "--config",
-        "configs/zeroscope_lora_smoke_nockpt.json"
+        "configs/temporal_controls_v1.json"
       ]
     },
     {
-      "id": "D1_cpu_precompute_frozen_VAE_CLIP_features",
-      "gpu": false,
-      "timeout_seconds": 1200,
-      "max_attempts": 1,
-      "requires_files": [
-        "models/zeroscope_v2_576w_safe/vae/diffusion_pytorch_model.safetensors"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/zeroscope_video_lora.py",
-        "cache",
-        "--config",
-        "configs/zeroscope_lora_smoke_nockpt.json"
-      ]
-    },
-    {
-      "id": "D2_actual_GPU_3D_UNet_Peft_LoRA_training",
+      "id": "E2_2b_repeat_vs_reversal_1600_GPU_inferences",
       "gpu": true,
       "min_free_mib": 12000,
-      "timeout_seconds": 1800,
+      "timeout_seconds": 7200,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/zeroscope_video_lora_v2/feature_cache_manifest.json",
-        "models/zeroscope_v2_576w_safe/unet/diffusion_pytorch_model.safetensors"
+        "models/SmolVLM2-2.2B-Instruct/model-00001-of-00002.safetensors",
+        "models/SmolVLM2-2.2B-Instruct/model-00002-of-00002.safetensors"
       ],
       "argv": [
         "{python}",
-        "experiments/zeroscope_video_lora.py",
-        "train",
+        "experiments/temporal_order_controls.py",
+        "infer",
         "--config",
-        "configs/zeroscope_lora_smoke_nockpt.json"
+        "configs/temporal_controls_v1.json"
       ]
     },
     {
-      "id": "D3_matched_pretrained_and_LoRA_video_inference",
-      "gpu": true,
-      "min_free_mib": 12000,
-      "timeout_seconds": 1800,
-      "max_attempts": 1,
-      "requires_files": [
-        "outputs/zeroscope_video_lora_v2/adapter/adapter_model.safetensors",
-        "outputs/zeroscope_video_lora_v2/training_report.json"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/zeroscope_lora_generate.py",
-        "--config",
-        "configs/zeroscope_lora_smoke_nockpt.json"
-      ]
-    },
-    {
-      "id": "D4_anonymous_independent_video_review_and_results",
+      "id": "E3_paired_temporal_degradation_and_flip_report",
       "gpu": false,
       "timeout_seconds": 180,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/zeroscope_video_lora_v2/generated_comparison/generation_report.json"
+        "outputs/temporal_controls_v1/controlled_predictions.json"
       ],
       "argv": [
         "{python}",
-        "experiments/zeroscope_lora_report.py",
+        "experiments/temporal_order_controls.py",
+        "report",
         "--config",
-        "configs/zeroscope_lora_smoke_nockpt.json"
+        "configs/temporal_controls_v1.json"
       ]
     },
     {
-      "id": "D5_all_regression_tests",
+      "id": "E4_frozen_regression_tests",
       "gpu": false,
-      "timeout_seconds": 240,
+      "timeout_seconds": 300,
       "max_attempts": 1,
       "argv": [
         "{python}",
@@ -98,7 +68,7 @@
       ]
     },
     {
-      "id": "D6_publication_security_gate",
+      "id": "E5_source_security_gate",
       "gpu": false,
       "timeout_seconds": 120,
       "max_attempts": 1,
