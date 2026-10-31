@@ -1,37 +1,26 @@
 {
-  "version": "2026-10-31-batch-15",
+  "version": "2026-10-31-batch-16",
   "enabled": true,
-  "description": "Final evidence-first release: source SHA grouped leakage audit, independent 200-video cross-task report, exact-frame shared-cache speedup, six real ZeroScope outputs, blind-human-review pending; produce local offline HTML preview and manifest, publication guard, full regression CI-compatible tests.",
+  "description": "Non-destructive perceptual near-duplicate audit of SHA-grouped 200 STAR MP4 videos. Three aligned frames, 64-bit DCT pHash+dHash strict predeclared threshold, flag cross split candidates for manual review; NEVER edit historic test labels/split. Preserve release.",
   "stages": [
     {
-      "id": "B70_audited_local_release_html_and_manifest",
+      "id": "B74_full_STAR_phash_and_dhash_audit_200_videos",
       "gpu": false,
-      "timeout_seconds": 600,
+      "timeout_seconds": 1500,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/star_grouped_sft_v1/AUTHORITATIVE_RESULTS.json",
-        "outputs/mvbench_scene_external_v1/comparison.json",
-        "outputs/shared_cache_grouped_v1/shared_cache.json",
-        "outputs/diffusion_grid/generation_report.json"
+        "outputs/star_grouped_sft_v1/manifest.json",
+        "data/mvbench_star/provenance.json"
       ],
       "argv": [
         "{python}",
-        "experiments/release_audit_and_preview.py",
-        "--verify"
+        "experiments/perceptual_duplicate_audit.py",
+        "--config",
+        "configs/perceptual_near_dup_v1.json"
       ]
     },
     {
-      "id": "B71_no_media_or_weights_in_source_guard",
-      "gpu": false,
-      "timeout_seconds": 120,
-      "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/source_security_guard.py"
-      ]
-    },
-    {
-      "id": "B72_full_public_cpu_test_suite",
+      "id": "B75_perceptual_audit_regression_suite",
       "gpu": false,
       "timeout_seconds": 240,
       "max_attempts": 1,
@@ -44,18 +33,13 @@
       ]
     },
     {
-      "id": "B73_compile_all_experiment_sources",
+      "id": "B76_source_security_guard_repeat",
       "gpu": false,
-      "timeout_seconds": 180,
+      "timeout_seconds": 120,
       "max_attempts": 1,
       "argv": [
         "{python}",
-        "-m",
-        "compileall",
-        "-q",
-        "experiments",
-        "automation",
-        "tests"
+        "experiments/source_security_guard.py"
       ]
     }
   ]
