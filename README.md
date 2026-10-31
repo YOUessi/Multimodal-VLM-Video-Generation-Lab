@@ -1,5 +1,28 @@
 # Multimodal VLM & Video Generation Lab
 
+## New research milestone: object-centric motion tool + VLM (batches 27–30, 2026-11-01)
+
+The project moved beyond heuristic visual-frame selection to ask **whether a VLM can use explicit object motion evidence and whether a gated deterministic tool can improve direction QA**.
+
+**Frozen synthetic counterfactual study — two pretrained VLMs × five conditions:**
+
+- New dataset: 120 frozen source test scenes, each played forward and reversed (**240 test clips**), with target color+shape queries, independently moving distractors, and five balanced motion classes; 20 separate development scene pairs.
+- Actual GPU: **2,400 VLM inferences** across question-only, RGB-3, numeric coordinates only, RGB+measured coordinates, and RGB+intentionally contradictory reversed coordinate order. The coordinates are measured from video pixels; no ground-truth scene annotation enters the tracker or model prompt.
+- On this simple fixed-camera rendered-color domain, classical CV direction estimation scored **240/240**, while 2.2B video-only scored **40/240**, and video+numeric coordinates **51/240** (+4.6pp, *paired scene-cluster CI [-0.83,+10]*; not proven). Directly appending correct numeric trajectories **did not establish VLM reasoning improvement**. The 2D classical tracker is **domain-specific, not universal**.
+- See [full 240-video experiment, negative results and caveats](docs/BATCH27_28_COUNTERFACTUAL_MOTION_2026-11-01.md). A local offline first-eight-pair review HTML is generated on Tang.
+
+**Public CLEVRER domain transfer, full 200 already-inspected simulated videos:**
+
+- The unmodified synthetic **exact-RGB palette** tracker failed to find usable targets on **200/200** external source items; a conservative fallback therefore produced **no gain**. See [batch29 failure analysis](docs/BATCH29_UNTUNED_CLEVRER_TRANSFER_2026-11-01.md).
+- A **generic named-color HSV + connected-component tracking + conservative position-confidence gate** (fixed before external scoring, 40/40 on separate development clips, no CLEVRER label calibration) produced movement options for **119/200** videos and accepted **65/200** high-motion predictions. Among the accepted 65, **58 correct and 7 incorrect** (89.2% tool precision). All 200, including abstentions, remain in the denominator.
+- With **existing frozen VLM outputs** (no additional VLM inference), 2.2B three-frame CLEVRER accuracy improved from **72/200 (36.0%) to 121/200 (60.5%)**, +24.5pp, paired bootstrap 95% CI [+18,+31.5]. Five-frame results: 73/200 to 121/200. 500M also improved from 61/200 to 106/200 at three frames.
+- **Critical qualification:** CLEVRER is rendered simulation, not natural camera video, and this benchmark was **already analyzed in earlier studies**. No blind out-of-domain independent effectiveness claim, generalized tracker reliability, or novel model architecture is made. The gated tool costs CPU time and can make wrong overrides.
+- See [the complete batch30 200-video external tracker benchmark and limitations](docs/BATCH30_HSV_TRACKER_GATED_CLEVRER_2026-11-01.md).
+
+**Engineering status:** the latest frozen batch30 passed **103/103 tests**, all four stages succeeded, and the local Tang every-10-minute cron remains enabled. The approved batch has finished, so cron now checks status only until another tested plan is installed. Raw model outputs, videos, review HTML, weights and LoRA adapters remain local on Tang, not committed to GitHub.
+
+---
+
 ## Latest verified milestones — 2026-11-01
 
 ### VLM temporal evidence and model scaling (batch 19)
@@ -35,9 +58,9 @@ A frozen control compared identical visual-frame counts, either **normal chronol
 
 The results motivate investigation of temporal evidence use but do not pinpoint an Attention or positional-encoding mechanism. Full [batch22 report](docs/BATCH22_TEMPORAL_CONTROLS_2026-11-01.md).
 
-### Current frozen batch23: exploratory motion-salient sampling
+### Frozen batch23: motion-salient frame selection negative ablation
 
-Tang's 10-minute cron is now configured to run a label-blind 12-probe motion/hue frame selector on the same frozen 400 public videos, matched 3/5-frame budgets and both VLM sizes; it records **CPU selection overhead** and paired correctness differences. This is an exploratory ablation on **already inspected** public samples, not fresh never-seen evaluation, and will fail closed on any stage errors. See `configs/motion_sampling_v1.json` and `automation/plans/batch23_motion_salient_v1.json`.
+The 12-probe label-blind motion/hue frame-selection benchmark completed **1,600 real GPU inferences** on the already-inspected 400 public CLEVRER/Scene Transition videos. For the stronger 2.2B model, movement-direction correctness was unchanged at 3 and 5 frames; all eight model/task/frame comparisons had paired 95% intervals including zero. Mean selection overhead was **208ms CPU per video**. The heuristic was not a reliable improvement over uniform sampling. See [negative results and source hashes](docs/BATCH23_MOTION_SALIENT_RESULTS_2026-11-01.md).
 
 ### Caution: earlier STAR data leakage
 
