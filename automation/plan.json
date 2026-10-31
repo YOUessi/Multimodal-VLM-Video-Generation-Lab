@@ -1,27 +1,26 @@
 {
-  "version": "2026-10-31-batch-8",
+  "version": "2026-10-31-batch-9",
   "enabled": true,
-  "description": "Freeze label-blind adaptive visual sampling after integer endpoint regression fix; 40 independent STAR test videos; matched 3/5 frame budget; compare Base and validation-selected LoRA; preserve negative results.",
+  "description": "Resume frozen 40 real STAR video adaptive sampling after independent correctness fixes; reuse immutable existing label-blind sample plan, no new labels or test-time tuning.",
   "stages": [
     {
-      "id": "B35_frozen_sampler_and_full_40_video_preflight",
+      "id": "B40_verify_frozen_40_video_sampling_plan",
       "gpu": false,
-      "timeout_seconds": 1200,
+      "timeout_seconds": 120,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/star_sft_round2/manifest.json",
-        "outputs/star_sft_round2/chosen_seed.json"
+        "outputs/adaptive_sampling_v2/sampling_plan.json",
+        "outputs/star_sft_round2/manifest.json"
       ],
       "argv": [
         "{python}",
-        "experiments/adaptive_temporal_sampling.py",
-        "prepare",
+        "experiments/verify_adaptive_plan.py",
         "--config",
         "configs/adaptive_sampling_v2.json"
       ]
     },
     {
-      "id": "B36_adaptive_base_3and5_frame_inference",
+      "id": "B41_base_adaptive_3and5_frames",
       "gpu": true,
       "min_free_mib": 11000,
       "timeout_seconds": 1800,
@@ -39,7 +38,7 @@
       ]
     },
     {
-      "id": "B37_adaptive_selected_real_video_lora",
+      "id": "B42_real_video_lora_adaptive_3and5",
       "gpu": true,
       "min_free_mib": 11000,
       "timeout_seconds": 1800,
@@ -57,13 +56,13 @@
       ]
     },
     {
-      "id": "B38_paired_40_video_sampling_ablation",
+      "id": "B43_paired_adaptive_vs_uniform_40_test",
       "gpu": false,
-      "timeout_seconds": 180,
+      "timeout_seconds": 120,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/adaptive_sampling_v2/selected_lora.json",
-        "outputs/adaptive_sampling_v2/base.json"
+        "outputs/adaptive_sampling_v2/base.json",
+        "outputs/adaptive_sampling_v2/selected_lora.json"
       ],
       "argv": [
         "{python}",
@@ -74,9 +73,9 @@
       ]
     },
     {
-      "id": "B39_all_tests_and_regressions",
+      "id": "B44_offline_regression_tests",
       "gpu": false,
-      "timeout_seconds": 240,
+      "timeout_seconds": 180,
       "max_attempts": 1,
       "argv": [
         "{python}",
