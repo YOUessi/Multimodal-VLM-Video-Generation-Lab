@@ -143,7 +143,7 @@ def evaluate(cfg,variant):
         for i,r in enumerate(plan["records"]):
             original=rows[r["id"]]
             indexes=r["frames"][str(n)]["frame_indices"]
-            frames=load_pil(ROOT[r["video"]],indexes)
+            frames=load_pil(ROOT/r["video"],indexes)
             batch=proc.apply_chat_template(prompt(original,frames),
                         add_generation_prompt=True,tokenize=True,
                         return_tensors="pt",return_dict=True).to("cuda",dtype=dtype)
