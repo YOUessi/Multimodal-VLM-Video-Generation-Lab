@@ -1,0 +1,13 @@
+{
+  "data_dir": "data/mvbench_public",
+  "model_dir": "models/SmolVLM2-500M-Video-Instruct",
+  "adapter": "outputs/temporal_round2/adapter",
+  "output_dir": "outputs/choice_bias_round1",
+  "frames": [
+    3,
+    5
+  ],
+  "max_new_tokens": 36,
+  "method": "full 120 sample complement of frozen 80, three deterministic cyclic rotations, majority vote, fallback rotation0",
+  "seed": 20261031
+}
