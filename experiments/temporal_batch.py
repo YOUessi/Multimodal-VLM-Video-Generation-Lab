@@ -103,6 +103,10 @@ def model_pack(path,adapter=None):
     from transformers import AutoModelForImageTextToText,AutoProcessor
     dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
     processor=AutoProcessor.from_pretrained(str(path),local_files_only=True)
+    # Disable 512px overlapping image crops: 3 video frames otherwise become 39 crops
+    # and 2601 image tokens, causing CUDA OOM during LoRA SFT on 16 GiB GPU.
+    # Apply the SAME deterministic image preprocessing in base and LoRA evaluation.
+    processor.image_processor.do_image_splitting=False
     model=AutoModelForImageTextToText.from_pretrained(str(path),local_files_only=True,dtype=dtype)
     if adapter:
         from peft import PeftModel
