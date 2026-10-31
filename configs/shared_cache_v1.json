@@ -1,0 +1,16 @@
+{
+  "star_manifest": "outputs/star_sft_round2/manifest.json",
+  "adaptive_plan": "outputs/adaptive_sampling_v2/sampling_plan.json",
+  "cache_dir": "data/shared_scenelet_cache_v1",
+  "output_dir": "outputs/shared_cache_v1",
+  "order_seed": 20261031,
+  "probe_count": 48,
+  "warm_repeats": 3,
+  "frame_budgets": [
+    3,
+    5
+  ],
+  "selection_policy": "identical frozen 0.65 motion + 0.35 hue, 5%/95% endpoints, spacing fixed",
+  "independent_test": "STAR 40 natural video test; no QA labels used for selection",
+  "accuracy_note": "No new VLM inference; every cached frame index and input pixel checked byte-identical"
+}
