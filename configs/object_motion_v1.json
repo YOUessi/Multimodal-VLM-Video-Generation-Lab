@@ -1,0 +1,45 @@
+{
+  "version": "2026-11-01-counterfactual-motion-v1",
+  "dataset_dir": "data/object_motion_counterfactual_v1",
+  "output_dir": "outputs/object_motion_counterfactual_v1",
+  "dev_pairs": 20,
+  "test_pairs": 120,
+  "dev_seed": 120338,
+  "test_seed": 654139,
+  "width": 224,
+  "height": 224,
+  "frames": 10,
+  "fps": 5,
+  "tracker_threshold_px": 9,
+  "max_new_tokens": 36,
+  "methods": [
+    "text_only",
+    "rgb3",
+    "positions_only",
+    "rgb3_positions",
+    "rgb3_wrong_order_positions"
+  ],
+  "models": {
+    "500m": {
+      "model_dir": "models/SmolVLM2-500M-Video-Instruct",
+      "revision": "7b375e1b73b11138ff12fe22c8f2822d8fe03467",
+      "weight_files": {
+        "model.safetensors": 2029990624
+      }
+    },
+    "2b": {
+      "model_dir": "models/SmolVLM2-2.2B-Instruct",
+      "revision": "482adb537c021c86670beed01cd58990d01e72e4",
+      "weight_files": {
+        "model-00001-of-00002.safetensors": 4959390584,
+        "model-00002-of-00002.safetensors": 4027833472
+      }
+    }
+  },
+  "bootstrap_seed": 20261101,
+  "generated_pair_policy": "120 newly frozen test base scenes, each has chronological forward and exactly reversed video; balanced five direction classes, stable target-color query, independently moving distractor.",
+  "label_blindness": "tracker reads only raw video pixels and question string; no scene metadata, reference labels, options or answer string used",
+  "novelty_limit": "Procedural 2D color objects and fixed camera; classical CV already able to solve. This is diagnostic VLM evidence-fusion, not a general video tracking algorithm.",
+  "wrong_hint_interpretation": "Deliberate contradictory reverse-order numeric measurement against original RGB chronology, not a real sensor signal.",
+  "test_time_tuning": false
+}
