@@ -1,7 +1,7 @@
 {
-  "version": "2026-10-31-batch-1",
+  "version": "2026-10-31-batch-2",
   "enabled": true,
-  "description": "Project4 VLM controlled temporal benchmark, LoRA, heldout comparison; WAN feasibility separately",
+  "description": "No-crop 1/3/5 frame baseline, real LoRA, frozen heldout comparison, Wan full-weight preflight, safe safetensors-only ZeroScope video generation",
   "stages": [
     {
       "id": "B1_temporal_baseline",
@@ -14,7 +14,7 @@
         "experiments/temporal_batch.py",
         "baseline",
         "--config",
-        "configs/round1.json"
+        "configs/round2.json"
       ]
     },
     {
@@ -28,7 +28,7 @@
         "experiments/temporal_batch.py",
         "train",
         "--config",
-        "configs/round1.json"
+        "configs/round2.json"
       ]
     },
     {
@@ -42,7 +42,7 @@
         "experiments/temporal_batch.py",
         "report",
         "--config",
-        "configs/round1.json"
+        "configs/round2.json"
       ]
     },
     {
@@ -54,7 +54,24 @@
         "{python}",
         "experiments/wan_preflight.py",
         "--config",
-        "configs/round1.json"
+        "configs/round2.json"
+      ]
+    },
+    {
+      "id": "B5_zeroscope_diffusion_video",
+      "gpu": true,
+      "min_free_mib": 11000,
+      "timeout_seconds": 3000,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/zeroscope_generate.py",
+        "--model",
+        "models/zeroscope_v2_576w_safe",
+        "--steps",
+        "14",
+        "--frames",
+        "12"
       ]
     }
   ]
