@@ -1,0 +1,61 @@
+{
+  "version": "2026-11-01-batch-28",
+  "enabled": true,
+  "description": "Posthoc audit and local demonstrator for frozen counterfactual motion experiments, no additional GPU or model/answer changes. Preserve source videos and raw inference. Produce descriptive error slices, deterministic forward-vs-reverse offline review page, source tests and security guard.",
+  "stages": [
+    {
+      "id": "K1_frozen_240_test_object_motion_error_slices",
+      "gpu": false,
+      "timeout_seconds": 240,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/object_motion_counterfactual_v1/comparison.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/object_motion_error_slices.py",
+        "--config",
+        "configs/object_motion_v1.json"
+      ]
+    },
+    {
+      "id": "K2_local_forward_reverse_video_model_evidence_preview",
+      "gpu": false,
+      "timeout_seconds": 240,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/object_motion_counterfactual_v1/500m.json",
+        "outputs/object_motion_counterfactual_v1/2b.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/object_motion_review.py",
+        "--config",
+        "configs/object_motion_v1.json"
+      ]
+    },
+    {
+      "id": "K3_all_source_tests",
+      "gpu": false,
+      "timeout_seconds": 300,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests"
+      ]
+    },
+    {
+      "id": "K4_source_media_and_private_weight_guard",
+      "gpu": false,
+      "timeout_seconds": 120,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/source_security_guard.py"
+      ]
+    }
+  ]
+}
