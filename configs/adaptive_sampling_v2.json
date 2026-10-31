@@ -1,0 +1,21 @@
+{
+  "star_manifest": "outputs/star_sft_round2/manifest.json",
+  "star_output": "outputs/star_sft_round2",
+  "chosen_seed": "outputs/star_sft_round2/chosen_seed.json",
+  "model_dir": "models/SmolVLM2-500M-Video-Instruct",
+  "output_dir": "outputs/adaptive_sampling_v2",
+  "frame_counts": [
+    3,
+    5
+  ],
+  "max_new_tokens": 40,
+  "probe_count": 48,
+  "selection_formula": "0.65 normalized mean gray change + 0.35 normalized HSV hue Bhattacharyya distance",
+  "endpoint_guard": "first and last at 5% and 95% of actual decode count",
+  "min_gap_fraction": {
+    "3": 0.1,
+    "5": 0.07
+  },
+  "test_time_tuning": false,
+  "candidate_rounding": "interpolate between exact integer 5%/95% endpoints; no answer-label changes"
+}
