@@ -35,19 +35,20 @@ def indices_for_signals(frame_indices,signals,count,min_distance):
         chosen.append(picked)
     return sorted(chosen)
 
-def select_video(video,decoded,count,probe_count=48):
-    import cv2
+def candidate_positions(decoded,probe_count):
+    """Sample within exact integer endpoint bounds, independent of QA labels."""
     if decoded<6:raise ValueError("Video must have >=6 decoded frames")
-    # Compute interior candidate positions FROM exact integer endpoints. The
-    # previous floating-point expression could round the last candidate one
-    # frame beyond 95%, so the endpoint assertion failed on valid videos.
-    # This is a pure arithmetic fix, independent of video labels and scores.
     if probe_count<3:raise ValueError("At least 3 probe positions required")
-    endpoints=[round(.05*(decoded-1)),round(.95*(decoded-1))]
-    lo,hi=endpoints
+    lo,hi=round(.05*(decoded-1)),round(.95*(decoded-1))
     samples=sorted({lo+round((hi-lo)*i/(probe_count-1)) for i in range(probe_count)}
                    | {lo,hi})
-    assert samples[0]==lo and samples[-1]==hi
+    if samples[0]!=lo or samples[-1]!=hi:
+        raise RuntimeError("ENDPOINT_CANDIDATE_BOUNDS_FAILED")
+    return (lo,hi),samples
+
+def select_video(video,decoded,count,probe_count=48):
+    import cv2
+    endpoints,samples=candidate_positions(decoded,probe_count)
     cap=cv2.VideoCapture(str(video))
     if not cap.isOpened():raise RuntimeError("Cannot open "+str(video))
     frames=[]
