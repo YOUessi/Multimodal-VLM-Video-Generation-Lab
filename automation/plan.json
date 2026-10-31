@@ -1,81 +1,56 @@
 {
-  "version": "2026-10-31-batch-13",
+  "version": "2026-10-31-batch-14",
   "enabled": true,
-  "description": "Post SHA-grouped STAR SFT cross-task external validation on 200 official MVBench scene_transition clips, full-byte SHA overlap exclusion, no external training/model selection, 3/5-frame base vs grouped LoRA paired CIs.",
+  "description": "Remediate failed B53 cold-cache assumption on duplicate MP4 bytes. On new SHA-content-grouped STAR 40 videos, freeze same .65/.35 label-blind adaptive sampling, verify frame-plan SHA, benchmark baseline versus per-sample isolated cold and content-SHA shared warm, assert ALL selected pixels exactly identical.",
   "stages": [
     {
-      "id": "B61_scene_external_200_video_preflight_and_hash_audit",
+      "id": "B66_grouped_40_video_labelblind_adaptive_frame_plan",
       "gpu": false,
-      "timeout_seconds": 1500,
+      "timeout_seconds": 1200,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/star_grouped_sft_v1/AUTHORITATIVE_RESULTS.json",
-        "data/mvbench_scene_transition/provenance.json",
-        "data/mvbench_scene_transition/text/scene_transition.json"
+        "outputs/star_grouped_sft_v1/manifest.json"
       ],
       "argv": [
         "{python}",
-        "experiments/mvbench_scene_external.py",
+        "experiments/adaptive_temporal_sampling.py",
         "prepare",
         "--config",
-        "configs/mvbench_scene_external_v1.json"
+        "configs/adaptive_grouped_v1.json"
       ]
     },
     {
-      "id": "B62_scene_external_base_3and5_inference",
-      "gpu": true,
-      "min_free_mib": 11000,
-      "timeout_seconds": 3600,
-      "max_attempts": 1,
-      "requires_files": [
-        "outputs/mvbench_scene_external_v1/manifest.json",
-        "models/SmolVLM2-500M-Video-Instruct/model.safetensors"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/mvbench_scene_external.py",
-        "base",
-        "--config",
-        "configs/mvbench_scene_external_v1.json"
-      ]
-    },
-    {
-      "id": "B63_scene_external_SHA_grouped_adapter_3and5",
-      "gpu": true,
-      "min_free_mib": 11000,
-      "timeout_seconds": 3600,
-      "max_attempts": 1,
-      "requires_files": [
-        "outputs/mvbench_scene_external_v1/base.json",
-        "outputs/star_grouped_sft_v1/chosen_seed.json"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/mvbench_scene_external.py",
-        "grouped_lora",
-        "--config",
-        "configs/mvbench_scene_external_v1.json"
-      ]
-    },
-    {
-      "id": "B64_external_paired_cross_task_report",
+      "id": "B67_validate_unchanged_grouped_sampling_plan",
       "gpu": false,
       "timeout_seconds": 180,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/mvbench_scene_external_v1/grouped_lora.json",
-        "outputs/mvbench_scene_external_v1/base.json"
+        "outputs/adaptive_grouped_v1/sampling_plan.json"
       ],
       "argv": [
         "{python}",
-        "experiments/mvbench_scene_external.py",
-        "compare",
+        "experiments/verify_adaptive_plan.py",
         "--config",
-        "configs/mvbench_scene_external_v1.json"
+        "configs/adaptive_grouped_v1.json"
       ]
     },
     {
-      "id": "B65_full_github_source_tests",
+      "id": "B68_grouped_40_video_cold_warm_exact_pixel_cache_benchmark",
+      "gpu": false,
+      "timeout_seconds": 1200,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/adaptive_grouped_v1/sampling_plan.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/shared_temporal_cache.py",
+        "--config",
+        "configs/shared_cache_grouped_v1.json"
+      ]
+    },
+    {
+      "id": "B69_complete_regression_suite",
       "gpu": false,
       "timeout_seconds": 240,
       "max_attempts": 1,
