@@ -54,7 +54,7 @@ def rotate_choices(choices,rotation):
     return [choices[(rotation+i)%3] for i in range(3)]
 
 def backmap(predicted_letter,rotation):
-    if predicted_letter not in LETTERS:return None
+    if not isinstance(predicted_letter,str) or predicted_letter not in LETTERS:return None
     return (LETTERS.index(predicted_letter)+rotation)%3
 
 def majority_vote(preds):
