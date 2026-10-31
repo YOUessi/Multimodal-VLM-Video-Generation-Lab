@@ -8,9 +8,9 @@ def read(rel):
     if not f.exists():raise FileNotFoundError(rel)
     return json.loads(f.read_text(encoding="utf8"))
 def main():
-    star=read("outputs/star_sft_round1/test_comparison.json")
-    manifest=read("outputs/star_sft_round1/manifest.json")
-    chosen=read("outputs/star_sft_round1/chosen_seed.json")
+    star=read("outputs/star_sft_round2/test_comparison.json")
+    manifest=read("outputs/star_sft_round2/manifest.json")
+    chosen=read("outputs/star_sft_round2/chosen_seed.json")
     original=read("outputs/mvbench_round1/rescored_v2/comparison_scored.json")
     bias=read("outputs/choice_bias_round1/comparison.json")
     generation=read("outputs/diffusion_round1/generation_report.json")
@@ -26,7 +26,7 @@ def main():
     rows=["# Multimodal VLM & Video Generation Lab — evidence report","",
        "Generated (UTC): "+datetime.now(timezone.utc).isoformat(),
        "Frozen source SHA: "+sha,"",
-       "## Experiment 1: REAL-VECTOR SFT on STAR video actions","",
+       "## Experiment 1: REAL-VIDEO SFT on STAR video actions","",
        "Official MVBench/STAR action_sequence annotation set, 120 train / 40 validation / 40 heldout test, video-ID disjoint.",
        "Only train videos used for optimizer gradients. Seed selected using validation 3-frame QA; test not used for checkpoint selection.",
        "The optimized STAR MP4s are pre-trimmed; original start/end metadata are retained but not used as absolute crop coordinates.",
@@ -72,7 +72,7 @@ def main():
     output=ROOT/"outputs/final_project"
     output.mkdir(parents=True,exist_ok=True)
     (output/"RESULTS.md").write_text("\n".join(rows)+"\n",encoding="utf8")
-    paths=["outputs/star_sft_round1/test_comparison.json",
+    paths=["outputs/star_sft_round2/test_comparison.json",
            "outputs/mvbench_round1/rescored_v2/comparison_scored.json",
            "outputs/choice_bias_round1/comparison.json",
            "outputs/multi_seed/REPLICATION.json",
