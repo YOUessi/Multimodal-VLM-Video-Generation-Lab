@@ -54,3 +54,14 @@ def test_real_decoded_mp4_endpoint_guards(tmp_path):
         assert len(selected)==len(set(selected))==n
         assert selected[0]==round(.05*54)
         assert selected[-1]==round(.95*54)
+
+def test_no_pathlib_root_subscripts_in_eval():
+    # Regression: evaluating real videos once attempted ROOT[r["video"]]
+    # rather than ROOT / r["video"] and failed before GPU execution.
+    import ast
+    tree=ast.parse(P.read_text(encoding="utf8"))
+    offenders=[node.lineno for node in ast.walk(tree)
+               if isinstance(node,ast.Subscript)
+               and isinstance(node.value,ast.Name)
+               and node.value.id=="ROOT"]
+    assert offenders==[],f"ROOT used as subscript on lines {offenders}"
