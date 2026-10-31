@@ -1,12 +1,12 @@
 {
-  "version": "2026-10-31-batch-5",
+  "version": "2026-10-31-batch-6",
   "enabled": true,
-  "description": "Real-video LoRA on 200 unique STAR action_sequence clips, freeze 120/40/40 source-video-disjoint split, train 2 seeds, validation-only seed selection, heldout natural-video test, complete research report",
+  "description": "Fix STAR falsely overstated MP4 metadata frame counts; ffprobe actual decoded frame count frozen in manifest. Run verified two-seed real video SFT and heldout evaluation.",
   "stages": [
     {
-      "id": "B18_star_video_split_preflight",
+      "id": "B24_star_actual_decode_preflight",
       "gpu": false,
-      "timeout_seconds": 240,
+      "timeout_seconds": 900,
       "max_attempts": 1,
       "requires_files": [
         "data/mvbench_star/provenance.json",
@@ -18,68 +18,68 @@
         "experiments/star_real_sft.py",
         "prepare",
         "--config",
-        "configs/star_real_sft_round1.json"
+        "configs/star_real_sft_round2.json"
       ]
     },
     {
-      "id": "B19_star_real_video_two_seed_lora",
+      "id": "B25_star_real_video_two_seed_lora",
       "gpu": true,
       "min_free_mib": 11000,
       "timeout_seconds": 3600,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/star_sft_round1/manifest.json"
+        "outputs/star_sft_round2/manifest.json"
       ],
       "argv": [
         "{python}",
         "experiments/star_real_sft.py",
         "train",
         "--config",
-        "configs/star_real_sft_round1.json"
+        "configs/star_real_sft_round2.json"
       ]
     },
     {
-      "id": "B20_validation_only_seed_selection",
+      "id": "B26_validation_only_seed_selection",
       "gpu": true,
       "min_free_mib": 11000,
       "timeout_seconds": 2400,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/star_sft_round1/adapter_19/adapter_model.safetensors",
-        "outputs/star_sft_round1/adapter_37/adapter_model.safetensors"
+        "outputs/star_sft_round2/adapter_19/adapter_model.safetensors",
+        "outputs/star_sft_round2/adapter_37/adapter_model.safetensors"
       ],
       "argv": [
         "{python}",
         "experiments/star_real_sft.py",
         "validate",
         "--config",
-        "configs/star_real_sft_round1.json"
+        "configs/star_real_sft_round2.json"
       ]
     },
     {
-      "id": "B21_heldout_real_action_sequence_test",
+      "id": "B27_heldout_real_action_sequence_test",
       "gpu": true,
       "min_free_mib": 11000,
       "timeout_seconds": 2400,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/star_sft_round1/chosen_seed.json"
+        "outputs/star_sft_round2/chosen_seed.json"
       ],
       "argv": [
         "{python}",
         "experiments/star_real_sft.py",
         "test",
         "--config",
-        "configs/star_real_sft_round1.json"
+        "configs/star_real_sft_round2.json"
       ]
     },
     {
-      "id": "B22_research_evidence_report_v3",
+      "id": "B28_research_evidence_report_v3",
       "gpu": false,
       "timeout_seconds": 240,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/star_sft_round1/test_comparison.json",
+        "outputs/star_sft_round2/test_comparison.json",
         "outputs/mvbench_round1/rescored_v2/comparison_scored.json",
         "outputs/choice_bias_round1/comparison.json"
       ],
@@ -89,7 +89,7 @@
       ]
     },
     {
-      "id": "B23_all_source_tests",
+      "id": "B29_full_source_regression_tests",
       "gpu": false,
       "timeout_seconds": 240,
       "max_attempts": 1,
