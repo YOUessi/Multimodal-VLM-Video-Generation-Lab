@@ -112,3 +112,14 @@ def test_complete_video_manifest_generation_and_counterfactual_pairs(tmp_path,mo
             assert fwd["options"]==rev["options"]
     assert (tmp_path/"generated/manifest.json").is_file()
     assert data.make_dataset(cfg)["rows_sha256"]==doc["rows_sha256"]
+
+def test_shared_frozen_source_key_used_by_generator_tracker_and_eval():
+    # Regression: the generated data manifest used dataset_dir, whereas the
+    # tracker and model evaluator accidentally read data_dir.
+    config=json.loads((ROOT/"configs/object_motion_v1.json").read_text())
+    assert "dataset_dir" in config and "data_dir" not in config
+    assert 'cfg["dataset_dir"]' in inspect.getsource(data.make_dataset)
+    assert 'cfg["dataset_dir"]' in inspect.getsource(track.run_preflight)
+    assert 'cfg["dataset_dir"]' in inspect.getsource(experiment.check_dataset)
+    assert 'cfg["data_dir"]' not in inspect.getsource(track.run_preflight)
+    assert 'cfg["data_dir"]' not in inspect.getsource(experiment.check_dataset)
