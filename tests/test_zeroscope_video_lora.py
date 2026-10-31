@@ -49,3 +49,34 @@ def test_optimizer_code_is_real_unet3d_peft():
     assert "loss.backward()" in s
     assert "validate_noise_mse" in s
     assert "latent_dist.mode()" in s
+
+def test_video_generation_color_motion_proxy_when_color_present():
+    import numpy as np
+    spec=importlib.util.spec_from_file_location(
+        "motion_video_generation",ROOT/"experiments/zeroscope_lora_generate.py")
+    m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+    data=load(DATA,"paired_motion")
+    for color in ("red","blue"):
+        for direction in ("left","right"):
+            item=next(x for x in data.make_specs()
+                      if x["color"]==color and x["direction"]==direction)
+            frames=data.render_frames(item,192,128,4)
+            proxy=m.direction_proxy([np.asarray(im) for im in frames],color)
+            assert proxy["measurable"] is True
+            assert proxy["direction"]==direction
+
+def test_unmeasurable_video_is_not_imputed_positive():
+    import numpy as np
+    spec=importlib.util.spec_from_file_location(
+        "motion_video_generation",ROOT/"experiments/zeroscope_lora_generate.py")
+    m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+    gray=np.full((128,192,3),150,dtype=np.uint8)
+    proxy=m.direction_proxy([gray]*4,"red")
+    assert proxy["measurable"] is False
+    assert proxy["direction"] is None
+
+def test_fixed_matched_generation_config():
+    cfg=json.loads((ROOT/"configs/zeroscope_lora_smoke.json").read_text())
+    assert cfg["generation_steps"]==8
+    assert cfg["generation_guidance"]==7.0
+    assert cfg["optimizer_steps"]>0
