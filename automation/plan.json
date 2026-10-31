@@ -1,107 +1,39 @@
 {
-  "version": "2026-10-31-batch-10",
+  "version": "2026-10-31-batch-11",
   "enabled": true,
-  "description": "Audit real STAR 40-video adaptive-vs-uniform CPU cost with frozen predictions; generate two fixed text-to-video prompts at 8/14/20 steps on RTX4090; compute nonsemantic motion diagnostics; prepare independent review and tested summary.",
+  "description": "Cost-only shared cached scenelet visual signals for identical 3/5-frame STAR decisions; SHA-identified video cache, full pixel-identical pre/post verification, cold/warm latency and 3 repeat trials. No test label tuning.",
   "stages": [
     {
-      "id": "B45_adaptive_selection_cpu_cost",
+      "id": "B52_shared_cache_unit_and_integrity_tests",
+      "gpu": false,
+      "timeout_seconds": 240,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_shared_temporal_cache.py"
+      ]
+    },
+    {
+      "id": "B53_shared_40_video_cold_warm_cache_benchmark",
       "gpu": false,
       "timeout_seconds": 900,
       "max_attempts": 1,
       "requires_files": [
         "outputs/adaptive_sampling_v2/sampling_plan.json",
-        "outputs/adaptive_sampling_v2/comparison.json"
+        "outputs/star_sft_round2/manifest.json"
       ],
       "argv": [
         "{python}",
-        "experiments/frame_selection_cost.py",
-        "audit",
+        "experiments/shared_temporal_cache.py",
         "--config",
-        "configs/frame_selection_cost.json"
+        "configs/shared_cache_v1.json"
       ]
     },
     {
-      "id": "B46_diffusion_step_grid_real_gpu",
-      "gpu": true,
-      "min_free_mib": 11000,
-      "timeout_seconds": 1800,
-      "max_attempts": 1,
-      "requires_files": [
-        "models/zeroscope_v2_576w_safe/unet/diffusion_pytorch_model.safetensors",
-        "outputs/diffusion_round1/generation_report.json"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/generation_step_grid.py",
-        "--config",
-        "configs/diffusion_steps_grid.json"
-      ]
-    },
-    {
-      "id": "B47_temporal_generation_diagnostics",
-      "gpu": false,
-      "timeout_seconds": 300,
-      "max_attempts": 1,
-      "requires_files": [
-        "outputs/diffusion_grid/generation_report.json"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/generation_diagnostics.py",
-        "--config",
-        "configs/diffusion_steps_grid.json"
-      ]
-    },
-    {
-      "id": "B48_six_video_blind_review_html",
-      "gpu": false,
-      "timeout_seconds": 120,
-      "max_attempts": 1,
-      "requires_files": [
-        "outputs/diffusion_grid/generation_report.json"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/generation_review.py",
-        "prepare",
-        "--report",
-        "outputs/diffusion_grid/generation_report.json"
-      ]
-    },
-    {
-      "id": "B49_cpu_cost_and_accuracy_report",
-      "gpu": false,
-      "timeout_seconds": 120,
-      "max_attempts": 1,
-      "requires_files": [
-        "outputs/frame_selection_cost_v1/selection_cost.json",
-        "outputs/adaptive_sampling_v2/comparison.json"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/frame_selection_cost.py",
-        "report",
-        "--config",
-        "configs/frame_selection_cost.json"
-      ]
-    },
-    {
-      "id": "B50_benchmark_and_generation_summary",
-      "gpu": false,
-      "timeout_seconds": 120,
-      "max_attempts": 1,
-      "requires_files": [
-        "outputs/diffusion_grid/review.html",
-        "outputs/diffusion_grid/diagnostics.json",
-        "outputs/frame_selection_cost_v1/selection_cost.json"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/batch10_summary.py"
-      ]
-    },
-    {
-      "id": "B51_complete_regression_tests",
+      "id": "B54_full_engineering_regression_tests",
       "gpu": false,
       "timeout_seconds": 240,
       "max_attempts": 1,
