@@ -1,111 +1,82 @@
 {
-  "version": "2026-10-31-batch-3",
+  "version": "2026-10-31-batch-4",
   "enabled": true,
-  "description": "Real annotated video evaluation-only, synthetic LoRA generalization probe, multi-seed synthetic replication, Diffusion integrity+blind review, consolidated report",
+  "description": "120 untouched MVBench real-video option position rotation; base and synthetic LoRA; preregistered ensemble, corrected final report and offline CI",
   "stages": [
     {
-      "id": "B6_real_video_base",
+      "id": "B13_unseen120_base_option_rotation",
       "gpu": true,
       "min_free_mib": 11000,
-      "timeout_seconds": 1800,
+      "timeout_seconds": 2400,
       "max_attempts": 1,
       "requires_files": [
+        "outputs/mvbench_round1/manifest.json",
         "data/mvbench_public/text/action_antonym.json",
-        "data/mvbench_public/dataset_provenance.json",
         "models/SmolVLM2-500M-Video-Instruct/model.safetensors"
       ],
       "argv": [
         "{python}",
-        "experiments/mvbench_real_eval.py",
+        "experiments/choice_bias_eval.py",
         "base",
         "--config",
-        "configs/mvbench_round1.json"
+        "configs/choice_bias_round1.json"
       ]
     },
     {
-      "id": "B7_real_video_transfer",
+      "id": "B14_unseen120_synthetic_lora_option_rotation",
       "gpu": true,
       "min_free_mib": 11000,
-      "timeout_seconds": 1800,
+      "timeout_seconds": 2400,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/mvbench_round1/base.json",
+        "outputs/choice_bias_round1/base.json",
         "outputs/temporal_round2/adapter/adapter_model.safetensors"
       ],
       "argv": [
         "{python}",
-        "experiments/mvbench_real_eval.py",
+        "experiments/choice_bias_eval.py",
         "synthetic_lora",
         "--config",
-        "configs/mvbench_round1.json"
+        "configs/choice_bias_round1.json"
       ]
     },
     {
-      "id": "B8_paired_real_video_report",
+      "id": "B15_paired_order_bias_analysis",
       "gpu": false,
-      "timeout_seconds": 180,
+      "timeout_seconds": 240,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/mvbench_round1/base.json",
-        "outputs/mvbench_round1/synthetic_lora.json"
+        "outputs/choice_bias_round1/base.json",
+        "outputs/choice_bias_round1/synthetic_lora.json"
       ],
       "argv": [
         "{python}",
-        "experiments/mvbench_real_eval.py",
+        "experiments/choice_bias_eval.py",
         "compare",
         "--config",
-        "configs/mvbench_round1.json"
+        "configs/choice_bias_round1.json"
       ]
     },
     {
-      "id": "B9_multi_seed_synthetic_replication",
-      "gpu": true,
-      "min_free_mib": 11000,
-      "timeout_seconds": 2200,
-      "max_attempts": 1,
-      "requires_files": [
-        "outputs/temporal_round2/baseline.json"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/multi_seed_round.py",
-        "run"
-      ]
-    },
-    {
-      "id": "B10_video_generation_review",
+      "id": "B16_corrected_project_release_report",
       "gpu": false,
-      "timeout_seconds": 180,
+      "timeout_seconds": 240,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/diffusion_round1/generation_report.json"
+        "outputs/choice_bias_round1/comparison.json",
+        "outputs/mvbench_round1/rescored_v2/comparison_scored.json",
+        "outputs/multi_seed/REPLICATION.json"
       ],
       "argv": [
         "{python}",
-        "experiments/generation_review.py",
-        "prepare"
-      ]
-    },
-    {
-      "id": "B11_consolidated_project_report",
-      "gpu": false,
-      "timeout_seconds": 180,
-      "max_attempts": 1,
-      "requires_files": [
-        "outputs/mvbench_round1/comparison.json",
-        "outputs/multi_seed/REPLICATION.json",
-        "outputs/diffusion_round1/generation_report.json"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/project_report.py",
+        "experiments/release_report_v2.py",
         "build"
       ]
     },
     {
-      "id": "B12_full_code_tests",
+      "id": "B17_frozen_release_tests",
       "gpu": false,
-      "timeout_seconds": 180,
+      "timeout_seconds": 240,
       "max_attempts": 1,
       "argv": [
         "{python}",
