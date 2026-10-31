@@ -95,6 +95,12 @@ def one_stage(plan: dict, state: dict):
         state["last_event"] = "STOPPED_AT_" + pending["id"] + ":" + rec["status"]
         save(state)
         return False
+    required = pending.get("requires_files", [])
+    missing = [x for x in required if not (ROOT / x).is_file()]
+    if missing:
+        state["last_event"] = "WAITING_FOR_REQUIRED_FILES:" + ",".join(missing[:5])
+        save(state)
+        return False
     max_attempts = int(pending.get("max_attempts", 1))
     if rec["attempts"] >= max_attempts:
         rec["status"] = "failed"
