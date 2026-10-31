@@ -1,0 +1,17 @@
+{
+  "version": "2026-11-01-untuned-CLEVRER-transfer-v1",
+  "public_manifest": "outputs/capacity_temporal_v1/manifest.json",
+  "pinned_manifest_sha": "cbbcf19e083fe27832bb4a36b1a7f67145fe000a81c7cce8b7694a18a4e0bf32",
+  "model_results_dir": "outputs/capacity_temporal_v1",
+  "output_dir": "outputs/clevrer_untuned_tracker_v1",
+  "direction_deadzone_px": 9,
+  "min_gate_displacement_px": 20,
+  "bootstrap_seed": 20261105,
+  "target_colors": "unchanged synthetic 2D RGB palette from object_motion_counterfactual_data.py",
+  "tracker_algorithm": "unchanged largest near-known-RGB connected component at 3 frames, source pixel centroids only",
+  "gate": "Only nonstationary diagonals with both |dx| and |dy| >=20 px, all three observations, known option; abstain otherwise",
+  "denominator_policy": "All 200 original MVBench moving_direction CLEVRER questions, no filtering; unsupported color and missing target count as abstain, and CV-only abstention is wrong",
+  "result_claim": "Public task already inspected in earlier 2,400-inference study, NOT a fresh blind test; simulated video not natural footage",
+  "no_test_time_tuning": true,
+  "new_gpu_inference": false
+}
