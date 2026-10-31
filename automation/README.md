@@ -1,5 +1,18 @@
 # Tang staged execution: 10-minute local checks
 
+## Batch 2 status (2026-10-31)
+
+The active cron points at the frozen Tang snapshot `repo-batch2`, not the earlier OOM-failed `repo-source`. On this snapshot, B1 baseline, B2 48-step LoRA and B3 frozen heldout comparison completed successfully; B4 Wan full precision RAM gate ran and reported unsafe (preflight only). B5 requires three locally complete ZeroScope safetensors checkpoints and will remain pending (no attempt charged) while those weights download.
+
+Batch 2 synthetic heldout metrics: single frame base / LoRA 18/18 vs 18/18; three and five frames 4/18 vs 18/18. These results are not real-world video understanding. Measured results: [batch2 report](../docs/BATCH_2_RESULTS_2026-10-31.md).
+
+The current frozen Tang snapshot was created from GitHub main at upstream commit `cd0ae5351c6c4adb2270d5062f7f562c7cfc30a7`. Later **documentation-only GitHub commits** do not alter the running frozen local code.
+
+## After B5: next research batches to approve and freeze
+
+B6: Import and test the remaining CPU prototype; create a real-video annotation pipeline with verified labels and an independently frozen test split. B7: repeat LoRA across random seeds, training-data difficulty and frame-sampling ablations. B8: evaluate local diffusion videos using a blinded human rating sheet; investigate quantized or group-offloaded Wan only if RAM/VRAM/disk gates are satisfied. Do not mark these stages as executed until code, tests, real GPU logs and source hashes are present.
+
+
 **Where**: Tang (Linux) only. This is a local cron job, NOT ChatGPT's scheduled-task feature (its minimum frequency is hourly). It does not send messages to this ChatGPT conversation.
 
 ## Planned fixed batch
