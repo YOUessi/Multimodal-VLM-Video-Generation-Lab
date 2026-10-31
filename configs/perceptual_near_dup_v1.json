@@ -1,0 +1,14 @@
+{
+  "manifest": "outputs/star_grouped_sft_v1/manifest.json",
+  "output_dir": "outputs/perceptual_near_duplicate_v1",
+  "max_phash_distance": 8,
+  "max_dhash_distance": 6,
+  "positions": [
+    0.1,
+    0.5,
+    0.9
+  ],
+  "unmodified_source_data": true,
+  "no_answer_labels_used": true,
+  "not_a_proof_of_visual_independence": true
+}
