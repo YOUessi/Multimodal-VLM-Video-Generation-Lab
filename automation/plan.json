@@ -1,97 +1,82 @@
 {
-  "version": "2026-10-31-batch-6",
+  "version": "2026-10-31-batch-7",
   "enabled": true,
-  "description": "Fix STAR falsely overstated MP4 metadata frame counts; ffprobe actual decoded frame count frozen in manifest. Run verified two-seed real video SFT and heldout evaluation.",
+  "description": "First label-blind adaptive temporal frame sampler experiment: real STAR frozen 40-video test. Same 3/5 frame budget, base and validation-selected LoRA, paired CI, fail-closed.",
   "stages": [
     {
-      "id": "B24_star_actual_decode_preflight",
+      "id": "B30_labelblind_frame_selection",
       "gpu": false,
       "timeout_seconds": 900,
       "max_attempts": 1,
       "requires_files": [
-        "data/mvbench_star/provenance.json",
-        "data/mvbench_star/text/action_sequence.json",
-        "models/SmolVLM2-500M-Video-Instruct/model.safetensors"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/star_real_sft.py",
-        "prepare",
-        "--config",
-        "configs/star_real_sft_round2.json"
-      ]
-    },
-    {
-      "id": "B25_star_real_video_two_seed_lora",
-      "gpu": true,
-      "min_free_mib": 11000,
-      "timeout_seconds": 3600,
-      "max_attempts": 1,
-      "requires_files": [
-        "outputs/star_sft_round2/manifest.json"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/star_real_sft.py",
-        "train",
-        "--config",
-        "configs/star_real_sft_round2.json"
-      ]
-    },
-    {
-      "id": "B26_validation_only_seed_selection",
-      "gpu": true,
-      "min_free_mib": 11000,
-      "timeout_seconds": 2400,
-      "max_attempts": 1,
-      "requires_files": [
-        "outputs/star_sft_round2/adapter_19/adapter_model.safetensors",
-        "outputs/star_sft_round2/adapter_37/adapter_model.safetensors"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/star_real_sft.py",
-        "validate",
-        "--config",
-        "configs/star_real_sft_round2.json"
-      ]
-    },
-    {
-      "id": "B27_heldout_real_action_sequence_test",
-      "gpu": true,
-      "min_free_mib": 11000,
-      "timeout_seconds": 2400,
-      "max_attempts": 1,
-      "requires_files": [
+        "outputs/star_sft_round2/manifest.json",
         "outputs/star_sft_round2/chosen_seed.json"
       ],
       "argv": [
         "{python}",
-        "experiments/star_real_sft.py",
-        "test",
+        "experiments/adaptive_temporal_sampling.py",
+        "prepare",
         "--config",
-        "configs/star_real_sft_round2.json"
+        "configs/adaptive_sampling_v1.json"
       ]
     },
     {
-      "id": "B28_research_evidence_report_v3",
-      "gpu": false,
-      "timeout_seconds": 240,
+      "id": "B31_adaptive_base_inference",
+      "gpu": true,
+      "min_free_mib": 11000,
+      "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/star_sft_round2/test_comparison.json",
-        "outputs/mvbench_round1/rescored_v2/comparison_scored.json",
-        "outputs/choice_bias_round1/comparison.json"
+        "outputs/adaptive_sampling_v1/sampling_plan.json",
+        "outputs/star_sft_round2/test_base.json"
       ],
       "argv": [
         "{python}",
-        "experiments/master_report_v3.py"
+        "experiments/adaptive_temporal_sampling.py",
+        "base",
+        "--config",
+        "configs/adaptive_sampling_v1.json"
       ]
     },
     {
-      "id": "B29_full_source_regression_tests",
+      "id": "B32_adaptive_lora_inference",
+      "gpu": true,
+      "min_free_mib": 11000,
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/adaptive_sampling_v1/base.json",
+        "outputs/star_sft_round2/adapter_37/adapter_model.safetensors"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/adaptive_temporal_sampling.py",
+        "selected_lora",
+        "--config",
+        "configs/adaptive_sampling_v1.json"
+      ]
+    },
+    {
+      "id": "B33_paired_adaptive_ablation",
       "gpu": false,
-      "timeout_seconds": 240,
+      "timeout_seconds": 180,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/adaptive_sampling_v1/selected_lora.json",
+        "outputs/adaptive_sampling_v1/base.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/adaptive_temporal_sampling.py",
+        "compare",
+        "--config",
+        "configs/adaptive_sampling_v1.json"
+      ]
+    },
+    {
+      "id": "B34_release_tests",
+      "gpu": false,
+      "timeout_seconds": 180,
       "max_attempts": 1,
       "argv": [
         "{python}",
