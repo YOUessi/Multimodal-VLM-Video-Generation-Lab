@@ -1,10 +1,10 @@
 {
-  "version": "2026-11-01-batch-26",
+  "version": "2026-11-01-batch-27",
   "enabled": true,
-  "description": "Approved tested counterfactual motion batch after correcting generator tuple shuffle and integration-test dataset_dir key. Exactly 90 frozen source tests passed. Source data did not yet generate any video in failed batch24; batch25 never armed. Preserve old snapshots; 20 dev and 120 test paired scenes, text/RGB/numeric/conflicting motion controls, CV pixel tracker and pairwise bootstrap.",
+  "description": "Full batch27 continuation after all prior field/type contract bugs fixed. Prechecked 91 CPU tests, all 280 generated MP4 SHA hashes, 40/40 dev target-tracker correctness and all 5 input modes for 500M and 2.2B on Tang GPU. Frozen data and source; evaluate 120 new paired test scenes without test-time tuning, with cluster bootstrap.",
   "stages": [
     {
-      "id": "I1_generate_280_counterfactual_video_pairs",
+      "id": "J1_generate_280_counterfactual_video_pairs",
       "gpu": false,
       "timeout_seconds": 500,
       "max_attempts": 1,
@@ -16,7 +16,7 @@
       ]
     },
     {
-      "id": "I2_dev_only_query_grounded_tracker_sanity",
+      "id": "J2_dev_only_query_grounded_tracker_sanity",
       "gpu": false,
       "timeout_seconds": 300,
       "max_attempts": 1,
@@ -31,7 +31,7 @@
       ]
     },
     {
-      "id": "I3_validate_all_source_video_hashes_and_opposite_pairs",
+      "id": "J3_validate_all_source_video_hashes_and_opposite_pairs",
       "gpu": false,
       "timeout_seconds": 450,
       "max_attempts": 1,
@@ -47,7 +47,7 @@
       ]
     },
     {
-      "id": "I4_2_model_5_condition_dev_execution_smoke",
+      "id": "J4_2_model_5_condition_dev_execution_smoke",
       "gpu": true,
       "min_free_mib": 12000,
       "timeout_seconds": 900,
@@ -65,7 +65,7 @@
       ]
     },
     {
-      "id": "I5_500M_five_condition_1200_real_GPU_inferences",
+      "id": "J5_500M_five_condition_1200_real_GPU_inferences",
       "gpu": true,
       "min_free_mib": 11000,
       "timeout_seconds": 3600,
@@ -84,7 +84,7 @@
       ]
     },
     {
-      "id": "I6_2B_five_condition_1200_real_GPU_inferences",
+      "id": "J6_2B_five_condition_1200_real_GPU_inferences",
       "gpu": true,
       "min_free_mib": 12000,
       "timeout_seconds": 3600,
@@ -105,7 +105,7 @@
       ]
     },
     {
-      "id": "I7_clustered_paired_counterfactual_report_with_CV_baseline",
+      "id": "J7_clustered_paired_counterfactual_report_with_CV_baseline",
       "gpu": false,
       "timeout_seconds": 600,
       "max_attempts": 1,
@@ -122,7 +122,7 @@
       ]
     },
     {
-      "id": "I8_full_source_regression_tests",
+      "id": "J8_full_source_regression_tests",
       "gpu": false,
       "timeout_seconds": 300,
       "max_attempts": 1,
@@ -135,7 +135,7 @@
       ]
     },
     {
-      "id": "I9_no_models_video_media_committed_security",
+      "id": "J9_no_models_video_media_committed_security",
       "gpu": false,
       "timeout_seconds": 120,
       "max_attempts": 1,
