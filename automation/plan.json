@@ -1,41 +1,28 @@
 {
-  "version": "2026-11-01-batch-28",
+  "version": "2026-11-01-batch-29",
   "enabled": true,
-  "description": "Posthoc audit and local demonstrator for frozen counterfactual motion experiments, no additional GPU or model/answer changes. Preserve source videos and raw inference. Produce descriptive error slices, deterministic forward-vs-reverse offline review page, source tests and security guard.",
+  "description": "Untuned external domain transfer check: unchanged query-grounded RGB pixel tracker on ALL 200 previously inspected public CLEVRER Moving Direction examples. Count every unsupported color and tracking failure as abstention, use predeclared strong-motion gate >=20px per axis and frozen 500M/2.2B 3/5-frame predictions for fallback. No extra GPU, no selection/tuning on these scored labels.",
   "stages": [
     {
-      "id": "K1_frozen_240_test_object_motion_error_slices",
+      "id": "L1_full200_CLEVRER_untuned_tracking_and_frozen_VLM_gating",
       "gpu": false,
-      "timeout_seconds": 240,
+      "timeout_seconds": 1500,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/object_motion_counterfactual_v1/comparison.json"
+        "outputs/capacity_temporal_v1/manifest.json",
+        "outputs/capacity_temporal_v1/500m.json",
+        "outputs/capacity_temporal_v1/2b.json",
+        "data/mvbench_moving_direction/text/moving_direction.json"
       ],
       "argv": [
         "{python}",
-        "experiments/object_motion_error_slices.py",
+        "experiments/clevrer_untuned_tracker_transfer.py",
         "--config",
-        "configs/object_motion_v1.json"
+        "configs/clevrer_untuned_tracker_v1.json"
       ]
     },
     {
-      "id": "K2_local_forward_reverse_video_model_evidence_preview",
-      "gpu": false,
-      "timeout_seconds": 240,
-      "max_attempts": 1,
-      "requires_files": [
-        "outputs/object_motion_counterfactual_v1/500m.json",
-        "outputs/object_motion_counterfactual_v1/2b.json"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/object_motion_review.py",
-        "--config",
-        "configs/object_motion_v1.json"
-      ]
-    },
-    {
-      "id": "K3_all_source_tests",
+      "id": "L2_complete_source_regression_tests",
       "gpu": false,
       "timeout_seconds": 300,
       "max_attempts": 1,
@@ -48,7 +35,7 @@
       ]
     },
     {
-      "id": "K4_source_media_and_private_weight_guard",
+      "id": "L3_source_guard",
       "gpu": false,
       "timeout_seconds": 120,
       "max_attempts": 1,
