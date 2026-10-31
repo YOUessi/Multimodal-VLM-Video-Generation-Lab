@@ -1,0 +1,42 @@
+name: Source and leakage-contract tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cpu-regression:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout frozen source
+        uses: actions/checkout@v4
+      - name: Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - name: Install CPU-only test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install '.[dev]'
+      - name: Compile source (no models required)
+        run: python -m compileall -q experiments automation tests
+      - name: Run synthetic and contract tests
+        run: pytest -q tests
+      - name: Reject tracked secrets and model binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          tracked="$(git ls-files)"
+          if echo "$tracked" | grep -E '\.(safetensors|ckpt|pth|pt|mp4|mov|env)$'; then
+            echo 'Tracked model, video or secret binary is not allowed' >&2
+            exit 1
+          fi
+          echo 'No tracked media or model weights'
