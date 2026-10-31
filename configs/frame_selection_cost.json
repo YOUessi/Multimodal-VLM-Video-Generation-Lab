@@ -1,0 +1,18 @@
+{
+  "star_manifest": "outputs/star_sft_round2/manifest.json",
+  "sampling_plan": "outputs/adaptive_sampling_v2/sampling_plan.json",
+  "adaptive_comparison": "outputs/adaptive_sampling_v2/comparison.json",
+  "uniform_base": "outputs/star_sft_round2/test_base.json",
+  "uniform_lora": "outputs/star_sft_round2/test_lora.json",
+  "adaptive_base": "outputs/adaptive_sampling_v2/base.json",
+  "adaptive_lora": "outputs/adaptive_sampling_v2/selected_lora.json",
+  "output_dir": "outputs/frame_selection_cost_v1",
+  "repeats": 3,
+  "probe_count": 48,
+  "order_seed": 20261031,
+  "frame_counts": [
+    3,
+    5
+  ],
+  "note": "40 frozen STAR videos, repeated alternating CPU decode/selection timings, no model re-evaluation or data fitting"
+}
