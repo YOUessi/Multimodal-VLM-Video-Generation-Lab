@@ -1,0 +1,25 @@
+{
+  "data_dir": "data/mvbench_star",
+  "star_archive_sha256": "e70969d4e90cdff9c10bd9799fe5a0797d60af051abaeeaef45e199d5dc83a07",
+  "source_revision": "e17b0cae0729ebf38322ad0fa692c7ca72495afb",
+  "output_dir": "outputs/star_sft_round2",
+  "model_dir": "models/SmolVLM2-500M-Video-Instruct",
+  "split_seed": 20261031,
+  "split_sizes": {
+    "train": 120,
+    "val": 40,
+    "test": 40
+  },
+  "training_seeds": [
+    19,
+    37
+  ],
+  "training_frames": 3,
+  "train_steps": 120,
+  "learning_rate": 0.00015,
+  "rank": 4,
+  "alpha": 8,
+  "max_new_tokens": 40,
+  "source_annotations_sha256": "c0379b130cef91bd2ccbe8db062437a564fc31a5c5f4807d9a7d8674bd0fa4ef",
+  "decoded_frames_policy": "ffprobe actual nb_read_frames, validated before GPU training"
+}
