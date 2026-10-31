@@ -1,16 +1,15 @@
 {
-  "version": "2026-10-31-batch-17",
+  "version": "2026-10-31-batch-18",
   "enabled": true,
-  "description": "Retrospective near-duplicate remediation on STAR: connected components from all 7 exact MP4 SHA duplicate groups + 2 strict pHash/dHash near-candidate edges, never cross split; fresh 2-seed LoRA and test; explicitly not new blind external benchmark.",
+  "description": "Resume retrospective SHA + strict perceptual connected-component STAR LoRA after canonical JSON edge serialization fix; previously frozen manifest SHA and split unchanged; new 2-seed training, validation selection, test and explicit retrospective report.",
   "stages": [
     {
-      "id": "B77_SHA_and_perceptual_connected_component_data_preflight",
+      "id": "B83_verify_existing_frozen_SHA_and_perceptual_components",
       "gpu": false,
-      "timeout_seconds": 1300,
+      "timeout_seconds": 900,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/perceptual_near_duplicate_v1/NEAR_DUP_AUDIT.json",
-        "outputs/star_grouped_sft_v1/manifest.json"
+        "outputs/star_perceptual_grouped_sft_v1/manifest.json"
       ],
       "argv": [
         "{python}",
@@ -21,7 +20,7 @@
       ]
     },
     {
-      "id": "B78_fresh_perceptual_grouped_two_seed_SFT",
+      "id": "B84_fresh_perceptual_connected_train_two_seeds",
       "gpu": true,
       "min_free_mib": 11000,
       "timeout_seconds": 3600,
@@ -38,10 +37,10 @@
       ]
     },
     {
-      "id": "B79_validation_select_perceptual_grouped_seed",
+      "id": "B85_select_model_by_validation_only",
       "gpu": true,
       "min_free_mib": 11000,
-      "timeout_seconds": 1800,
+      "timeout_seconds": 2100,
       "max_attempts": 1,
       "requires_files": [
         "outputs/star_perceptual_grouped_sft_v1/adapter_19/adapter_model.safetensors",
@@ -56,10 +55,10 @@
       ]
     },
     {
-      "id": "B80_retro_heldout_perceptual_grouped_test",
+      "id": "B86_one_retrospective_test_after_grouping",
       "gpu": true,
       "min_free_mib": 11000,
-      "timeout_seconds": 1800,
+      "timeout_seconds": 2400,
       "max_attempts": 1,
       "requires_files": [
         "outputs/star_perceptual_grouped_sft_v1/chosen_seed.json"
@@ -73,7 +72,7 @@
       ]
     },
     {
-      "id": "B81_retrospective_report_with_zero_cross_edges",
+      "id": "B87_explicit_retrospective_integrity_report",
       "gpu": false,
       "timeout_seconds": 180,
       "max_attempts": 1,
@@ -86,7 +85,7 @@
       ]
     },
     {
-      "id": "B82_full_regression_suite",
+      "id": "B88_complete_source_regression_tests",
       "gpu": false,
       "timeout_seconds": 240,
       "max_attempts": 1,
