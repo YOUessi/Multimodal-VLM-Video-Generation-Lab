@@ -132,7 +132,7 @@ def make_dataset(cfg):
     width,height=cfg["width"],cfg["height"]
     rows=[];all_hashes=set()
     for split,count in (("dev",train_count),("test",test_count)):
-        order=DIRECTIONS*(count//5)
+        order=list(DIRECTIONS)*(count//5)
         rng=random.Random(cfg["dev_seed"] if split=="dev" else cfg["test_seed"])
         rng.shuffle(order)
         for i,direction in enumerate(order):
