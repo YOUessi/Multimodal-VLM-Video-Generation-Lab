@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=70", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "multimodal-vlm-video-generation-lab"
+version = "0.1.0"
+description = "Reproducible video understanding, real-video LoRA, temporal sampling and local Diffusion benchmarks"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+  "numpy>=1.26,<2",
+  "Pillow>=10.4,<12",
+  "opencv-python-headless>=4.10,<4.12",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10"]
+gpu = [
+  "transformers==4.57.6",
+  "accelerate>=1.8,<2",
+  "peft>=0.17,<0.19",
+  "trl>=0.24,<0.26",
+  "datasets>=3,<5",
+  "diffusers>=0.35,<0.38",
+  "huggingface_hub>=0.32",
+  "safetensors>=0.5",
+  "filelock>=3",
+]
+# Install an explicit CUDA-compatible PyTorch build separately from the
+# official PyTorch index; do not assume pip's CPU wheel enables NVIDIA GPU.
+# Weights, private videos, generated MP4s and trained adapters are not shipped.
+
+[tool.setuptools]
+packages = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
