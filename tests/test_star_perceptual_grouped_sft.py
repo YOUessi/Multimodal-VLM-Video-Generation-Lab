@@ -29,3 +29,10 @@ def test_fixed_remediation_plan():
     assert cfg["split_sizes"]=={"train":120,"val":40,"test":40}
     assert cfg["output_dir"]=="outputs/star_perceptual_grouped_sft_v1"
     assert "Retrospective" in cfg["disclosure"]
+
+def test_canonical_perceptual_edges_survive_json_roundtrip():
+    records=[{"left_id":31,"right_id":83},{"left_id":123,"right_id":173}]
+    pairs=m.canonical_edge_pairs(records)
+    assert pairs==[[31,83],[123,173]]
+    assert json.loads(json.dumps(pairs))==pairs
+    assert all(isinstance(v,list) for v in pairs)
