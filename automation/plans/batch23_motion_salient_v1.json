@@ -1,0 +1,104 @@
+{
+  "version": "2026-11-01-batch-23",
+  "enabled": true,
+  "description": "Exploratory visual-only motion-saliency 12-probe (0.7 grayscale-diff +0.3 hue-diff, time-diverse endpoint guard) under fixed 3/5 frame budgets, two frozen VLM models, paired to prior uniform baseline on 400 publicly already inspected MVBench videos. No question labels in frame selection or hyperparameter tuning; report CPU cost and confidence intervals.",
+  "stages": [
+    {
+      "id": "F1_frozen_400_video_label_blind_motion_probe_selection",
+      "gpu": false,
+      "timeout_seconds": 1500,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/capacity_temporal_v1/manifest.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/motion_salient_sampling.py",
+        "prepare",
+        "--config",
+        "configs/motion_sampling_v1.json"
+      ]
+    },
+    {
+      "id": "F2_500m_motion_selected_3and5_frame_inference",
+      "gpu": true,
+      "min_free_mib": 11000,
+      "timeout_seconds": 3900,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/motion_sampling_v1/frame_plan.json",
+        "models/SmolVLM2-500M-Video-Instruct/model.safetensors"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/motion_salient_sampling.py",
+        "evaluate",
+        "--model",
+        "500m",
+        "--config",
+        "configs/motion_sampling_v1.json"
+      ]
+    },
+    {
+      "id": "F3_2b_motion_selected_3and5_frame_inference",
+      "gpu": true,
+      "min_free_mib": 12000,
+      "timeout_seconds": 4200,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/motion_sampling_v1/500m.json",
+        "models/SmolVLM2-2.2B-Instruct/model-00001-of-00002.safetensors",
+        "models/SmolVLM2-2.2B-Instruct/model-00002-of-00002.safetensors"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/motion_salient_sampling.py",
+        "evaluate",
+        "--model",
+        "2b",
+        "--config",
+        "configs/motion_sampling_v1.json"
+      ]
+    },
+    {
+      "id": "F4_paired_accuracy_and_cpu_cost_ablations",
+      "gpu": false,
+      "timeout_seconds": 180,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/motion_sampling_v1/500m.json",
+        "outputs/motion_sampling_v1/2b.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/motion_salient_sampling.py",
+        "report",
+        "--config",
+        "configs/motion_sampling_v1.json"
+      ]
+    },
+    {
+      "id": "F5_full_source_regression_tests",
+      "gpu": false,
+      "timeout_seconds": 300,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests"
+      ]
+    },
+    {
+      "id": "F6_publication_and_no_model_media_binary_guard",
+      "gpu": false,
+      "timeout_seconds": 120,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/source_security_guard.py"
+      ]
+    }
+  ]
+}
