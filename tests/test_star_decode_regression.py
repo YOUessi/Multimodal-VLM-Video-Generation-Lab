@@ -19,7 +19,7 @@ def test_ffprobe_uses_actual_decoded_count(monkeypatch):
     count=module.decoded_frame_count(Path("/fake/metadata-reports-595.mp4"))
     assert count==437
     assert "-count_frames" in recorded["args"]
-    assert "nb_read_frames" in recorded["args"]
+    assert any("nb_read_frames" in x for x in recorded["args"])
 
 def test_ffprobe_rejects_invalid_counts(monkeypatch):
     def fake_run(cmd,**options):
