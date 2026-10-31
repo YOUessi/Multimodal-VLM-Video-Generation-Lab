@@ -42,3 +42,26 @@ def test_cached_config_frozen():
     config=json.loads(p.read_text())
     assert config["probe_count"]==48 and config["frame_budgets"]==[3,5]
     assert config["warm_repeats"]==3
+
+def test_sha_identical_distinct_filenames_warm_hit_and_cold_isolated(tmp_path):
+    """A second filename with identical MP4 bytes must not corrupt cold timing."""
+    from shutil import copy2
+    from tempfile import TemporaryDirectory
+    first=_video(tmp_path)
+    second=tmp_path/"same_bytes_new_filename.mp4"
+    copy2(first,second)
+    assert m.file_digest(first)==m.file_digest(second)
+    shared=tmp_path/"shared"
+    _,hit=m.read_or_build(first,61,48,shared)
+    assert hit is False
+    _,hit=m.read_or_build(second,61,48,shared)
+    assert hit is True
+    with TemporaryDirectory(dir=str(tmp_path)) as tmp:
+        _,hit=m.read_or_build(second,61,48,Path(tmp))
+        assert hit is False
+
+def test_grouped_cache_config_uses_new_nonleaked_manifest():
+    conf=json.loads((P.parents[0]/"configs/shared_cache_grouped_v1.json").read_text())
+    assert conf["star_manifest"]=="outputs/star_grouped_sft_v1/manifest.json"
+    assert conf["adaptive_plan"]=="outputs/adaptive_grouped_v1/sampling_plan.json"
+    assert conf["output_dir"]=="outputs/shared_cache_grouped_v1"
