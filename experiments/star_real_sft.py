@@ -78,12 +78,12 @@ def prompt(row,images):
                       {"type":"image","image":image}])
     choices="\n".join(f"{LETTERS[i]}. {s}" for i,s in enumerate(row["choices"]))
     items.append({"type":"text","text":row["question"]+"\n"+choices+
-                  "\nReply with exactly one answer letter: ANSWER: A/B/C/D."})
+                  "\nReply with a single selected option letter on the final line: ANSWER: followed by that letter."})
     return [{"role":"user","content":items}]
 
 def parse_answer(s):
     x=str(s or "").strip()
-    found=re.findall(r"(?i)\bANSWER\s*:\s*([A-D])\b",x)
+    found=re.findall(r"(?i)\bANSWER\s*:\s*([A-D])\b(?!/)",x)
     if found:return found[-1].upper()
     m=re.match(r"^\s*([A-D])\s*[.)\]:-]\s*(?:\S|$)",x,re.I)
     if m:return m.group(1).upper()
