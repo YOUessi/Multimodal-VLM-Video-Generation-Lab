@@ -1,113 +1,27 @@
 {
-  "version": "2026-11-01-batch-27",
+  "version": "2026-11-01-batch-28",
   "enabled": true,
-  "description": "Full batch27 continuation after all prior field/type contract bugs fixed. Prechecked 91 CPU tests, all 280 generated MP4 SHA hashes, 40/40 dev target-tracker correctness and all 5 input modes for 500M and 2.2B on Tang GPU. Frozen data and source; evaluate 120 new paired test scenes without test-time tuning, with cluster bootstrap.",
+  "description": "Posthoc audit and local demonstrator for frozen counterfactual motion experiments, no additional GPU or model/answer changes. Preserve source videos and raw inference. Produce descriptive error slices, deterministic forward-vs-reverse offline review page, source tests and security guard.",
   "stages": [
     {
-      "id": "J1_generate_280_counterfactual_video_pairs",
+      "id": "K1_frozen_240_test_object_motion_error_slices",
       "gpu": false,
-      "timeout_seconds": 500,
+      "timeout_seconds": 240,
       "max_attempts": 1,
+      "requires_files": [
+        "outputs/object_motion_counterfactual_v1/comparison.json"
+      ],
       "argv": [
         "{python}",
-        "experiments/object_motion_counterfactual_data.py",
+        "experiments/object_motion_error_slices.py",
         "--config",
         "configs/object_motion_v1.json"
       ]
     },
     {
-      "id": "J2_dev_only_query_grounded_tracker_sanity",
+      "id": "K2_local_forward_reverse_video_model_evidence_preview",
       "gpu": false,
-      "timeout_seconds": 300,
-      "max_attempts": 1,
-      "requires_files": [
-        "data/object_motion_counterfactual_v1/manifest.json"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/target_motion_tracking.py",
-        "--config",
-        "configs/object_motion_v1.json"
-      ]
-    },
-    {
-      "id": "J3_validate_all_source_video_hashes_and_opposite_pairs",
-      "gpu": false,
-      "timeout_seconds": 450,
-      "max_attempts": 1,
-      "requires_files": [
-        "data/object_motion_counterfactual_v1/manifest.json"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/object_motion_counterfactual_eval.py",
-        "audit",
-        "--config",
-        "configs/object_motion_v1.json"
-      ]
-    },
-    {
-      "id": "J4_2_model_5_condition_dev_execution_smoke",
-      "gpu": true,
-      "min_free_mib": 12000,
-      "timeout_seconds": 900,
-      "max_attempts": 1,
-      "requires_files": [
-        "models/SmolVLM2-2.2B-Instruct/model-00001-of-00002.safetensors",
-        "models/SmolVLM2-2.2B-Instruct/model-00002-of-00002.safetensors"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/object_motion_counterfactual_eval.py",
-        "preflight",
-        "--config",
-        "configs/object_motion_v1.json"
-      ]
-    },
-    {
-      "id": "J5_500M_five_condition_1200_real_GPU_inferences",
-      "gpu": true,
-      "min_free_mib": 11000,
-      "timeout_seconds": 3600,
-      "max_attempts": 1,
-      "requires_files": [
-        "data/object_motion_counterfactual_v1/manifest.json"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/object_motion_counterfactual_eval.py",
-        "evaluate",
-        "--model",
-        "500m",
-        "--config",
-        "configs/object_motion_v1.json"
-      ]
-    },
-    {
-      "id": "J6_2B_five_condition_1200_real_GPU_inferences",
-      "gpu": true,
-      "min_free_mib": 12000,
-      "timeout_seconds": 3600,
-      "max_attempts": 1,
-      "requires_files": [
-        "outputs/object_motion_counterfactual_v1/500m.json",
-        "models/SmolVLM2-2.2B-Instruct/model-00001-of-00002.safetensors",
-        "models/SmolVLM2-2.2B-Instruct/model-00002-of-00002.safetensors"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/object_motion_counterfactual_eval.py",
-        "evaluate",
-        "--model",
-        "2b",
-        "--config",
-        "configs/object_motion_v1.json"
-      ]
-    },
-    {
-      "id": "J7_clustered_paired_counterfactual_report_with_CV_baseline",
-      "gpu": false,
-      "timeout_seconds": 600,
+      "timeout_seconds": 240,
       "max_attempts": 1,
       "requires_files": [
         "outputs/object_motion_counterfactual_v1/500m.json",
@@ -115,14 +29,13 @@
       ],
       "argv": [
         "{python}",
-        "experiments/object_motion_counterfactual_eval.py",
-        "report",
+        "experiments/object_motion_review.py",
         "--config",
         "configs/object_motion_v1.json"
       ]
     },
     {
-      "id": "J8_full_source_regression_tests",
+      "id": "K3_all_source_tests",
       "gpu": false,
       "timeout_seconds": 300,
       "max_attempts": 1,
@@ -135,7 +48,7 @@
       ]
     },
     {
-      "id": "J9_no_models_video_media_committed_security",
+      "id": "K4_source_media_and_private_weight_guard",
       "gpu": false,
       "timeout_seconds": 120,
       "max_attempts": 1,
