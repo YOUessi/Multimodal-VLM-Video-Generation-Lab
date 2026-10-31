@@ -1,0 +1,25 @@
+{
+  "sha_group_manifest": "outputs/star_grouped_sft_v1/manifest.json",
+  "perceptual_audit": "outputs/perceptual_near_duplicate_v1/NEAR_DUP_AUDIT.json",
+  "output_dir": "outputs/star_perceptual_grouped_sft_v1",
+  "model_dir": "models/SmolVLM2-500M-Video-Instruct",
+  "max_phash_distance": 8,
+  "max_dhash_distance": 6,
+  "split_seed": 20261031,
+  "split_sizes": {
+    "train": 120,
+    "val": 40,
+    "test": 40
+  },
+  "training_seeds": [
+    19,
+    37
+  ],
+  "training_frames": 3,
+  "train_steps": 120,
+  "learning_rate": 0.00015,
+  "rank": 4,
+  "alpha": 8,
+  "max_new_tokens": 40,
+  "disclosure": "Retrospective data-audit split, not a new blind external benchmark; no test outcome used to form connected components"
+}
