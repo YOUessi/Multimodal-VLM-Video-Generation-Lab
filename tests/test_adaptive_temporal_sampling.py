@@ -1,7 +1,9 @@
 """Label-blind temporal sampler guards and exact paired metric tests."""
 import importlib.util
 from pathlib import Path
+import sys
 P=Path(__file__).resolve().parents[1]/"experiments"/"adaptive_temporal_sampling.py"
+sys.path.insert(0,str(P.parent))
 spec=importlib.util.spec_from_file_location("sampling",P)
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 def test_endpoint_guard_and_uniqueness():
