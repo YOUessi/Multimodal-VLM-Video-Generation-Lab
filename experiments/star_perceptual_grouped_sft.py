@@ -38,6 +38,13 @@ def linked_components(rows,edges):
         components[find(idx)].append(idx)
     return {str(k):sorted(v) for k,v in components.items()}
 
+def canonical_edge_pairs(records):
+    """Use nested lists; JSON roundtrips would change tuples to lists."""
+    pairs=[[int(r["left_id"]),int(r["right_id"])] for r in records]
+    if len(pairs)!=len({tuple(x) for x in pairs}):
+        raise RuntimeError("DUPLICATE_PERCEPTUAL_EDGE")
+    return pairs
+
 def manifest(cfg):
     original=json.loads((ROOT/cfg["sha_group_manifest"]).read_text(encoding="utf8"))
     audit_file=ROOT/cfg["perceptual_audit"]
@@ -50,7 +57,7 @@ def manifest(cfg):
         audit["thresholds"]["dhash"]!=cfg["max_dhash_distance"]):
         raise RuntimeError("PERCEPTUAL_THRESHOLDS_CHANGED")
     edge_records=audit["cross_split_candidates"]+audit["within_split_candidates"]
-    edges=[(int(r["left_id"]),int(r["right_id"])) for r in edge_records]
+    edges=canonical_edge_pairs(edge_records)
     if len(edges)!=2:
         raise RuntimeError("NEAR_DUP_AUDIT_EDGE_COUNT_CHANGED")
     components=linked_components(original["rows"],edges)
