@@ -1,6 +1,43 @@
 # Multimodal VLM & Video Generation Lab
 
-## Current verified results (2026-10-31; supersedes earlier smoke results)
+## Latest verified milestones — 2026-11-01
+
+### VLM temporal evidence and model scaling (batch 19)
+
+**2,400 actual GPU inferences**, no task-specific tuning: two frozen SmolVLM2 models × 400 public MVBench video QAs × three conditions (question-only / uniformly sampled 3 frames / 5 frames).
+
+| Task (200 official QAs each) | Model | No video | 3 frames | 5 frames |
+|---|---|---:|---:|---:|
+| CLEVRER simulated Moving Direction | 500M | 26.0% | 30.5% | 32.5% |
+| CLEVRER simulated Moving Direction | 2.2B | 20.5% | 36.0% | 36.5% |
+| Public natural-video Scene Transition | 500M | 40.5% | 79.5% | 80.0% |
+| Public natural-video Scene Transition | 2.2B | 57.0% | 91.0% | 90.0% |
+
+The 2.2B model **gains +16.0 percentage points on simulated direction with five frames versus no video (paired bootstrap 95% CI [+7.0,+24.5])**. In 3-frame scene transition it outperforms 500M by +11.5pp (CI [+5,+18]). **Increasing three to five uniformly sampled frames shows no reliable improvement** in either task. These are specific public benchmarks, not evidence of all-domain VLM capability.
+
+Detailed [batch19 results, protocol, source hashes and limitations](docs/BATCH19_CAPACITY_TEMPORAL_RESULTS_2026-11-01.md).
+
+### Actual video Diffusion LoRA (batch 21)
+
+A pretrained **ZeroScope UNet3DConditionModel** has now undergone **real PEFT LoRA optimization** on 12 procedurally generated paired motion videos/captions, with four different synthetic validation clips. Rank 4, **830,720 of 1.412B model parameters trainable**, 12 genuine GPU update steps, training peak allocated VRAM **3.483 GiB**. Fixed validation epsilon-denoising MSE decreased from **0.072447 to 0.066950 (-7.59%)**.
+
+Four actual matched pretrained/tuned MP4s (two prompts/seeds; four 192×128 frames, eight Diffusion steps) were successfully generated. A reviewer-blinded offline HTML and private variant mapping exist locally on Tang. **Generated-video human quality and prompt adherence have NOT been rated**. This small synthetic noise-prediction improvement cannot be presented as a real-world video quality improvement. Model license is **CC-BY-NC-4.0, research/noncommercial**.
+
+See [batch21 real video-generation LoRA log](docs/BATCH21_ACTUAL_ZEROSCOPE_VIDEO_LORA_2026-11-01.md).
+
+### Further temporal mechanism controls (batch 22)
+
+A frozen follow-up compares **the exact same 3/5-frame budget** with either a repeated center frame or reversed chronological frames on all 400 videos, using the 2.2B model. Reversed clips do not retain the original gold answer and are **never scored as accuracy**; only model choice changes are reported. The active Tang 10-minute cron checks approved stages and fails closed. Source tests passed prior to execution.
+
+### Caution: earlier STAR data leakage
+
+The initial STAR source-ID-only split was **invalid** because SHA-identical MP4 contents crossed splits. An exact SHA grouped study was completed, followed by a retrospective strict perceptual-candidate grouped rerun. The latter yielded 3-frame **19/40 base → 25/40 LoRA** (+15pp), but its paired CI [-5,+35] includes zero, and it was **not a new never-inspected blind benchmark**. Do not mix this result with the independent MVBench capacity test or claim stable natural-video improvement.
+
+All original videos, model weights, LoRA adapters, and generated MP4s remain on Tang; this public repository contains only source code, frozen configurations, tests and evidence summaries.
+
+---
+
+## Prior verified research and data-integrity work — 2026-10-31
 
 **The project now contains real GPU VLM training, public video benchmarks, reproducible failure analysis, and six actual text-to-video Diffusion outputs.** The outcome is mixed; no unsupported model accuracy/quality improvement is claimed.
 
