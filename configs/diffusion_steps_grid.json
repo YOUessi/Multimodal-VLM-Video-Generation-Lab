@@ -1,0 +1,29 @@
+{
+  "model_dir": "models/zeroscope_v2_576w_safe",
+  "model_revision": "1f35e3dc3350d649f342bb7618fe34ac8fae5c9e",
+  "baseline_report": "outputs/diffusion_round1/generation_report.json",
+  "generation_report": "outputs/diffusion_grid/generation_report.json",
+  "output_dir": "outputs/diffusion_grid",
+  "width": 576,
+  "height": 320,
+  "frames": 12,
+  "fps": 6,
+  "guidance_scale": 7,
+  "baseline_steps": 14,
+  "additional_steps": [
+    8,
+    20
+  ],
+  "prompts": {
+    "rolling_ball": {
+      "text": "A bright red toy ball slowly rolls across a clean wooden table, static camera, natural lighting",
+      "seed": 42
+    },
+    "turning_robot": {
+      "text": "A small white toy robot carefully turns to face the camera inside a simple studio, smooth movement, fixed viewpoint",
+      "seed": 31415
+    }
+  },
+  "review_min_raters": 2,
+  "license": "cc-by-nc-4.0 research only"
+}
