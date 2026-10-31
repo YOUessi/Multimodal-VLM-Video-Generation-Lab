@@ -1,10 +1,10 @@
 {
-  "version": "2026-11-01-batch-24",
+  "version": "2026-11-01-batch-25",
   "enabled": true,
-  "description": "New counterfactual question-grounded object-motion study: frozen 20 dev and 120 test scene pairs, each original/reverse; 5 balanced motion classes with distractors. Pixel-only color tracker, classical CV baseline, 500M and 2.2B VLM matched text-only/RGB/number trajectory/conflicting-order controls. No tuning to test; cluster bootstrap per independent scene pair; raw source and model weights remain local.",
+  "description": "Batch25 reruns all frozen counterfactual motion experiments after tuple-to-mutable-list video generator fix. The failed batch24 produced zero video files; source changes are limited to direction shuffle and a full-data generator regression test. New Tang source freeze, no blind retry.",
   "stages": [
     {
-      "id": "G1_generate_280_counterfactual_video_pairs",
+      "id": "H1_generate_280_counterfactual_video_pairs",
       "gpu": false,
       "timeout_seconds": 500,
       "max_attempts": 1,
@@ -16,7 +16,7 @@
       ]
     },
     {
-      "id": "G2_dev_only_query_grounded_tracker_sanity",
+      "id": "H2_dev_only_query_grounded_tracker_sanity",
       "gpu": false,
       "timeout_seconds": 300,
       "max_attempts": 1,
@@ -31,7 +31,7 @@
       ]
     },
     {
-      "id": "G3_validate_all_source_video_hashes_and_opposite_pairs",
+      "id": "H3_validate_all_source_video_hashes_and_opposite_pairs",
       "gpu": false,
       "timeout_seconds": 450,
       "max_attempts": 1,
@@ -47,7 +47,7 @@
       ]
     },
     {
-      "id": "G4_2_model_5_condition_dev_execution_smoke",
+      "id": "H4_2_model_5_condition_dev_execution_smoke",
       "gpu": true,
       "min_free_mib": 12000,
       "timeout_seconds": 900,
@@ -65,7 +65,7 @@
       ]
     },
     {
-      "id": "G5_500M_five_condition_1200_real_GPU_inferences",
+      "id": "H5_500M_five_condition_1200_real_GPU_inferences",
       "gpu": true,
       "min_free_mib": 11000,
       "timeout_seconds": 3600,
@@ -84,7 +84,7 @@
       ]
     },
     {
-      "id": "G6_2B_five_condition_1200_real_GPU_inferences",
+      "id": "H6_2B_five_condition_1200_real_GPU_inferences",
       "gpu": true,
       "min_free_mib": 12000,
       "timeout_seconds": 3600,
@@ -105,7 +105,7 @@
       ]
     },
     {
-      "id": "G7_clustered_paired_counterfactual_report_with_CV_baseline",
+      "id": "H7_clustered_paired_counterfactual_report_with_CV_baseline",
       "gpu": false,
       "timeout_seconds": 600,
       "max_attempts": 1,
@@ -122,7 +122,7 @@
       ]
     },
     {
-      "id": "G8_full_source_regression_tests",
+      "id": "H8_full_source_regression_tests",
       "gpu": false,
       "timeout_seconds": 300,
       "max_attempts": 1,
@@ -135,7 +135,7 @@
       ]
     },
     {
-      "id": "G9_no_models_video_media_committed_security",
+      "id": "H9_no_models_video_media_committed_security",
       "gpu": false,
       "timeout_seconds": 120,
       "max_attempts": 1,
