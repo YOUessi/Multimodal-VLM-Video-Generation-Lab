@@ -25,9 +25,19 @@ Four actual matched pretrained/tuned MP4s (two prompts/seeds; four 192×128 fram
 
 See [batch21 real video-generation LoRA log](docs/BATCH21_ACTUAL_ZEROSCOPE_VIDEO_LORA_2026-11-01.md).
 
-### Further temporal mechanism controls (batch 22)
+### Temporal control results (batch 22): 1,600 additional real inferences
 
-A frozen follow-up compares **the exact same 3/5-frame budget** with either a repeated center frame or reversed chronological frames on all 400 videos, using the 2.2B model. Reversed clips do not retain the original gold answer and are **never scored as accuracy**; only model choice changes are reported. The active Tang 10-minute cron checks approved stages and fails closed. Source tests passed prior to execution.
+A frozen control compared identical visual-frame counts, either **normal chronological frames**, **repeated static center frames**, or **reversed chronology**, on all 400 public videos using SmolVLM2-2.2B. All five stages completed, 78 tests passed.
+
+- CLEVRER moving_direction 3 frames: **72/200 normal vs 75/200 repeated-center** (no demonstrated loss of accuracy when visual progression disappears); 5 frames: **73/200 normal vs 74/200 repeated-center**.
+- Natural scene_transition 3 frames: **182/200 normal vs 171/200 repeated-center** (-5.5pp, paired CI [-10.5,-1.0]); 5 frames: **180/200 normal vs 170/200 repeated-center** (-5pp, paired CI [-9.5,-0.5]).
+- Reversed frame order changed only **5–6/200** motion-direction selections and **7–15/200** scene-transition selections. **No reversed-video accuracy was computed**; reversing changes the valid answer in some cases.
+
+The results motivate investigation of temporal evidence use but do not pinpoint an Attention or positional-encoding mechanism. Full [batch22 report](docs/BATCH22_TEMPORAL_CONTROLS_2026-11-01.md).
+
+### Current frozen batch23: exploratory motion-salient sampling
+
+Tang's 10-minute cron is now configured to run a label-blind 12-probe motion/hue frame selector on the same frozen 400 public videos, matched 3/5-frame budgets and both VLM sizes; it records **CPU selection overhead** and paired correctness differences. This is an exploratory ablation on **already inspected** public samples, not fresh never-seen evaluation, and will fail closed on any stage errors. See `configs/motion_sampling_v1.json` and `automation/plans/batch23_motion_salient_v1.json`.
 
 ### Caution: earlier STAR data leakage
 
