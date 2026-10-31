@@ -1,0 +1,17 @@
+{
+  "data_dir": "data/mvbench_public",
+  "dataset_revision": "e17b0cae0729ebf38322ad0fa692c7ca72495afb",
+  "revision": "e17b0cae0729ebf38322ad0fa692c7ca72495afb",
+  "archive_sha256": "14ef25b947a02c1a8deffb7353463008a5bed86f65117f0881335eb5e73d78e0",
+  "sample_count": 80,
+  "seed": 20261031,
+  "frame_counts": [
+    1,
+    3,
+    5
+  ],
+  "max_new_tokens": 36,
+  "model_path": "models/SmolVLM2-500M-Video-Instruct",
+  "adapter": "outputs/temporal_round2/adapter",
+  "output_dir": "outputs/mvbench_round1"
+}
