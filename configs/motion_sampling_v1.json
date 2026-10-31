@@ -1,0 +1,44 @@
+{
+  "version": "2026-11-01-motion-salient-v1",
+  "source_manifest": "outputs/capacity_temporal_v1/manifest.json",
+  "pinned_source_sha": "cbbcf19e083fe27832bb4a36b1a7f67145fe000a81c7cce8b7694a18a4e0bf32",
+  "uniform_output_dir": "outputs/capacity_temporal_v1",
+  "output_dir": "outputs/motion_sampling_v1",
+  "frame_counts": [
+    3,
+    5
+  ],
+  "probe_count": 12,
+  "luma_motion_weight": 0.7,
+  "hue_change_weight": 0.3,
+  "min_temporal_separation": {
+    "3": 0.14,
+    "5": 0.08
+  },
+  "endpoint_fractions": [
+    0.05,
+    0.95
+  ],
+  "models": {
+    "500m": {
+      "model_dir": "models/SmolVLM2-500M-Video-Instruct",
+      "revision": "7b375e1b73b11138ff12fe22c8f2822d8fe03467",
+      "weight_files": {
+        "model.safetensors": 2029990624
+      }
+    },
+    "2b": {
+      "model_dir": "models/SmolVLM2-2.2B-Instruct",
+      "revision": "482adb537c021c86670beed01cd58990d01e72e4",
+      "weight_files": {
+        "model-00001-of-00002.safetensors": 4959390584,
+        "model-00002-of-00002.safetensors": 4027833472
+      }
+    }
+  },
+  "max_new_tokens": 40,
+  "bootstrap_seed": 20261102,
+  "test_time_tuning": false,
+  "test_dataset_is_new_blind": false,
+  "research_limit": "Existing public 400-video dataset was evaluated in batch19; this is a hypothesis-driven exploratory frame selection ablation without QA label-dependent parameter optimization."
+}
