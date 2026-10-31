@@ -28,3 +28,29 @@ def test_pairwise_metric_identical():
     adaptive={"predictions":[{"id":i,"frames":3,"correct":i%2==0} for i in range(40)]}
     x=m.paired_improvement(uniform,adaptive,3)
     assert x["delta_pp"]==0 and x["bootstrap_95ci_pp"]==[0.0,0.0]
+
+def test_candidate_bounds_across_mp4_lengths():
+    # Regression: the old floating-point interpolation could exceed the
+    # rounded 5% / 95% endpoint by one frame.
+    for decoded in range(6,3000):
+        for probe_count in (3,7,16,48,75):
+            (lo,hi),samples=m.candidate_positions(decoded,probe_count)
+            assert lo==round(.05*(decoded-1))
+            assert hi==round(.95*(decoded-1))
+            assert samples==sorted(set(samples))
+            assert samples[0]==lo and samples[-1]==hi
+            assert all(lo<=v<=hi for v in samples)
+def test_real_decoded_mp4_endpoint_guards(tmp_path):
+    import cv2,numpy as np
+    path=tmp_path/"clip.mp4"
+    writer=cv2.VideoWriter(str(path),cv2.VideoWriter_fourcc(*"mp4v"),8,(96,64))
+    assert writer.isOpened()
+    for i in range(55):
+        im=np.full((64,96,3),i*3%256,dtype=np.uint8)
+        writer.write(im)
+    writer.release()
+    for n in (3,5):
+        selected,_=m.select_video(path,decoded=55,count=n,probe_count=48)
+        assert len(selected)==len(set(selected))==n
+        assert selected[0]==round(.05*54)
+        assert selected[-1]==round(.95*54)
