@@ -82,3 +82,33 @@ def test_frozen_config_and_5_approved_prompt_conditions():
     assert cfg["test_time_tuning"] is False
     assert "Procedural" in cfg["novelty_limit"]
     assert set(cfg["models"])=={"500m","2b"}
+
+def test_complete_video_manifest_generation_and_counterfactual_pairs(tmp_path,monkeypatch):
+    # Regression: tuples cannot be shuffled; this exercises actual file
+    # creation, frozen manifest and both counterfactual time directions.
+    monkeypatch.setattr(data,"ROOT",tmp_path)
+    cfg={"version":"unit-counterfactual-motion-v1",
+         "data_dir":"generated","dev_pairs":5,"test_pairs":5,
+         "dev_seed":123,"test_seed":456,
+         "width":224,"height":224,"frames":10,"fps":5}
+    doc=data.make_dataset(cfg)
+    assert doc["video_count"]==20
+    assert len(doc["rows"])==20
+    from collections import Counter
+    for subset in ("dev","test"):
+        rows=[r for r in doc["rows"] if r["split"]==subset]
+        assert len(rows)==10
+        assert Counter(r["gold_direction"] for r in rows)=={d:2 for d in data.DIRECTIONS}
+        grouped={}
+        for row in rows:
+            grouped.setdefault(row["pair_id"],[]).append(row)
+            assert (tmp_path/row["video"]).is_file()
+            assert data.sha256(tmp_path/row["video"])==row["video_sha256"]
+        for pair in grouped.values():
+            assert len(pair)==2
+            fwd=next(r for r in pair if not r["reversed"])
+            rev=next(r for r in pair if r["reversed"])
+            assert rev["gold_direction"]==data.OPPOSITE[fwd["gold_direction"]]
+            assert fwd["options"]==rev["options"]
+    assert (tmp_path/"generated/manifest.json").is_file()
+    assert data.make_dataset(cfg)["rows_sha256"]==doc["rows_sha256"]
