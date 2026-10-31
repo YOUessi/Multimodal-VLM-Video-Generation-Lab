@@ -1,0 +1,30 @@
+{
+  "version": "2026-11-01-zeroscope-video-lora-v2-nockpt",
+  "description": "Actual PEFT LoRA on pretrained ZeroScope UNet3D, 12 synthetic moving-square video/caption pairs, 4 val; fixed-noise/timestep denoising MSE; no natural video or perceptual quality claims",
+  "model_dir": "models/zeroscope_v2_576w_safe",
+  "model_revision": "1f35e3dc3350d649f342bb7618fe34ac8fae5c9e",
+  "required_weights": [
+    "unet/diffusion_pytorch_model.safetensors",
+    "vae/diffusion_pytorch_model.safetensors",
+    "text_encoder/model.safetensors"
+  ],
+  "dataset_dir": "data/zeroscope_paired_motion_v1",
+  "output_dir": "outputs/zeroscope_video_lora_v2",
+  "frames": 4,
+  "width": 192,
+  "height": 128,
+  "fps": 4,
+  "rank": 4,
+  "alpha": 4,
+  "optimizer_steps": 12,
+  "learning_rate": 0.0001,
+  "seed": 20261101,
+  "validation_timestep": 500,
+  "gradient_checkpointing": false,
+  "license": "CC-BY-NC-4.0 noncommercial research only",
+  "claim_policy": "pipeline and local synthetic denoising validation only; no natural-video generation or perceptual quality guarantee",
+  "generation_steps": 8,
+  "generation_guidance": 7,
+  "generation_comparison": "Two fixed procedural motion captions, two seeds; base and LoRA matched. No quality scores without independent human rating.",
+  "compatibility_note": "Diffusers 0.37.1 UNet3DConditionModel _supports_gradient_checkpointing=False. Do NOT call enable_gradient_checkpointing() on it. This is a new frozen run, not a silent retry."
+}
