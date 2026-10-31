@@ -116,7 +116,7 @@ def prepare(cfg):
         if (i+1)%10==0:print("SAMPLER_PREFLIGHT",i+1,"/",len(selected),flush=True)
     digest=hashlib.sha256(json.dumps(record,sort_keys=True).encode()).hexdigest()
     target=ROOT/cfg["output_dir"]/"sampling_plan.json"
-    doc={"sampling_version":"adaptive_v1_preregistered","star_manifest_sha256":src["sha256"],
+    doc={"sampling_version":"adaptive_v1_preregistered","star_manifest_sha256":src.get("rows_sha256",src.get("sha256")),
          "plan_sha256":digest,"rules":{"motion_weight":.65,"hue_change_weight":.35,
          "endpoints":"5% and 95% of ACTUAL decoded frames","min_spacing":"7% for n5, 10% for n3",
          "candidate_count":cfg["probe_count"]},"selection_is_label_blind":True,"records":record}
@@ -130,7 +130,7 @@ def evaluate(cfg,variant):
     import torch
     plan=json.loads((ROOT/cfg["output_dir"]/"sampling_plan.json").read_text())
     manifest=json.loads((ROOT/cfg["star_manifest"]).read_text())
-    assert plan["star_manifest_sha256"]==manifest["sha256"]
+    assert plan["star_manifest_sha256"]==manifest.get("rows_sha256",manifest.get("sha256"))
     rows={r["source_index"]:r for r in manifest["rows"] if r["split"]=="test"}
     if variant=="selected_lora":
         chosen=json.loads((ROOT/cfg["chosen_seed"]).read_text())
