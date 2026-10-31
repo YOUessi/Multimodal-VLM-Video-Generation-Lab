@@ -157,7 +157,8 @@ def train(cfg,doc):
     from peft import LoraConfig,get_peft_model
     _,out,modelpath=paths(cfg)
     if not (out/"baseline.json").is_file():raise RuntimeError("Missing baseline")
-    torch.manual_seed(cfg["seed"])
+    run_seed=int(cfg.get("train_seed",cfg["seed"]))
+    torch.manual_seed(run_seed)
     model,proc,dtype=model_pack(modelpath)
     model=get_peft_model(model,LoraConfig(r=cfg["lora_rank"],lora_alpha=cfg["lora_alpha"],
                                          lora_dropout=0.0,target_modules=["q_proj","v_proj"],task_type="CAUSAL_LM"))
@@ -165,6 +166,7 @@ def train(cfg,doc):
     params=[p for p in model.parameters() if p.requires_grad]
     optimizer=torch.optim.AdamW(params,lr=cfg["train_learning_rate"])
     examples=[s for s in doc["samples"] if s["split"]=="train"]
+    random.Random(run_seed).shuffle(examples)
     steps=[];num_steps=cfg["train_steps"]
     for idx in range(num_steps):
         item=examples[idx % len(examples)]
