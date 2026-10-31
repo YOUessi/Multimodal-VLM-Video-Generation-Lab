@@ -37,7 +37,10 @@ def decoded_frame_count(path):
 
 def manifest(cfg):
     data=ROOT/cfg["data_dir"]
-    ann=json.loads((data/"text/action_sequence.json").read_text(encoding="utf8"))
+    annotation_file=data/"text/action_sequence.json"
+    if "source_annotations_sha256" in cfg and hashlib.sha256(annotation_file.read_bytes()).hexdigest()!=cfg["source_annotations_sha256"]:
+        raise RuntimeError("SOURCE_ANNOTATIONS_SHA256_DRIFT")
+    ann=json.loads(annotation_file.read_text(encoding="utf8"))
     prov=json.loads((data/"provenance.json").read_text(encoding="utf8"))
     assert prov["archive_sha256"]==cfg["star_archive_sha256"] and prov["exact_video_count"]==200
     assert len(ann)==200 and len({r["video"] for r in ann})==200
