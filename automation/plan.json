@@ -1,81 +1,109 @@
 {
-  "version": "2026-10-31-batch-9",
+  "version": "2026-10-31-batch-10",
   "enabled": true,
-  "description": "Resume frozen 40 real STAR video adaptive sampling after independent correctness fixes; reuse immutable existing label-blind sample plan, no new labels or test-time tuning.",
+  "description": "Audit real STAR 40-video adaptive-vs-uniform CPU cost with frozen predictions; generate two fixed text-to-video prompts at 8/14/20 steps on RTX4090; compute nonsemantic motion diagnostics; prepare independent review and tested summary.",
   "stages": [
     {
-      "id": "B40_verify_frozen_40_video_sampling_plan",
+      "id": "B45_adaptive_selection_cpu_cost",
       "gpu": false,
-      "timeout_seconds": 120,
+      "timeout_seconds": 900,
       "max_attempts": 1,
       "requires_files": [
         "outputs/adaptive_sampling_v2/sampling_plan.json",
-        "outputs/star_sft_round2/manifest.json"
+        "outputs/adaptive_sampling_v2/comparison.json"
       ],
       "argv": [
         "{python}",
-        "experiments/verify_adaptive_plan.py",
+        "experiments/frame_selection_cost.py",
+        "audit",
         "--config",
-        "configs/adaptive_sampling_v2.json"
+        "configs/frame_selection_cost.json"
       ]
     },
     {
-      "id": "B41_base_adaptive_3and5_frames",
+      "id": "B46_diffusion_step_grid_real_gpu",
       "gpu": true,
       "min_free_mib": 11000,
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/adaptive_sampling_v2/sampling_plan.json",
-        "outputs/star_sft_round2/test_base.json"
+        "models/zeroscope_v2_576w_safe/unet/diffusion_pytorch_model.safetensors",
+        "outputs/diffusion_round1/generation_report.json"
       ],
       "argv": [
         "{python}",
-        "experiments/adaptive_temporal_sampling.py",
-        "base",
+        "experiments/generation_step_grid.py",
         "--config",
-        "configs/adaptive_sampling_v2.json"
+        "configs/diffusion_steps_grid.json"
       ]
     },
     {
-      "id": "B42_real_video_lora_adaptive_3and5",
-      "gpu": true,
-      "min_free_mib": 11000,
-      "timeout_seconds": 1800,
+      "id": "B47_temporal_generation_diagnostics",
+      "gpu": false,
+      "timeout_seconds": 300,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/adaptive_sampling_v2/base.json",
-        "outputs/star_sft_round2/adapter_37/adapter_model.safetensors"
+        "outputs/diffusion_grid/generation_report.json"
       ],
       "argv": [
         "{python}",
-        "experiments/adaptive_temporal_sampling.py",
-        "selected_lora",
+        "experiments/generation_diagnostics.py",
         "--config",
-        "configs/adaptive_sampling_v2.json"
+        "configs/diffusion_steps_grid.json"
       ]
     },
     {
-      "id": "B43_paired_adaptive_vs_uniform_40_test",
+      "id": "B48_six_video_blind_review_html",
       "gpu": false,
       "timeout_seconds": 120,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/adaptive_sampling_v2/base.json",
-        "outputs/adaptive_sampling_v2/selected_lora.json"
+        "outputs/diffusion_grid/generation_report.json"
       ],
       "argv": [
         "{python}",
-        "experiments/adaptive_temporal_sampling.py",
-        "compare",
-        "--config",
-        "configs/adaptive_sampling_v2.json"
+        "experiments/generation_review.py",
+        "prepare",
+        "--report",
+        "outputs/diffusion_grid/generation_report.json"
       ]
     },
     {
-      "id": "B44_offline_regression_tests",
+      "id": "B49_cpu_cost_and_accuracy_report",
       "gpu": false,
-      "timeout_seconds": 180,
+      "timeout_seconds": 120,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/frame_selection_cost_v1/selection_cost.json",
+        "outputs/adaptive_sampling_v2/comparison.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/frame_selection_cost.py",
+        "report",
+        "--config",
+        "configs/frame_selection_cost.json"
+      ]
+    },
+    {
+      "id": "B50_benchmark_and_generation_summary",
+      "gpu": false,
+      "timeout_seconds": 120,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/diffusion_grid/review.html",
+        "outputs/diffusion_grid/diagnostics.json",
+        "outputs/frame_selection_cost_v1/selection_cost.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/batch10_summary.py"
+      ]
+    },
+    {
+      "id": "B51_complete_regression_tests",
+      "gpu": false,
+      "timeout_seconds": 240,
       "max_attempts": 1,
       "argv": [
         "{python}",
