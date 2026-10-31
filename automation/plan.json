@@ -1,56 +1,37 @@
 {
-  "version": "2026-10-31-batch-14",
+  "version": "2026-10-31-batch-15",
   "enabled": true,
-  "description": "Remediate failed B53 cold-cache assumption on duplicate MP4 bytes. On new SHA-content-grouped STAR 40 videos, freeze same .65/.35 label-blind adaptive sampling, verify frame-plan SHA, benchmark baseline versus per-sample isolated cold and content-SHA shared warm, assert ALL selected pixels exactly identical.",
+  "description": "Final evidence-first release: source SHA grouped leakage audit, independent 200-video cross-task report, exact-frame shared-cache speedup, six real ZeroScope outputs, blind-human-review pending; produce local offline HTML preview and manifest, publication guard, full regression CI-compatible tests.",
   "stages": [
     {
-      "id": "B66_grouped_40_video_labelblind_adaptive_frame_plan",
+      "id": "B70_audited_local_release_html_and_manifest",
       "gpu": false,
-      "timeout_seconds": 1200,
+      "timeout_seconds": 600,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/star_grouped_sft_v1/manifest.json"
+        "outputs/star_grouped_sft_v1/AUTHORITATIVE_RESULTS.json",
+        "outputs/mvbench_scene_external_v1/comparison.json",
+        "outputs/shared_cache_grouped_v1/shared_cache.json",
+        "outputs/diffusion_grid/generation_report.json"
       ],
       "argv": [
         "{python}",
-        "experiments/adaptive_temporal_sampling.py",
-        "prepare",
-        "--config",
-        "configs/adaptive_grouped_v1.json"
+        "experiments/release_audit_and_preview.py",
+        "--verify"
       ]
     },
     {
-      "id": "B67_validate_unchanged_grouped_sampling_plan",
+      "id": "B71_no_media_or_weights_in_source_guard",
       "gpu": false,
-      "timeout_seconds": 180,
+      "timeout_seconds": 120,
       "max_attempts": 1,
-      "requires_files": [
-        "outputs/adaptive_grouped_v1/sampling_plan.json"
-      ],
       "argv": [
         "{python}",
-        "experiments/verify_adaptive_plan.py",
-        "--config",
-        "configs/adaptive_grouped_v1.json"
+        "experiments/source_security_guard.py"
       ]
     },
     {
-      "id": "B68_grouped_40_video_cold_warm_exact_pixel_cache_benchmark",
-      "gpu": false,
-      "timeout_seconds": 1200,
-      "max_attempts": 1,
-      "requires_files": [
-        "outputs/adaptive_grouped_v1/sampling_plan.json"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/shared_temporal_cache.py",
-        "--config",
-        "configs/shared_cache_grouped_v1.json"
-      ]
-    },
-    {
-      "id": "B69_complete_regression_suite",
+      "id": "B72_full_public_cpu_test_suite",
       "gpu": false,
       "timeout_seconds": 240,
       "max_attempts": 1,
@@ -59,6 +40,21 @@
         "-m",
         "pytest",
         "-q",
+        "tests"
+      ]
+    },
+    {
+      "id": "B73_compile_all_experiment_sources",
+      "gpu": false,
+      "timeout_seconds": 180,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "-m",
+        "compileall",
+        "-q",
+        "experiments",
+        "automation",
         "tests"
       ]
     }
