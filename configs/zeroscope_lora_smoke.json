@@ -22,5 +22,8 @@
   "validation_timestep": 500,
   "gradient_checkpointing": true,
   "license": "CC-BY-NC-4.0 noncommercial research only",
-  "claim_policy": "pipeline and local synthetic denoising validation only; no natural-video generation or perceptual quality guarantee"
+  "claim_policy": "pipeline and local synthetic denoising validation only; no natural-video generation or perceptual quality guarantee",
+  "generation_steps": 8,
+  "generation_guidance": 7,
+  "generation_comparison": "Two fixed procedural motion captions, two seeds; base and LoRA matched. No quality scores without independent human rating."
 }
