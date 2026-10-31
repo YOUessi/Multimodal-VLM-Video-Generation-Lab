@@ -1,80 +1,95 @@
 {
-  "version": "2026-10-31-batch-4",
+  "version": "2026-10-31-batch-5",
   "enabled": true,
-  "description": "120 untouched MVBench real-video option position rotation; base and synthetic LoRA; preregistered ensemble, corrected final report and offline CI",
+  "description": "Real-video LoRA on 200 unique STAR action_sequence clips, freeze 120/40/40 source-video-disjoint split, train 2 seeds, validation-only seed selection, heldout natural-video test, complete research report",
   "stages": [
     {
-      "id": "B13_unseen120_base_option_rotation",
-      "gpu": true,
-      "min_free_mib": 11000,
-      "timeout_seconds": 2400,
+      "id": "B18_star_video_split_preflight",
+      "gpu": false,
+      "timeout_seconds": 240,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/mvbench_round1/manifest.json",
-        "data/mvbench_public/text/action_antonym.json",
+        "data/mvbench_star/provenance.json",
+        "data/mvbench_star/text/action_sequence.json",
         "models/SmolVLM2-500M-Video-Instruct/model.safetensors"
       ],
       "argv": [
         "{python}",
-        "experiments/choice_bias_eval.py",
-        "base",
+        "experiments/star_real_sft.py",
+        "prepare",
         "--config",
-        "configs/choice_bias_round1.json"
+        "configs/star_real_sft_round1.json"
       ]
     },
     {
-      "id": "B14_unseen120_synthetic_lora_option_rotation",
+      "id": "B19_star_real_video_two_seed_lora",
+      "gpu": true,
+      "min_free_mib": 11000,
+      "timeout_seconds": 3600,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/star_sft_round1/manifest.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/star_real_sft.py",
+        "train",
+        "--config",
+        "configs/star_real_sft_round1.json"
+      ]
+    },
+    {
+      "id": "B20_validation_only_seed_selection",
       "gpu": true,
       "min_free_mib": 11000,
       "timeout_seconds": 2400,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/choice_bias_round1/base.json",
-        "outputs/temporal_round2/adapter/adapter_model.safetensors"
+        "outputs/star_sft_round1/adapter_19/adapter_model.safetensors",
+        "outputs/star_sft_round1/adapter_37/adapter_model.safetensors"
       ],
       "argv": [
         "{python}",
-        "experiments/choice_bias_eval.py",
-        "synthetic_lora",
+        "experiments/star_real_sft.py",
+        "validate",
         "--config",
-        "configs/choice_bias_round1.json"
+        "configs/star_real_sft_round1.json"
       ]
     },
     {
-      "id": "B15_paired_order_bias_analysis",
+      "id": "B21_heldout_real_action_sequence_test",
+      "gpu": true,
+      "min_free_mib": 11000,
+      "timeout_seconds": 2400,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/star_sft_round1/chosen_seed.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/star_real_sft.py",
+        "test",
+        "--config",
+        "configs/star_real_sft_round1.json"
+      ]
+    },
+    {
+      "id": "B22_research_evidence_report_v3",
       "gpu": false,
       "timeout_seconds": 240,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/choice_bias_round1/base.json",
-        "outputs/choice_bias_round1/synthetic_lora.json"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/choice_bias_eval.py",
-        "compare",
-        "--config",
-        "configs/choice_bias_round1.json"
-      ]
-    },
-    {
-      "id": "B16_corrected_project_release_report",
-      "gpu": false,
-      "timeout_seconds": 240,
-      "max_attempts": 1,
-      "requires_files": [
-        "outputs/choice_bias_round1/comparison.json",
+        "outputs/star_sft_round1/test_comparison.json",
         "outputs/mvbench_round1/rescored_v2/comparison_scored.json",
-        "outputs/multi_seed/REPLICATION.json"
+        "outputs/choice_bias_round1/comparison.json"
       ],
       "argv": [
         "{python}",
-        "experiments/release_report_v2.py",
-        "build"
+        "experiments/master_report_v3.py"
       ]
     },
     {
-      "id": "B17_frozen_release_tests",
+      "id": "B23_all_source_tests",
       "gpu": false,
       "timeout_seconds": 240,
       "max_attempts": 1,
