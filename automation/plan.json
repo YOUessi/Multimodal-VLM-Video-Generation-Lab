@@ -1,93 +1,126 @@
 {
-  "version": "2026-10-31-batch-18",
+  "version": "2026-11-01-batch-19",
   "enabled": true,
-  "description": "Resume retrospective SHA + strict perceptual connected-component STAR LoRA after canonical JSON edge serialization fix; previously frozen manifest SHA and split unchanged; new 2-seed training, validation selection, test and explicit retrospective report.",
+  "description": "Frozen independent public MVBench 400 videos across CLEVRER moving_direction and natural scene_transition. Compare SmolVLM2-500M vs 2.2B under 0 (text-only), 3 and 5 uniform decoded frames, no finetuning or test-driven prompt tuning. Real GPU inference, per-item audit, paired bootstrap CIs, failure stop.",
   "stages": [
     {
-      "id": "B83_verify_existing_frozen_SHA_and_perceptual_components",
+      "id": "B89_frozen_external_400_video_source_and_decode_preflight",
       "gpu": false,
+      "timeout_seconds": 1500,
+      "max_attempts": 1,
+      "requires_files": [
+        "data/mvbench_moving_direction/provenance.json",
+        "data/mvbench_scene_transition/provenance.json",
+        "outputs/star_perceptual_grouped_sft_v1/manifest.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/mvbench_capacity_temporal.py",
+        "prepare",
+        "--config",
+        "configs/capacity_temporal_v1.json"
+      ]
+    },
+    {
+      "id": "B90_smol500m_protocol_and_text_image_smoke",
+      "gpu": true,
+      "min_free_mib": 10000,
       "timeout_seconds": 900,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/star_perceptual_grouped_sft_v1/manifest.json"
+        "models/SmolVLM2-500M-Video-Instruct/model.safetensors"
       ],
       "argv": [
         "{python}",
-        "experiments/star_perceptual_grouped_sft.py",
-        "prepare",
+        "experiments/mvbench_capacity_temporal.py",
+        "preflight",
+        "--model",
+        "500m",
         "--config",
-        "configs/star_perceptual_grouped_v1.json"
+        "configs/capacity_temporal_v1.json"
       ]
     },
     {
-      "id": "B84_fresh_perceptual_connected_train_two_seeds",
+      "id": "B91_smol500m_400x3_real_public_QA_baseline",
       "gpu": true,
-      "min_free_mib": 11000,
-      "timeout_seconds": 3600,
+      "min_free_mib": 10000,
+      "timeout_seconds": 4500,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/star_perceptual_grouped_sft_v1/manifest.json"
+        "outputs/capacity_temporal_v1/manifest.json"
       ],
       "argv": [
         "{python}",
-        "experiments/star_perceptual_grouped_sft.py",
-        "train",
+        "experiments/mvbench_capacity_temporal.py",
+        "evaluate",
+        "--model",
+        "500m",
         "--config",
-        "configs/star_perceptual_grouped_v1.json"
+        "configs/capacity_temporal_v1.json"
       ]
     },
     {
-      "id": "B85_select_model_by_validation_only",
+      "id": "B92_smol2b_protocol_and_VRAM_preflight",
       "gpu": true,
-      "min_free_mib": 11000,
-      "timeout_seconds": 2100,
+      "min_free_mib": 12000,
+      "timeout_seconds": 1200,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/star_perceptual_grouped_sft_v1/adapter_19/adapter_model.safetensors",
-        "outputs/star_perceptual_grouped_sft_v1/adapter_37/adapter_model.safetensors"
+        "models/SmolVLM2-2.2B-Instruct/model-00001-of-00002.safetensors",
+        "models/SmolVLM2-2.2B-Instruct/model-00002-of-00002.safetensors"
       ],
       "argv": [
         "{python}",
-        "experiments/star_perceptual_grouped_sft.py",
-        "validate",
+        "experiments/mvbench_capacity_temporal.py",
+        "preflight",
+        "--model",
+        "2b",
         "--config",
-        "configs/star_perceptual_grouped_v1.json"
+        "configs/capacity_temporal_v1.json"
       ]
     },
     {
-      "id": "B86_one_retrospective_test_after_grouping",
+      "id": "B93_smol2b_400x3_real_public_QA_comparison",
       "gpu": true,
-      "min_free_mib": 11000,
-      "timeout_seconds": 2400,
+      "min_free_mib": 12000,
+      "timeout_seconds": 7200,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/star_perceptual_grouped_sft_v1/chosen_seed.json"
+        "models/SmolVLM2-2.2B-Instruct/model-00001-of-00002.safetensors",
+        "models/SmolVLM2-2.2B-Instruct/model-00002-of-00002.safetensors",
+        "outputs/capacity_temporal_v1/500m.json"
       ],
       "argv": [
         "{python}",
-        "experiments/star_perceptual_grouped_sft.py",
-        "test",
+        "experiments/mvbench_capacity_temporal.py",
+        "evaluate",
+        "--model",
+        "2b",
         "--config",
-        "configs/star_perceptual_grouped_v1.json"
+        "configs/capacity_temporal_v1.json"
       ]
     },
     {
-      "id": "B87_explicit_retrospective_integrity_report",
+      "id": "B94_full_paired_temporal_and_capacity_report",
       "gpu": false,
-      "timeout_seconds": 180,
+      "timeout_seconds": 300,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/star_perceptual_grouped_sft_v1/test_comparison.json"
+        "outputs/capacity_temporal_v1/500m.json",
+        "outputs/capacity_temporal_v1/2b.json"
       ],
       "argv": [
         "{python}",
-        "experiments/star_perceptual_report.py"
+        "experiments/mvbench_capacity_temporal.py",
+        "compare",
+        "--config",
+        "configs/capacity_temporal_v1.json"
       ]
     },
     {
-      "id": "B88_complete_source_regression_tests",
+      "id": "B95_regression_tests_with_video_contract",
       "gpu": false,
-      "timeout_seconds": 240,
+      "timeout_seconds": 300,
       "max_attempts": 1,
       "argv": [
         "{python}",
@@ -95,6 +128,16 @@
         "pytest",
         "-q",
         "tests"
+      ]
+    },
+    {
+      "id": "B96_publication_security_guard",
+      "gpu": false,
+      "timeout_seconds": 120,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/source_security_guard.py"
       ]
     }
   ]
