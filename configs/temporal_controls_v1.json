@@ -1,0 +1,32 @@
+{
+  "version": "2026-11-01-temporal-controls-v1",
+  "source_manifest": "outputs/capacity_temporal_v1/manifest.json",
+  "pinned_source_manifest_sha256": "cbbcf19e083fe27832bb4a36b1a7f67145fe000a81c7cce8b7694a18a4e0bf32",
+  "uniform_model_results": "outputs/capacity_temporal_v1/2b.json",
+  "model_name": "2b",
+  "models": {
+    "2b": {
+      "model_dir": "models/SmolVLM2-2.2B-Instruct",
+      "revision": "482adb537c021c86670beed01cd58990d01e72e4",
+      "weight_files": {
+        "model-00001-of-00002.safetensors": 4959390584,
+        "model-00002-of-00002.safetensors": 4027833472
+      }
+    }
+  },
+  "frame_counts": [
+    3,
+    5
+  ],
+  "methods": [
+    "center_repeated",
+    "reverse_order"
+  ],
+  "max_new_tokens": 40,
+  "bootstrap_seed": 20261111,
+  "output_dir": "outputs/temporal_controls_v1",
+  "input_utility": "Forward chronological reference from frozen batch19; center repeated means identical image tokens with fixed n; reverse changes video semantics, no accuracy score.",
+  "no_reversed_gold_accuracy": true,
+  "no_model_training": true,
+  "no_test_time_prompt_tuning": true
+}
