@@ -1,0 +1,18 @@
+{
+  "source_dir": "data/mvbench_scene_transition",
+  "labels_sha256": "edab8a7992851061cac170f7e50782961ec21826f99e70ee72ae73a9dafb79f9",
+  "archive_sha256": "1215b6f2e69820089320baa1e3f6fc8b73be4b4e3ee3948fe4b15a34cec22690",
+  "source_revision": "e17b0cae0729ebf38322ad0fa692c7ca72495afb",
+  "grouped_star_manifest": "outputs/star_grouped_sft_v1/manifest.json",
+  "grouped_adapter_dir": "outputs/star_grouped_sft_v1",
+  "model_dir": "models/SmolVLM2-500M-Video-Instruct",
+  "output_dir": "outputs/mvbench_scene_external_v1",
+  "sample_count": 200,
+  "frame_counts": [
+    3,
+    5
+  ],
+  "max_new_tokens": 40,
+  "evaluation_only": true,
+  "no_train_on_scene_transition": true
+}
