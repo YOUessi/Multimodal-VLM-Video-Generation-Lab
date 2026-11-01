@@ -1,0 +1,69 @@
+{
+  "version": "2026-11-01-domain-shift-world-motion-v1",
+  "dataset_dir": "data/motion_render_shift_v1",
+  "output_dir": "outputs/motion_render_shift_v1",
+  "dev_pairs": 40,
+  "test_pairs": 100,
+  "dev_seed": 722149,
+  "test_seed": 828494,
+  "width": 256,
+  "height": 256,
+  "frames": 10,
+  "fps": 6,
+  "hue_tolerance": 15,
+  "min_saturation": 42,
+  "min_value": 35,
+  "gray_saturation_max": 32,
+  "gray_value_max": 190,
+  "brown_value_max": 190,
+  "min_component_pixels": 40,
+  "min_component_fraction": 0.0002,
+  "max_component_pixels": 6000,
+  "max_component_fraction": 0.04,
+  "roi_min_x": 0.02,
+  "roi_max_x": 0.98,
+  "roi_min_y": 0.02,
+  "roi_max_y": 0.98,
+  "max_candidate_count": 7,
+  "first_frame_dominance_ratio": 1.2,
+  "max_step_displacement_px": 260,
+  "association_margin_px": 12,
+  "direction_deadzone_px": 9,
+  "gate_min_dxdy": 20,
+  "min_registration_response": 0.12,
+  "frame_budgets": {
+    "500m": [
+      3
+    ],
+    "2b": [
+      3,
+      5
+    ]
+  },
+  "models": {
+    "500m": {
+      "model_dir": "models/SmolVLM2-500M-Video-Instruct",
+      "revision": "7b375e1b73b11138ff12fe22c8f2822d8fe03467",
+      "weight_files": {
+        "model.safetensors": 2029990624
+      }
+    },
+    "2b": {
+      "model_dir": "models/SmolVLM2-2.2B-Instruct",
+      "revision": "482adb537c021c86670beed01cd58990d01e72e4",
+      "weight_files": {
+        "model-00001-of-00002.safetensors": 4959390584,
+        "model-00002-of-00002.safetensors": 4027833472
+      }
+    }
+  },
+  "max_new_tokens": 40,
+  "bootstrap_seed": 202611011,
+  "source_data_type": "NEW, synthetic 2D rendered textures with fixed target/distractor colors",
+  "world_motion_definition": "Direction relative to stationary textured world background; in camera_pan screen displacement includes camera translation",
+  "camera_registration_method": "cv2.phaseCorrelate globally translating dominant textured background; no ground truth camera velocity used",
+  "study_question": "Can image-based camera shift compensation improve query-grounded HSV motion tracking and conservative VLM fallback in new rendering conditions?",
+  "predeclare_no_test_tuning": true,
+  "not_natural_video": true,
+  "privacy": "Never commit generated MP4, models, training caches or private video to GitHub"
+}
