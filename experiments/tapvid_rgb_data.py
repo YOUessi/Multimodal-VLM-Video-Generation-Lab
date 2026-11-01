@@ -175,8 +175,8 @@ def prepare() -> None:
         "n_total_official": len(records), "n_dev": DEV, "n_test": TEST,
         "query_selection": "hash-only point ids, first visible query on sampled frames",
         "coordinates": "official normalized (x,y) multiplied by (frame_width,frame_height) into pixels; upstream TAP-Vid reader convention",
-        "oracle_sha256": content_key(target / "oracle-private.json"),
-        "public_queries_sha256": content_key(target / "queries-public.json"),
+        "oracle_sha256": hashlib.sha256(as_json(private)).hexdigest(),
+        "public_queries_sha256": hashlib.sha256(as_json(public)).hexdigest(),
         "scenes": scenes,
     }
     # Write oracle before manifest, so an interrupted write cannot appear complete.

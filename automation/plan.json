@@ -1,5 +1,5 @@
 {
-  "version": "2026-11-02-batch38-independent-TAPVid-RGB-Stacking-true-point-occlusion-and-matched-VLM-v1",
+  "version": "2026-11-02-batch38B-frozen-preparation-order-recovery-same-source-media-split-v2",
   "enabled": true,
   "description": "New independent synthetic robotics TAP-Vid RGB-Stacking explicit physical-point occlusion, 4 DEV+8 TEST videos, 125 frames each, 4 CPU label-blind trackers and zero-shot 500M VLM two-image query+endpoint probe on two fixed query IDs per video; DEV then one-time sealed TEST; GPU exclusive, source safe, full regressions, fail closed.",
   "stages": [

@@ -253,3 +253,32 @@ def test_upstream_tapvid_jaccard_counts_wrong_visible_false_positives(tmp_path,m
     # 2 visible (1 correct, 1 abstained), 1 occluded but predicted visible.
     # Jaccard at every radius: TP / (GT visible + absent FP + bad-visible FP)
     assert report["scene_details"]["clip_00"]["stationary_point"]["jaccard_mean_1_2_4_8_16"] == round(1/3,5)
+
+def test_preparation_manifest_hashes_generated_payloads_before_disk_write(tmp_path, monkeypatch):
+    # Regression: the first frozen Batch38 attempt crashed because it hashed
+    # oracle-private.json BEFORE atomic_once had written it. Test complete
+    # prepare+audit without opening any real source or TEST answers.
+    d = tmp_path/"shared-data"
+    d.mkdir()
+    (d/"official.zip").write_bytes(b"fake-source-in-unit-test")
+    tracks = np.tile(np.array([[[0.5,0.25],[0.55,0.25],[0.6,0.25],[0.65,0.25]]]),
+                    (2,1,1))
+    samples = [(f"video_{k:04d}",{
+        "video": np.zeros((4,8,8,3),dtype=np.uint8),
+        "points": tracks.copy(),
+        "occluded": np.zeros((2,4),dtype=bool),
+    }) for k in range(data.DEV+data.TEST)]
+    monkeypatch.setattr(data,"DATA",d)
+    monkeypatch.setattr(data,"verify",lambda _:None)
+    monkeypatch.setattr(data,"official_records",lambda _:samples)
+    data.prepare()
+    manifest=json.loads((d/"batch38_frozen/manifest.json").read_text())
+    for key, filename in [("oracle_sha256","oracle-private.json"),
+                          ("public_queries_sha256","queries-public.json")]:
+        expected=hashlib.sha256((d/"batch38_frozen"/filename).read_bytes()).hexdigest()
+        assert manifest[key] == expected
+    query=json.loads((d/"batch38_frozen/queries-public.json").read_text())
+    assert sorted(q["query_xy"][0] for q in query["clip_00"]) == [4.,4.]
+    # It must audit without reading future private answers during prediction.
+    (d/"batch38_frozen/oracle-private.json").rename(d/"batch38_frozen/private-unavailable")
+    data.audit()
