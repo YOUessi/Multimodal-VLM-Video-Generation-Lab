@@ -1,40 +1,121 @@
 {
-  "version": "2026-11-01-batch-35-cross-snapshot-integrity",
+  "version": "2026-11-01-batch-36-independent-real-davis-prospective-v1",
   "enabled": true,
-  "description": "Immutable failure recovery after Batch34 failed S9: isolated source-root manifest/media and frozen CV/VLM model artifact reads, missing-file and identity regressions, strict SHA-pinned read-only post-hoc accepted-gate rescue/harm attribution on already-scored synthetic 200-video / 100-scene-pair heldout. Verify original results agreement and keep Batch34 failure logs intact. No GPU, no retraining or new TEST tuning.",
+  "description": "SHA-frozen 12 independent 480p DAVIS real-camera sequences (4 DEV, 8 TEST), 8 sampled frames each; first-mask-only non-VLM image-plane centroid tracking; source labels/private gold not loaded by prediction; byte-pinned heldout predictions scored once. Never reoptimize the 8 TEST scenes. CPU-only, media/weights/private gold ignored by Git.",
   "stages": [
     {
-      "id": "T1_original_S9_failure_reproduction_and_new_frozen_scope_regressions",
-      "gpu": false,
-      "timeout_seconds": 360,
-      "max_attempts": 1,
-      "argv": ["{python}", "-m", "pytest", "-q", "tests/test_parallax_identity.py", "tests/test_parallax_gate_risk_audit.py"]
-    },
-    {
-      "id": "T2_all_existing_and_new_project_regressions",
+      "id": "U1_freeze_and_audit_192_original_DAVIS_assets",
       "gpu": false,
       "timeout_seconds": 900,
       "max_attempts": 1,
-      "argv": ["{python}", "-m", "pytest", "-q", "tests"]
+      "requires_files": [
+        "data/davis_real_v1/manifest.json",
+        "data/davis_real_v1/initial_queries.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/davis_real_data.py",
+        "audit"
+      ]
     },
     {
-      "id": "T3_280_video_bytes_and_all_frozen_model_outputs_SHA_pinned_posthoc_risk_audit",
+      "id": "U2_153_complete_source_regressions",
       "gpu": false,
-      "timeout_seconds": 600,
+      "timeout_seconds": 900,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests"
+      ]
+    },
+    {
+      "id": "U3_reverify_DEV_prediction_digest_before_oracle",
+      "gpu": false,
+      "timeout_seconds": 900,
       "max_attempts": 1,
       "requires_files": [
-        "configs/parallax_gate_audit_v1.json",
-        "experiments/parallax_gate_risk_audit.py"
+        "outputs/davis_real_v1/dev_predictions.json"
       ],
-      "argv": ["{python}", "experiments/parallax_gate_risk_audit.py", "--config", "configs/parallax_gate_audit_v1.json"]
+      "argv": [
+        "{python}",
+        "experiments/davis_real_eval.py",
+        "predict-dev"
+      ]
     },
     {
-      "id": "T4_publication_guard_after_immutable_risk_report",
+      "id": "U4_reproduce_DEV_only_4_scene_report",
       "gpu": false,
-      "timeout_seconds": 360,
+      "timeout_seconds": 900,
       "max_attempts": 1,
-      "requires_files": ["outputs/parallax_gate_risk_audit_v1/aggregate_risk.json", "outputs/parallax_gate_risk_audit_v1/RISK_AUDIT.md"],
-      "argv": ["{python}", "experiments/source_security_guard.py"]
+      "requires_files": [
+        "outputs/davis_real_v1/dev_predictions.sha256"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/davis_real_eval.py",
+        "score-dev"
+      ]
+    },
+    {
+      "id": "U5_write_first_and_pin_8_real_TEST_blind_pixel_trajectories",
+      "gpu": false,
+      "timeout_seconds": 900,
+      "max_attempts": 1,
+      "requires_files": [
+        "data/davis_real_v1/manifest.json",
+        "data/davis_real_v1/initial_queries.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/davis_real_eval.py",
+        "predict-test"
+      ]
+    },
+    {
+      "id": "U6_score_once_8_real_TEST_scenes_from_only_sha_pinned_predictions",
+      "gpu": false,
+      "timeout_seconds": 900,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/davis_real_v1/test_predictions.sha256"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/davis_real_eval.py",
+        "score-test"
+      ]
+    },
+    {
+      "id": "U7_media_weights_secrets_source_guard",
+      "gpu": false,
+      "timeout_seconds": 900,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/davis_real_v1/test_results.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/source_security_guard.py"
+      ]
+    },
+    {
+      "id": "U8_final_full_regression_after_private_scoring",
+      "gpu": false,
+      "timeout_seconds": 900,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/davis_real_v1/test_results.json"
+      ],
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests"
+      ]
     }
   ]
 }
