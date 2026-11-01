@@ -21,11 +21,11 @@ import tarfile
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "data/tapvid_kinetics_batch45"
+DATA = ROOT / "data/tapvid_kinetics_batch45c"
 SOURCE_CSV = ROOT / "data/tapvid_kinetics_batch41/tapvid_kinetics/tapvid_kinetics.csv"
 VAL_METADATA = ROOT / "data/tapvid_kinetics_batch41/metadata/k700_2020_val.csv"
 VAL_IDS = ROOT / "data/tapvid_kinetics_batch41/tapvid_kinetics/val.txt"
-FROZEN = DATA / "batch45_frozen"
+FROZEN = DATA / "batch45c_frozen"
 PATH_LIST = DATA / "preflight/k700_2020_val_path.txt"
 DOWNLOAD_MANIFEST = DATA / "preflight/download_manifest.json"
 PATH_LIST_URL = "https://s3.amazonaws.com/kinetics/700_2020/val/k700_2020_val_path.txt"
@@ -250,6 +250,36 @@ def extract_member(meta: dict, destination: Path) -> None:
         raise RuntimeError("KINETICS_EXTRACTED_VIDEO_MEMBER_SHA_MISMATCH")
 
 
+
+def gitsha() -> str:
+    return subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip()
+
+
+def manifest_provenance(selection: dict, source_commit: str) -> dict:
+    return {
+        "path_list_sha256": sha_file(PATH_LIST),
+        "download_manifest_sha256": sha_file(DOWNLOAD_MANIFEST),
+        "previous_video_ids_sha256": selection["previous_video_ids_sha256"],
+        "source_commit": source_commit,
+    }
+
+
+def validate_split_disjointness(scenes: list[dict], previous_ids: set[str],
+                                previous_labels: set[str]) -> bool:
+    video_ids = [x["video_id"] for x in scenes]
+    labels = [x["action_class"] for x in scenes]
+    if len(set(video_ids)) != len(video_ids):
+        raise RuntimeError("KINETICS_SCENE_ID_OVERLAP")
+    if len(set(labels)) != len(labels):
+        raise RuntimeError("KINETICS_ACTION_CLASS_OVERLAP")
+    if set(video_ids) & previous_ids:
+        raise RuntimeError("KINETICS_PREVIOUS_VIDEO_ID_OVERLAP")
+    if set(labels) & previous_labels:
+        raise RuntimeError("KINETICS_BATCH42_ACTION_CLASS_OVERLAP")
+    return True
+
+
+
 def prepare() -> None:
     selection = load_selection()
     verify_sources(selection)
@@ -350,7 +380,7 @@ def prepare() -> None:
 
     selection_sha = sha_file(DATA / "preflight/selection.json")
     manifest = {
-        "version": "BATCH45-TAPVID-KINETICS-FRESH-CLASS-HOLDOUT-2026-11-02-v1",
+        "version": "BATCH45C-TAPVID-KINETICS-FRESH-CLASS-HOLDOUT-2026-11-02-v3",
         "dataset": "TAP-Vid-Kinetics; natural YouTube/Kinetics video clips",
         "annotation_license": "CC BY 4.0",
         "video_rights": "source videos remain local and retain their individual creator/platform terms",
@@ -359,6 +389,7 @@ def prepare() -> None:
         "source_csv_sha256": sha_file(SOURCE_CSV),
         "kinetics_val_metadata_sha256": sha_file(VAL_METADATA),
         "val_ids_sha256": sha_file(VAL_IDS),
+        **manifest_provenance(selection, gitsha()),
         "selection_salt": SALT,
         "dev_videos": DEV_VIDEOS,
         "test_videos": TEST_VIDEOS,
@@ -395,6 +426,8 @@ def audit() -> dict:
     selection = load_selection()
     verify_sources(selection)
     manifest = json.loads((FROZEN / "manifest.json").read_text(encoding="utf-8"))
+    if manifest.get("source_commit") != gitsha():
+        raise RuntimeError("KINETICS_SOURCE_COMMIT_DRIFT")
     public_path = FROZEN / "queries-public.json"
     oracle_path = FROZEN / "oracle-private.json"
     if manifest.get("selection_sha256") != sha_file(DATA / "preflight/selection.json"):
@@ -419,19 +452,13 @@ def audit() -> dict:
         ["dev"] * DEV_VIDEOS + ["test"] * TEST_VIDEOS
     ):
         raise RuntimeError("KINETICS_SPLIT_DRIFT")
-    if len({s["video_id"] for s in manifest["scenes"]}) != len(manifest["scenes"]):
-        raise RuntimeError("KINETICS_SCENE_ID_OVERLAP")
-    if len({s["action_class"] for s in manifest["scenes"]}) != len(manifest["scenes"]):
-        raise RuntimeError("KINETICS_ACTION_CLASS_OVERLAP")
     previous_ids = collect_previous_video_ids()
-    if {s["video_id"] for s in manifest["scenes"]} & previous_ids:
-        raise RuntimeError("KINETICS_PREVIOUS_VIDEO_ID_OVERLAP")
     batch42_manifest = ROOT / "data/tapvid_kinetics_batch42/batch42_frozen/manifest.json"
+    old_labels = set()
     if batch42_manifest.is_file():
         old = json.loads(batch42_manifest.read_text(encoding="utf-8"))
         old_labels = {x.get("action_class") for x in old.get("scenes", []) if x.get("action_class")}
-        if {s["action_class"] for s in manifest["scenes"]} & old_labels:
-            raise RuntimeError("KINETICS_BATCH42_ACTION_CLASS_OVERLAP")
+    validate_split_disjointness(manifest["scenes"], previous_ids, old_labels)
     public = json.loads(public_path.read_text(encoding="utf-8"))
     if set(public) != {s["name"] for s in manifest["scenes"]}:
         raise RuntimeError("KINETICS_PUBLIC_SCENE_SET_DRIFT")

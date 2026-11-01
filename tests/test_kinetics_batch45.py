@@ -143,3 +143,30 @@ def test_eval_method_set_contains_photometric_and_gradient_gates():
     assert "gradient_fb_050" in ev.METHODS
     assert "gradient_fb_065" in ev.METHODS
     assert "gradient_fb_080" in ev.METHODS
+
+
+def test_manifest_provenance_pins_all_upstream_hashes(tmp_path, monkeypatch):
+    path_list = tmp_path / "path-list.txt"
+    download_manifest = tmp_path / "download-manifest.json"
+    path_list.write_text("official-shard-list\\n", encoding="utf-8")
+    download_manifest.write_text("{\\"shards\\":{}}\\n", encoding="utf-8")
+    monkeypatch.setattr(data, "PATH_LIST", path_list)
+    monkeypatch.setattr(data, "DOWNLOAD_MANIFEST", download_manifest)
+    selection = {"previous_video_ids_sha256": "e" * 64}
+    provenance = data.manifest_provenance(selection, "frozen-source-sha")
+    assert provenance["path_list_sha256"] == data.sha_file(path_list)
+    assert provenance["download_manifest_sha256"] == data.sha_file(download_manifest)
+    assert provenance["previous_video_ids_sha256"] == "e" * 64
+    assert provenance["source_commit"] == "frozen-source-sha"
+
+
+def test_split_disjointness_rejects_prior_video_and_action_class():
+    scenes = [
+        {"video_id": "fresh-a", "action_class": "fresh-class-a"},
+        {"video_id": "fresh-b", "action_class": "fresh-class-b"},
+    ]
+    assert data.validate_split_disjointness(scenes, {"old-video"}, {"old-class"})
+    with pytest.raises(RuntimeError, match="KINETICS_PREVIOUS_VIDEO_ID_OVERLAP"):
+        data.validate_split_disjointness(scenes, {"fresh-a"}, set())
+    with pytest.raises(RuntimeError, match="KINETICS_BATCH42_ACTION_CLASS_OVERLAP"):
+        data.validate_split_disjointness(scenes, set(), {"fresh-class-b"})
