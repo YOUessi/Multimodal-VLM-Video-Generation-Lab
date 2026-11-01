@@ -423,6 +423,15 @@ def audit() -> dict:
         raise RuntimeError("KINETICS_SCENE_ID_OVERLAP")
     if len({s["action_class"] for s in manifest["scenes"]}) != len(manifest["scenes"]):
         raise RuntimeError("KINETICS_ACTION_CLASS_OVERLAP")
+    previous_ids = collect_previous_video_ids()
+    if {s["video_id"] for s in manifest["scenes"]} & previous_ids:
+        raise RuntimeError("KINETICS_PREVIOUS_VIDEO_ID_OVERLAP")
+    batch42_manifest = ROOT / "data/tapvid_kinetics_batch42/batch42_frozen/manifest.json"
+    if batch42_manifest.is_file():
+        old = json.loads(batch42_manifest.read_text(encoding="utf-8"))
+        old_labels = {x.get("action_class") for x in old.get("scenes", []) if x.get("action_class")}
+        if {s["action_class"] for s in manifest["scenes"]} & old_labels:
+            raise RuntimeError("KINETICS_BATCH42_ACTION_CLASS_OVERLAP")
     public = json.loads(public_path.read_text(encoding="utf-8"))
     if set(public) != {s["name"] for s in manifest["scenes"]}:
         raise RuntimeError("KINETICS_PUBLIC_SCENE_SET_DRIFT")
@@ -488,10 +497,11 @@ def ensure_path_list() -> list[str]:
 
 def collect_previous_video_ids() -> set[str]:
     ids: set[str] = set()
-    data_root = ROOT / "data"
+    data_root = (ROOT / "data").resolve()
+    batch45_data = DATA.resolve()
     for path in data_root.rglob("manifest.json"):
         try:
-            if DATA in path.parents:
+            if batch45_data in path.parents:
                 continue
             doc = json.loads(path.read_text(encoding="utf-8"))
         except Exception:
