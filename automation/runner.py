@@ -171,6 +171,15 @@ def tick(max_stages=1):
         for _ in range(min(max_stages, 4)):
             if not one_stage(plan, state):
                 break
+        if (gitsha() == state["frozen_sha"] and
+                all(state["stages"][x["id"]]["status"] == "done" for x in plan["stages"])):
+            # Only the current frozen plan can end its cron lifecycle.
+            marker = PRIVATE / "ALL_APPROVED_STAGES_DONE"
+            if marker.exists() and marker.read_text().strip() != state["frozen_sha"]:
+                raise RuntimeError("COMPLETION_MARKER_FOREIGN_SHA")
+            marker.write_text(state["frozen_sha"] + "\n", encoding="utf-8")
+            state["last_event"] = "ALL_APPROVED_STAGES_DONE"
+            save(state)
         print(json.dumps({"event": state["last_event"], "frozen_sha": state["frozen_sha"],
                           "stages": state["stages"]}, ensure_ascii=False))
         return 0 if "FAILED" not in state["last_event"] and "TIMEOUT" not in state["last_event"] else 1

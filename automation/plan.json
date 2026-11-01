@@ -1,28 +1,42 @@
 {
-  "version": "2026-11-02-batch-37B-frozen-JSON-serialization-recovery-v1",
+  "version": "2026-11-02-batch38-independent-TAPVid-RGB-Stacking-true-point-occlusion-and-matched-VLM-v1",
   "enabled": true,
-  "description": "New code+SHA after Batch37 DEV-only JSON int64 serializer failure. Audit byte-identical original 384 official DAVIS assets; unchanged predeclared methods and TEST split; regenerate DEV and TEST predictions on new source SHA, score TEST once. Failed prior batch retained and paused. CPU only.",
+  "description": "New independent synthetic robotics TAP-Vid RGB-Stacking explicit physical-point occlusion, 4 DEV+8 TEST videos, 125 frames each, 4 CPU label-blind trackers and zero-shot 500M VLM two-image query+endpoint probe on two fixed query IDs per video; DEV then one-time sealed TEST; GPU exclusive, source safe, full regressions, fail closed.",
   "stages": [
     {
-      "id": "W1_audit_frozen_384_new_real_DAVIS_media_without_redownload",
+      "id": "A01_validate_official_source_full_MD5_SHA_CRC",
       "gpu": false,
-      "timeout_seconds": 1800,
+      "timeout_seconds": 1200,
       "max_attempts": 1,
       "argv": [
         "{python}",
-        "experiments/davis_real_data.py",
-        "audit",
-        "--config",
-        "configs/davis_occlusion_v2.json"
+        "experiments/tapvid_download.py",
+        "verify",
+        "--dest",
+        "data/tapvid_rgb_stacking_v1"
       ],
       "requires_files": [
-        "data/davis_occlusion_v2/manifest.json"
+        "data/tapvid_rgb_stacking_v1/official.zip"
       ]
     },
     {
-      "id": "W3_165plus_regressions_and_future_label_firewall",
+      "id": "A02_hash_freeze_12_independent_RGB_stacking_scenes_and_private_oracle",
       "gpu": false,
-      "timeout_seconds": 1800,
+      "timeout_seconds": 2400,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/tapvid_rgb_data.py",
+        "prepare"
+      ],
+      "requires_files": [
+        "data/tapvid_rgb_stacking_v1/official.zip"
+      ]
+    },
+    {
+      "id": "A03_project_regressions_200plus_and_future_oracle_firewall",
+      "gpu": false,
+      "timeout_seconds": 900,
       "max_attempts": 1,
       "argv": [
         "{python}",
@@ -30,91 +44,152 @@
         "pytest",
         "-q",
         "tests"
+      ],
+      "requires_files": [
+        "data/tapvid_rgb_stacking_v1/batch38_frozen/manifest.json"
       ]
     },
     {
-      "id": "W4_only_DEV_predict_and_pin_frozen_trajectories",
+      "id": "A04_DEV_only_CPU_point_predictions_SHA_pin",
       "gpu": false,
-      "timeout_seconds": 1800,
+      "timeout_seconds": 2400,
       "max_attempts": 1,
-      "requires_files": [
-        "data/davis_occlusion_v2/initial_queries.json"
-      ],
       "argv": [
         "{python}",
-        "experiments/davis_occlusion_eval.py",
+        "experiments/tapvid_rgb_eval.py",
         "predict-dev"
+      ],
+      "requires_files": [
+        "data/tapvid_rgb_stacking_v1/batch38_frozen/queries-public.json"
       ]
     },
     {
-      "id": "W5_only_DEV_score_and_log_failures",
+      "id": "A05_DEV_only_CPU_point_occlusion_score",
       "gpu": false,
-      "timeout_seconds": 1800,
+      "timeout_seconds": 1200,
       "max_attempts": 1,
-      "requires_files": [
-        "outputs/davis_occlusion_v2/dev_predictions.sha256"
-      ],
       "argv": [
         "{python}",
-        "experiments/davis_occlusion_eval.py",
+        "experiments/tapvid_rgb_eval.py",
         "score-dev"
+      ],
+      "requires_files": [
+        "outputs/tapvid_rgb_stacking_v1/dev_predictions.sha256"
       ]
     },
     {
-      "id": "W6_first_TEST_label_blind_pred_and_SHA_lock",
-      "gpu": false,
-      "timeout_seconds": 1800,
+      "id": "A06_DEV_GPU_500M_point_endpoint_labelblind_SHA_pin",
+      "gpu": true,
+      "timeout_seconds": 2400,
       "max_attempts": 1,
-      "requires_files": [
-        "data/davis_occlusion_v2/manifest.json"
-      ],
       "argv": [
         "{python}",
-        "experiments/davis_occlusion_eval.py",
+        "experiments/tapvid_rgb_vlm.py",
+        "predict-dev"
+      ],
+      "min_free_mib": 10000,
+      "requires_files": [
+        "outputs/tapvid_rgb_stacking_v1/dev_predictions.sha256"
+      ]
+    },
+    {
+      "id": "A07_DEV_GPU_endpoint_point_occlusion_scoring",
+      "gpu": false,
+      "timeout_seconds": 1200,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/tapvid_rgb_vlm.py",
+        "score-dev"
+      ],
+      "requires_files": [
+        "outputs/tapvid_rgb_stacking_v1/dev_vlm_predictions.sha256"
+      ]
+    },
+    {
+      "id": "A08_TEST_CPU_only_labelblind_trajectory_and_SHA_pin",
+      "gpu": false,
+      "timeout_seconds": 2400,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/tapvid_rgb_eval.py",
         "predict-test"
+      ],
+      "requires_files": [
+        "data/tapvid_rgb_stacking_v1/batch38_frozen/manifest.json"
       ]
     },
     {
-      "id": "W7_first_and_only_TEST_private_oracle_scoring",
-      "gpu": false,
-      "timeout_seconds": 1800,
+      "id": "A09_TEST_GPU_labelblind_500M_endpoint_and_SHA_pin",
+      "gpu": true,
+      "timeout_seconds": 3600,
       "max_attempts": 1,
-      "requires_files": [
-        "outputs/davis_occlusion_v2/test_predictions.sha256"
-      ],
       "argv": [
         "{python}",
-        "experiments/davis_occlusion_eval.py",
-        "score-test"
+        "experiments/tapvid_rgb_vlm.py",
+        "predict-test"
+      ],
+      "min_free_mib": 10000,
+      "requires_files": [
+        "outputs/tapvid_rgb_stacking_v1/test_predictions.sha256"
       ]
     },
     {
-      "id": "W8_no_media_weights_secrets_publication_guard",
+      "id": "A10_first_only_TEST_oracle_CPU_point_scoring",
       "gpu": false,
       "timeout_seconds": 1800,
       "max_attempts": 1,
-      "requires_files": [
-        "outputs/davis_occlusion_v2/test_results.json"
+      "argv": [
+        "{python}",
+        "experiments/tapvid_rgb_eval.py",
+        "score-test"
       ],
+      "requires_files": [
+        "outputs/tapvid_rgb_stacking_v1/test_vlm_predictions.sha256"
+      ]
+    },
+    {
+      "id": "A11_first_only_TEST_oracle_matched_VLM_endpoint_scoring",
+      "gpu": false,
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/tapvid_rgb_vlm.py",
+        "score-test"
+      ],
+      "requires_files": [
+        "outputs/tapvid_rgb_stacking_v1/test_results.json"
+      ]
+    },
+    {
+      "id": "A12_source_media_weights_secrets_publication_guard",
+      "gpu": false,
+      "timeout_seconds": 900,
+      "max_attempts": 1,
       "argv": [
         "{python}",
         "experiments/source_security_guard.py"
+      ],
+      "requires_files": [
+        "outputs/tapvid_rgb_stacking_v1/test_vlm_results.json"
       ]
     },
     {
-      "id": "W9_final_all_regressions_and_source_freeze",
+      "id": "A13_final_200plus_regressions_and_SHA_frozen_completion",
       "gpu": false,
-      "timeout_seconds": 1800,
+      "timeout_seconds": 900,
       "max_attempts": 1,
-      "requires_files": [
-        "outputs/davis_occlusion_v2/test_results.json"
-      ],
       "argv": [
         "{python}",
         "-m",
         "pytest",
         "-q",
         "tests"
+      ],
+      "requires_files": [
+        "outputs/tapvid_rgb_stacking_v1/test_vlm_results.json"
       ]
     }
   ]
