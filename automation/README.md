@@ -1,21 +1,27 @@
 # Tang staged execution: 10-minute local checks
 
-## Batch 2 status (2026-10-31)
+## Current approved research batch — Batch42 Kinetics visibility (2026-11-02)
 
-The active cron points at the frozen Tang snapshot `repo-batch2`, not the earlier OOM-failed `repo-source`. On this snapshot, B1 baseline, B2 48-step LoRA and B3 frozen heldout comparison completed successfully; B4 Wan full precision RAM gate ran and reported unsafe (preflight only). B5 requires three locally complete ZeroScope safetensors checkpoints and will remain pending (no attempt charged) while those weights download.
+The current frozen plan is `batch42-kinetics-real-camera-visibility-20261102-v1` with 20 fail-closed stages. It starts by verifying the official TAP-Vid-Kinetics source and local video/frame hashes, runs targeted and full regression, generates DEV CPU predictions, scores DEV once, seals DEV-only method selection, then runs the SmolVLM2-500M DEV baseline and a strict admission gate. Only after those steps does it produce TEST CPU predictions and score them once; TEST VLM inference is skipped unless every DEV gate passes. It finishes with report, source-security, data-hash and prediction-pin audits. The protocol is [BATCH42_KINETICS_PROTOCOL_2026-11-02.md](../docs/BATCH42_KINETICS_PROTOCOL_2026-11-02.md), and the machine plan is [batch42 JSON](plans/batch42_kinetics_real_camera_visibility_2026-11-02.json).
+
+The scheduler runs at most four stages per tick. A failed stage has one attempt and stops the batch; retain its log and partial outputs, repair on a new source SHA and new tested directory. GPU stages require the global lock, at least 11,000 MiB free and no competing compute process. Raw clips, frames, annotations, weights and secrets remain local.
+
+## Historical Batch 2 status (2026-10-31)
+
+At that time, the active cron pointed at the frozen Tang snapshot `repo-batch2`, not the earlier OOM-failed `repo-source`. On that snapshot, B1 baseline, B2 48-step LoRA and B3 frozen heldout comparison completed successfully; B4 Wan full precision RAM gate ran and reported unsafe (preflight only). B5 required three locally complete ZeroScope safetensors checkpoints and remained pending. This is historical context, not the current cron target.
 
 Batch 2 synthetic heldout metrics: single frame base / LoRA 18/18 vs 18/18; three and five frames 4/18 vs 18/18. These results are not real-world video understanding. Measured results: [batch2 report](../docs/BATCH_2_RESULTS_2026-10-31.md).
 
-The current frozen Tang snapshot was created from GitHub main at upstream commit `cd0ae5351c6c4adb2270d5062f7f562c7cfc30a7`. Later **documentation-only GitHub commits** do not alter the running frozen local code.
+The historical Batch2 Tang snapshot was created from GitHub main at upstream commit `cd0ae5351c6c4adb2270d5062f7f562c7cfc30a7`. Later **documentation-only GitHub commits** did not alter that frozen local code.
 
-## After B5: next research batches to approve and freeze
+## Historical post-B5 research ideas
 
 B6: Import and test the remaining CPU prototype; create a real-video annotation pipeline with verified labels and an independently frozen test split. B7: repeat LoRA across random seeds, training-data difficulty and frame-sampling ablations. B8: evaluate local diffusion videos using a blinded human rating sheet; investigate quantized or group-offloaded Wan only if RAM/VRAM/disk gates are satisfied. Do not mark these stages as executed until code, tests, real GPU logs and source hashes are present.
 
 
 **Where**: Tang (Linux) only. This is a local cron job, NOT ChatGPT's scheduled-task feature (its minimum frequency is hourly). It does not send messages to this ChatGPT conversation.
 
-## Planned fixed batch
+## Historical fixed batch (Batch2)
 - B1_temporal_baseline: Generate distinct train/val/test synthetic MP4 clips; actual SmolVLM2 CUDA baseline on 1/3/5 sampled frames and save all per-sample predictions.
 - B2_lora_training: Genuine PEFT LoRA optimization on training split only, log loss, save adapter locally.
 - B3_heldout_comparison: Baseline vs LoRA on the *same frozen test set*, annotate failure patterns and report deltas, **not real-world performance**.
@@ -54,5 +60,4 @@ Disable checks (remove only the # MVVG_STAGED_EXECUTION line from crontab). Do n
 
 ## What can and cannot advance automatically
 
-The scheduler continues **approved deterministic scripts** under the frozen source SHA.
-It cannot research new architectures, patch a broken training pipeline, or fabricate missing labels by itself. A failed or blocked stage pauses until diagnosed and a new immutable batch SHA is approved and frozen. ChatGPT cannot report every 10-minute local check in this chat; see .automation/state.json for actual progress.
+The local Tang cron continues **approved deterministic scripts** under the frozen source SHA; it cannot invent research or edit code. The separate ChatGPT research-continuation workflow reviews completed metrics, develops and tests the next source batch, publishes it to GitHub main, then freezes a new Tang checkout. A failed or blocked local stage pauses until diagnosed and repaired on a new immutable SHA and new tested directory. The local cron itself does not post chat messages; `.automation/state.json` and `.automation/logs/` are the execution record.

@@ -1,0 +1,76 @@
+{
+  "version": "2026-11-02-batch42-kinetics-real-camera-visibility-v1",
+  "dataset_dir": "data/tapvid_kinetics_batch42",
+  "frozen_subdir": "batch42_frozen",
+  "output_dir": "outputs/kinetics_batch42",
+  "source_csv": "data/tapvid_kinetics_batch41/tapvid_kinetics/tapvid_kinetics.csv",
+  "selection_file": "data/tapvid_kinetics_batch42/preflight/selection.json",
+  "dev_videos": 4,
+  "test_videos": 8,
+  "queries_per_video": 4,
+  "frame_rate": 25,
+  "max_frames": 250,
+  "frame_size": [256, 256],
+  "query_protocol": "official first-visible point; deterministic hash-selected track ids",
+  "tracker": {
+    "fb_error_px": 1.5,
+    "patch_size": 21,
+    "template_search_radius_px": 32,
+    "template_ncc_min": 0.75,
+    "template_max_consecutive_misses": 4,
+    "affine_orb_features": 700,
+    "affine_ratio": 0.75,
+    "affine_min_matches": 12,
+    "affine_min_inliers": 8,
+    "affine_min_inlier_ratio": 0.25,
+    "affine_ransac_reprojection_px": 3.0,
+    "affine_max_reprojection_p50_px": 2.5,
+    "affine_scale_min": 0.75,
+    "affine_scale_max": 1.33,
+    "affine_max_rotation_deg": 25.0,
+    "appearance_thresholds": [0.55, 0.70, 0.85]
+  },
+  "dev_selection": {
+    "candidate_methods": [
+      "klt_fb",
+      "template_recover4",
+      "affine_stabilized_klt",
+      "appearance_fb_055",
+      "appearance_fb_070",
+      "appearance_fb_085"
+    ],
+    "min_visible_coverage": 0.40,
+    "max_invisible_false_accept_rate": 0.25,
+    "objective": "maximize scene-macro TAP-Vid Jaccard@8, then visible coverage",
+    "fallback_method": "klt_fb",
+    "selection_source": "DEV only"
+  },
+  "vlm": {
+    "model_id": "HuggingFaceTB/SmolVLM2-500M-Video-Instruct",
+    "model_path": "../models/SmolVLM2-500M-Video-Instruct",
+    "target_fractions": [0.50, 0.90],
+    "max_new_tokens": 12,
+    "dev_gate": {
+      "max_invalid_rate": 0.20,
+      "min_coverage": 0.50,
+      "min_balanced_accuracy": 0.55,
+      "max_not_visible_false_accept_rate": 0.25,
+      "min_visible_support": 8,
+      "min_not_visible_support": 8
+    }
+  },
+  "evaluation": {
+    "point_threshold_px": 8,
+    "radii_px": [1, 2, 4, 8, 16],
+    "bootstrap_seed": 20261102,
+    "bootstrap_replicates": 2000
+  },
+  "provenance": {
+    "dataset": "TAP-Vid-Kinetics",
+    "source_type": "natural YouTube/Kinetics video clips",
+    "annotation_license": "CC BY 4.0",
+    "video_rights": "individual source-video terms; videos remain local and are not republished",
+    "official_reference": "https://github.com/google-deepmind/tapnet/tree/main/tapnet/tapvid",
+    "protocol_note": "Image-plane tracking and 2-D background-affine compensation only; no camera pose or 3-D world-motion claim"
+  }
+}

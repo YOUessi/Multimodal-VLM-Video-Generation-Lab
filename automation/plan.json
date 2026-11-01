@@ -1,296 +1,429 @@
 {
-  "version": "2026-11-02-batch41e-robotap-query-path-repair-v1",
+  "version": "batch42-kinetics-real-camera-visibility-20261102-v1",
   "enabled": true,
-  "description": "Batch41E repairs the configured RoboTAP frozen-subdirectory query lookup, adds a decoy-path regression, isolates all outputs, reuses only the untouched episode-disjoint Batch41B freeze after Batch41D stopped before DEV scoring and before any TEST read, then performs DEV-only CPU selection, a DEV-gated SmolVLM2-500M visibility baseline, pinned TEST predictions, first-only TEST scoring, security checks, and final hash audits. RoboTAP is synthetic robotics video, not natural camera footage.",
+  "description": "Independent TAP-Vid-Kinetics natural-video point tracking, visibility, appearance-gate and 2-D background-affine evaluation. DEV-only selection; TEST predictions sealed before one-time scoring; VLM TEST inference requires a strict DEV admission gate.",
+  "source_of_truth": "GitHub main; frozen_sha is initialized by automation/runner.py from a clean checkout.",
+  "dataset_manifest_sha256": "2c7b17f3954e75158177aec9f1743b8c6a411efbdc7028a286286c7e3325844a",
+  "failure_policy": "One attempt per stage; fail closed. Preserve logs and partial outputs. A repair requires a new source SHA and new tested directory.",
+  "test_policy": "Never use TEST answers to select thresholds, methods, prompts or parser behavior. VLM TEST is skipped unless every DEV gate passes.",
+  "max_stages_per_tick": 4,
   "stages": [
     {
-      "id": "R00_verify_RoboTAP_source_shards_and_frozen_manifest",
-      "gpu": false,
-      "timeout_seconds": 3600,
-      "max_attempts": 1,
+      "id": "R00_FREEZE_KINETICS_DATA",
       "argv": [
         "{python}",
-        "experiments/robotap_batch41_data.py",
-        "final-audit",
-        "--config",
-        "configs/robotap_batch41e.json"
+        "experiments/kinetics_batch42_data.py",
+        "prepare"
       ],
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
       "requires_files": [
-        "data/robotap_batch41/download_manifest.json",
-        "data/robotap_batch41/robotap_split0.pkl",
-        "data/robotap_batch41/robotap_split1.pkl",
-        "data/robotap_batch41/batch41_grouped_frozen/manifest.json",
-        "data/robotap_batch41/batch41_grouped_frozen/queries-public.json",
-        "data/robotap_batch41/batch41_grouped_frozen/oracle-private.json"
+        "experiments/kinetics_batch42_data.py",
+        "experiments/kinetics_batch42_eval.py",
+        "experiments/kinetics_batch42_vlm.py",
+        "configs/kinetics_batch42.json",
+        "data/tapvid_kinetics_batch42/preflight/selection.json",
+        "data/tapvid_kinetics_batch41/tapvid_kinetics/tapvid_kinetics.csv",
+        "data/tapvid_kinetics_batch41/tapvid_kinetics/val.txt",
+        "data/tapvid_kinetics_batch41/metadata/k700_2020_val.csv",
+        "data/tapvid_kinetics_batch42/shards/k700_val_002.tar.gz",
+        "data/tapvid_kinetics_batch42/shards/k700_val_065.tar.gz",
+        "data/tapvid_kinetics_batch42/shards/k700_val_123.tar.gz",
+        "data/tapvid_kinetics_batch42/shards/k700_val_157.tar.gz",
+        "data/tapvid_kinetics_batch42/shards/k700_val_206.tar.gz",
+        "data/tapvid_kinetics_batch42/shards/k700_val_272.tar.gz",
+        "data/tapvid_kinetics_batch42/shards/k700_val_298.tar.gz",
+        "data/tapvid_kinetics_batch42/shards/k700_val_503.tar.gz",
+        "data/tapvid_kinetics_batch42/shards/k700_val_519.tar.gz",
+        "data/tapvid_kinetics_batch42/shards/k700_val_543.tar.gz",
+        "data/tapvid_kinetics_batch42/shards/k700_val_670.tar.gz",
+        "data/tapvid_kinetics_batch42/shards/k700_val_688.tar.gz"
       ]
     },
     {
-      "id": "R01_targeted_RoboTAP_query_path_regression",
-      "gpu": false,
-      "timeout_seconds": 1800,
+      "id": "R01_AUDIT_KINETICS_FREEZE",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch42_data.py",
+        "audit"
+      ],
+      "timeout_seconds": 900,
       "max_attempts": 1,
+      "requires_files": [
+        "data/tapvid_kinetics_batch42/batch42_frozen/manifest.json",
+        "data/tapvid_kinetics_batch42/batch42_frozen/queries-public.json",
+        "data/tapvid_kinetics_batch42/batch42_frozen/oracle-private.json",
+        "data/tapvid_kinetics_batch42/videos/LC1cQ5dFg2Y.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_00.npy",
+        "data/tapvid_kinetics_batch42/videos/-R4z88ZvLCA.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_01.npy",
+        "data/tapvid_kinetics_batch42/videos/cDpnC6usogk.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_02.npy",
+        "data/tapvid_kinetics_batch42/videos/IJiR25sosNc.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_03.npy",
+        "data/tapvid_kinetics_batch42/videos/ABtNT6ok57E.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_04.npy",
+        "data/tapvid_kinetics_batch42/videos/D0TR14J-gm8.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_05.npy",
+        "data/tapvid_kinetics_batch42/videos/_3Y8zVeaFjk.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_06.npy",
+        "data/tapvid_kinetics_batch42/videos/eMnvf1L9ZxI.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_07.npy",
+        "data/tapvid_kinetics_batch42/videos/KwzxRSnbZUY.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_08.npy",
+        "data/tapvid_kinetics_batch42/videos/FF-vVs3GWy8.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_09.npy",
+        "data/tapvid_kinetics_batch42/videos/TF0brHb5dsY.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_10.npy",
+        "data/tapvid_kinetics_batch42/videos/FhymgtQfe5g.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_11.npy"
+      ]
+    },
+    {
+      "id": "R02_TARGETED_REGRESSION",
       "argv": [
         "{python}",
         "-m",
         "pytest",
         "-q",
-        "tests/test_robotap_batch41.py"
+        "tests/test_kinetics_batch42.py"
       ],
+      "timeout_seconds": 600,
+      "max_attempts": 1,
       "requires_files": [
-        "tests/test_robotap_batch41.py"
+        "tests/test_kinetics_batch42.py",
+        "experiments/kinetics_batch42_data.py",
+        "experiments/kinetics_batch42_eval.py",
+        "experiments/kinetics_batch42_vlm.py"
       ]
     },
     {
-      "id": "R02_full_project_regression_suite",
-      "gpu": false,
-      "timeout_seconds": 2400,
-      "max_attempts": 1,
+      "id": "R03_FULL_REGRESSION",
       "argv": [
         "{python}",
         "-m",
         "pytest",
-        "-q",
-        "tests"
+        "-q"
       ],
-      "requires_files": [
-        "tests/test_robotap_batch41.py"
-      ]
-    },
-    {
-      "id": "R03_DEV_CPU_labelblind_predictions",
-      "gpu": false,
-      "timeout_seconds": 5400,
-      "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/robotap_batch41_eval.py",
-        "predict-dev",
-        "--config",
-        "configs/robotap_batch41e.json"
-      ],
-      "requires_files": [
-        "data/robotap_batch41/batch41_grouped_frozen/manifest.json",
-        "data/robotap_batch41/batch41_grouped_frozen/queries-public.json"
-      ]
-    },
-    {
-      "id": "R04_DEV_CPU_private_oracle_score",
-      "gpu": false,
-      "timeout_seconds": 1800,
-      "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/robotap_batch41_eval.py",
-        "score-dev",
-        "--config",
-        "configs/robotap_batch41e.json"
-      ],
-      "requires_files": [
-        "outputs/robotap_batch41e_grouped/dev_predictions.json.sha256"
-      ]
-    },
-    {
-      "id": "R05_select_tracking_method_from_DEV_only",
-      "gpu": false,
-      "timeout_seconds": 900,
-      "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/robotap_batch41_eval.py",
-        "select-dev",
-        "--config",
-        "configs/robotap_batch41e.json"
-      ],
-      "requires_files": [
-        "outputs/robotap_batch41e_grouped/dev_results.json"
-      ]
-    },
-    {
-      "id": "R06_DEV_GPU_SmolVLM2_visibility_predictions",
-      "gpu": true,
-      "timeout_seconds": 7200,
-      "max_attempts": 1,
-      "argv": [
-        "env",
-        "MVVG_VLM_MODEL=../models/SmolVLM2-500M-Video-Instruct",
-        "{python}",
-        "experiments/robotap_batch41_vlm.py",
-        "predict-dev",
-        "--config",
-        "configs/robotap_batch41e.json"
-      ],
-      "requires_files": [
-        "../models/SmolVLM2-500M-Video-Instruct/model.safetensors",
-        "data/robotap_batch41/batch41_grouped_frozen/queries-public.json"
-      ],
-      "min_free_mib": 10000
-    },
-    {
-      "id": "R07_DEV_VLM_visibility_score",
-      "gpu": false,
-      "timeout_seconds": 1800,
-      "max_attempts": 1,
-      "argv": [
-        "env",
-        "MVVG_VLM_MODEL=../models/SmolVLM2-500M-Video-Instruct",
-        "{python}",
-        "experiments/robotap_batch41_vlm.py",
-        "score-dev",
-        "--config",
-        "configs/robotap_batch41e.json"
-      ],
-      "requires_files": [
-        "outputs/robotap_batch41e_grouped/vlm_visibility_dev_predictions.json.sha256"
-      ]
-    },
-    {
-      "id": "R08_predeclared_VLM_DEV_interface_gate",
-      "gpu": false,
-      "timeout_seconds": 900,
-      "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/robotap_batch41_vlm.py",
-        "dev-gate",
-        "--config",
-        "configs/robotap_batch41e.json"
-      ],
-      "requires_files": [
-        "outputs/robotap_batch41e_grouped/vlm_visibility_dev_results.json.sha256"
-      ]
-    },
-    {
-      "id": "R09_TEST_CPU_labelblind_predictions",
-      "gpu": false,
-      "timeout_seconds": 7200,
-      "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/robotap_batch41_eval.py",
-        "predict-test",
-        "--config",
-        "configs/robotap_batch41e.json"
-      ],
-      "requires_files": [
-        "outputs/robotap_batch41e_grouped/dev_selection.json.sha256"
-      ]
-    },
-    {
-      "id": "R10_TEST_GPU_SmolVLM2_visibility_predictions_or_gate_skip",
-      "gpu": true,
-      "timeout_seconds": 7200,
-      "max_attempts": 1,
-      "argv": [
-        "env",
-        "MVVG_VLM_MODEL=../models/SmolVLM2-500M-Video-Instruct",
-        "{python}",
-        "experiments/robotap_batch41_vlm.py",
-        "predict-test",
-        "--config",
-        "configs/robotap_batch41e.json"
-      ],
-      "requires_files": [
-        "outputs/robotap_batch41e_grouped/vlm_visibility_dev_gate.json.sha256",
-        "outputs/robotap_batch41e_grouped/test_predictions.json.sha256"
-      ],
-      "min_free_mib": 10000
-    },
-    {
-      "id": "R11_first_only_TEST_CPU_private_oracle_score",
-      "gpu": false,
-      "timeout_seconds": 2400,
-      "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/robotap_batch41_eval.py",
-        "score-test",
-        "--config",
-        "configs/robotap_batch41e.json"
-      ],
-      "requires_files": [
-        "outputs/robotap_batch41e_grouped/test_predictions.json.sha256"
-      ]
-    },
-    {
-      "id": "R12_first_only_TEST_VLM_visibility_score",
-      "gpu": false,
-      "timeout_seconds": 2400,
-      "max_attempts": 1,
-      "argv": [
-        "env",
-        "MVVG_VLM_MODEL=../models/SmolVLM2-500M-Video-Instruct",
-        "{python}",
-        "experiments/robotap_batch41_vlm.py",
-        "score-test",
-        "--config",
-        "configs/robotap_batch41e.json"
-      ],
-      "requires_files": [
-        "outputs/robotap_batch41e_grouped/vlm_visibility_test_predictions.json.sha256"
-      ]
-    },
-    {
-      "id": "R13_source_media_weights_and_secrets_publication_guard",
-      "gpu": false,
       "timeout_seconds": 1200,
       "max_attempts": 1,
+      "requires_files": [
+        "tests/test_kinetics_batch42.py",
+        "pyproject.toml"
+      ]
+    },
+    {
+      "id": "R04_DEV_CPU_PREDICTIONS",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch42_eval.py",
+        "predict-dev"
+      ],
+      "timeout_seconds": 3600,
+      "max_attempts": 1,
+      "requires_files": [
+        "configs/kinetics_batch42.json",
+        "data/tapvid_kinetics_batch42/batch42_frozen/manifest.json",
+        "data/tapvid_kinetics_batch42/batch42_frozen/queries-public.json",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_00.npy",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_01.npy",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_02.npy",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_03.npy"
+      ]
+    },
+    {
+      "id": "R05_DEV_CPU_SCORE",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch42_eval.py",
+        "score-dev"
+      ],
+      "timeout_seconds": 900,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch42/dev_predictions.json",
+        "outputs/kinetics_batch42/dev_predictions.json.sha256",
+        "data/tapvid_kinetics_batch42/batch42_frozen/oracle-private.json"
+      ]
+    },
+    {
+      "id": "R06_DEV_ONLY_METHOD_SELECTION",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch42_eval.py",
+        "select-dev"
+      ],
+      "timeout_seconds": 300,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch42/dev_results.json",
+        "configs/kinetics_batch42.json"
+      ]
+    },
+    {
+      "id": "R07_DEV_SMOLVLM2_PREDICTIONS",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch42_vlm.py",
+        "predict-dev"
+      ],
+      "timeout_seconds": 2400,
+      "max_attempts": 1,
+      "requires_files": [
+        "configs/kinetics_batch42.json",
+        "models/SmolVLM2-500M-Video-Instruct/config.json",
+        "models/SmolVLM2-500M-Video-Instruct/model.safetensors",
+        "models/SmolVLM2-500M-Video-Instruct/preprocessor_config.json",
+        "models/SmolVLM2-500M-Video-Instruct/processor_config.json",
+        "models/SmolVLM2-500M-Video-Instruct/tokenizer.json",
+        "models/SmolVLM2-500M-Video-Instruct/tokenizer_config.json",
+        "models/SmolVLM2-500M-Video-Instruct/special_tokens_map.json",
+        "models/SmolVLM2-500M-Video-Instruct/chat_template.json",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_00.npy",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_01.npy",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_02.npy",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_03.npy"
+      ],
+      "gpu": true,
+      "min_free_mib": 11000
+    },
+    {
+      "id": "R08_DEV_VLM_SCORE",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch42_vlm.py",
+        "score-dev"
+      ],
+      "timeout_seconds": 900,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch42/dev_vlm_predictions.json",
+        "outputs/kinetics_batch42/dev_vlm_predictions.json.sha256",
+        "outputs/kinetics_batch42/dev_predictions.json",
+        "outputs/kinetics_batch42/dev_predictions.json.sha256",
+        "data/tapvid_kinetics_batch42/batch42_frozen/oracle-private.json"
+      ]
+    },
+    {
+      "id": "R09_DEV_VLM_ADMISSION_GATE",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch42_vlm.py",
+        "dev-gate"
+      ],
+      "timeout_seconds": 300,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch42/dev_vlm_results.json",
+        "configs/kinetics_batch42.json"
+      ]
+    },
+    {
+      "id": "R10_TEST_CPU_PREDICTIONS",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch42_eval.py",
+        "predict-test"
+      ],
+      "timeout_seconds": 3600,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch42/dev_selection.json",
+        "outputs/kinetics_batch42/dev_selection.json.sha256",
+        "data/tapvid_kinetics_batch42/batch42_frozen/manifest.json",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_04.npy",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_05.npy",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_06.npy",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_07.npy",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_08.npy",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_09.npy",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_10.npy",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_11.npy"
+      ]
+    },
+    {
+      "id": "R11_TEST_CPU_SCORE_ONCE",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch42_eval.py",
+        "score-test"
+      ],
+      "timeout_seconds": 900,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch42/test_predictions.json",
+        "outputs/kinetics_batch42/test_predictions.json.sha256",
+        "data/tapvid_kinetics_batch42/batch42_frozen/oracle-private.json"
+      ]
+    },
+    {
+      "id": "R12_TEST_VLM_PREDICTIONS_DEV_GATED",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch42_vlm.py",
+        "predict-test"
+      ],
+      "timeout_seconds": 2400,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch42/dev_vlm_gate.json",
+        "outputs/kinetics_batch42/dev_vlm_gate.json.sha256",
+        "models/SmolVLM2-500M-Video-Instruct/config.json",
+        "models/SmolVLM2-500M-Video-Instruct/model.safetensors",
+        "models/SmolVLM2-500M-Video-Instruct/preprocessor_config.json",
+        "models/SmolVLM2-500M-Video-Instruct/processor_config.json",
+        "models/SmolVLM2-500M-Video-Instruct/tokenizer.json",
+        "models/SmolVLM2-500M-Video-Instruct/tokenizer_config.json",
+        "models/SmolVLM2-500M-Video-Instruct/special_tokens_map.json",
+        "models/SmolVLM2-500M-Video-Instruct/chat_template.json",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_04.npy",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_05.npy",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_06.npy",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_07.npy",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_08.npy",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_09.npy",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_10.npy",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_11.npy"
+      ],
+      "gpu": true,
+      "min_free_mib": 11000
+    },
+    {
+      "id": "R13_TEST_VLM_SCORE_OR_SKIP",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch42_vlm.py",
+        "score-test"
+      ],
+      "timeout_seconds": 900,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch42/test_vlm_predictions.json",
+        "outputs/kinetics_batch42/test_vlm_predictions.json.sha256",
+        "outputs/kinetics_batch42/test_predictions.json",
+        "outputs/kinetics_batch42/test_predictions.json.sha256",
+        "data/tapvid_kinetics_batch42/batch42_frozen/oracle-private.json"
+      ]
+    },
+    {
+      "id": "R14_BUILD_RESULTS_REPORT",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch42_eval.py",
+        "report"
+      ],
+      "timeout_seconds": 300,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch42/dev_results.json",
+        "outputs/kinetics_batch42/test_results.json",
+        "outputs/kinetics_batch42/dev_selection.json",
+        "outputs/kinetics_batch42/dev_vlm_results.json",
+        "outputs/kinetics_batch42/dev_vlm_gate.json",
+        "outputs/kinetics_batch42/test_vlm_results.json"
+      ]
+    },
+    {
+      "id": "R15_FINAL_FULL_REGRESSION",
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "timeout_seconds": 1200,
+      "max_attempts": 1,
+      "requires_files": [
+        "tests/test_kinetics_batch42.py",
+        "pyproject.toml"
+      ]
+    },
+    {
+      "id": "R16_SOURCE_PUBLICATION_GUARD",
       "argv": [
         "{python}",
         "experiments/source_security_guard.py"
       ],
+      "timeout_seconds": 300,
+      "max_attempts": 1,
       "requires_files": [
-        "outputs/robotap_batch41e_grouped/test_results.json"
+        "experiments/source_security_guard.py",
+        ".gitignore",
+        "README.md"
       ]
     },
     {
-      "id": "R14_final_full_project_regression_suite",
-      "gpu": false,
-      "timeout_seconds": 2400,
-      "max_attempts": 1,
+      "id": "R17_FINAL_DATA_HASH_AUDIT",
       "argv": [
         "{python}",
-        "-m",
-        "pytest",
-        "-q",
-        "tests"
+        "experiments/kinetics_batch42_data.py",
+        "audit"
       ],
-      "requires_files": [
-        "outputs/robotap_batch41e_grouped/test_results.json",
-        "outputs/robotap_batch41e_grouped/vlm_visibility_test_results.json"
-      ]
-    },
-    {
-      "id": "R15_generate_Batch41E_results_report",
-      "gpu": false,
       "timeout_seconds": 900,
       "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/robotap_batch41_eval.py",
-        "report",
-        "--config",
-        "configs/robotap_batch41e.json"
-      ],
       "requires_files": [
-        "outputs/robotap_batch41e_grouped/dev_selection.json",
-        "outputs/robotap_batch41e_grouped/test_results.json",
-        "outputs/robotap_batch41e_grouped/vlm_visibility_test_results.json"
+        "data/tapvid_kinetics_batch42/batch42_frozen/manifest.json",
+        "data/tapvid_kinetics_batch42/batch42_frozen/oracle-private.json",
+        "data/tapvid_kinetics_batch42/batch42_frozen/queries-public.json",
+        "data/tapvid_kinetics_batch42/videos/LC1cQ5dFg2Y.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_00.npy",
+        "data/tapvid_kinetics_batch42/videos/-R4z88ZvLCA.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_01.npy",
+        "data/tapvid_kinetics_batch42/videos/cDpnC6usogk.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_02.npy",
+        "data/tapvid_kinetics_batch42/videos/IJiR25sosNc.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_03.npy",
+        "data/tapvid_kinetics_batch42/videos/ABtNT6ok57E.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_04.npy",
+        "data/tapvid_kinetics_batch42/videos/D0TR14J-gm8.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_05.npy",
+        "data/tapvid_kinetics_batch42/videos/_3Y8zVeaFjk.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_06.npy",
+        "data/tapvid_kinetics_batch42/videos/eMnvf1L9ZxI.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_07.npy",
+        "data/tapvid_kinetics_batch42/videos/KwzxRSnbZUY.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_08.npy",
+        "data/tapvid_kinetics_batch42/videos/FF-vVs3GWy8.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_09.npy",
+        "data/tapvid_kinetics_batch42/videos/TF0brHb5dsY.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_10.npy",
+        "data/tapvid_kinetics_batch42/videos/FhymgtQfe5g.mp4",
+        "data/tapvid_kinetics_batch42/batch42_frozen/frames/kinetics_11.npy"
       ]
     },
     {
-      "id": "R16_final_episode_data_prediction_and_source_SHA_audit",
-      "gpu": false,
-      "timeout_seconds": 1800,
-      "max_attempts": 1,
+      "id": "R18_FINAL_CPU_AND_TEST_PIN_AUDIT",
       "argv": [
         "{python}",
-        "experiments/robotap_batch41_eval.py",
-        "final-audit",
-        "--config",
-        "configs/robotap_batch41e.json"
+        "experiments/kinetics_batch42_eval.py",
+        "final-audit"
       ],
+      "timeout_seconds": 900,
+      "max_attempts": 1,
       "requires_files": [
-        "outputs/robotap_batch41e_grouped/BATCH41_RESULTS.md"
+        "outputs/kinetics_batch42/dev_predictions.json",
+        "outputs/kinetics_batch42/test_predictions.json",
+        "outputs/kinetics_batch42/dev_results.json",
+        "outputs/kinetics_batch42/test_results.json",
+        "outputs/kinetics_batch42/dev_selection.json",
+        "outputs/kinetics_batch42/BATCH42_KINETICS_REPORT.md"
+      ]
+    },
+    {
+      "id": "R19_FINAL_VLM_GATE_AND_PIN_AUDIT",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch42_vlm.py",
+        "final-audit"
+      ],
+      "timeout_seconds": 600,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch42/dev_vlm_predictions.json",
+        "outputs/kinetics_batch42/test_vlm_predictions.json",
+        "outputs/kinetics_batch42/dev_vlm_results.json",
+        "outputs/kinetics_batch42/test_vlm_results.json",
+        "outputs/kinetics_batch42/dev_vlm_gate.json"
       ]
     }
   ]
