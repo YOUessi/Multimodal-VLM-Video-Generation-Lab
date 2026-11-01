@@ -32,6 +32,10 @@ def load_config(path: Path = DEFAULT_CONFIG) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def frozen_dir(cfg: dict) -> Path:
+    return ROOT / cfg["dataset_dir"] / cfg.get("frozen_subdir", "batch41_frozen")
+
+
 def json_bytes(value: dict) -> bytes:
     return (json.dumps(value, sort_keys=True, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
 
@@ -310,19 +314,34 @@ def first_visible_query(track_id: int, points_px: np.ndarray,
     }
 
 
+def episode_id_from_key(key: str) -> str:
+    source_name = key.split("::", 1)[-1]
+    return source_name.split("-", 1)[0]
+
+
 def selected_video_keys(records: list[tuple[str, dict]], total: int) -> list[str]:
-    keys = [key for key, _ in records]
-    if len(keys) < total:
-        raise RuntimeError("ROBOTAP_NOT_ENOUGH_SCENES:" + str(len(keys)))
-    if len(keys) != len(set(keys)):
+    groups: dict[str, list[str]] = {}
+    for key, _ in records:
+        groups.setdefault(episode_id_from_key(key), []).append(key)
+    if len(groups) < total:
+        raise RuntimeError("ROBOTAP_NOT_ENOUGH_DISTINCT_EPISODES:" + str(len(groups)))
+    if len({key for key, _ in records}) != len(records):
         raise RuntimeError("ROBOTAP_SCENE_KEY_DUPLICATE")
-    rank = lambda key: hashlib.sha256((SALT + "|VIDEO|" + key).encode()).hexdigest()
-    return sorted(keys, key=rank)[:total]
+    episode_rank = lambda episode: hashlib.sha256(
+        (SALT + "|EPISODE|" + episode).encode()
+    ).hexdigest()
+    view_rank = lambda key: hashlib.sha256((SALT + "|VIEW|" + key).encode()).hexdigest()
+    selected = []
+    for episode in sorted(groups, key=episode_rank)[:total]:
+        selected.append(sorted(groups[episode], key=view_rank)[0])
+    if len({episode_id_from_key(key) for key in selected}) != total:
+        raise RuntimeError("ROBOTAP_EPISODE_GROUPING_FAILED")
+    return selected
 
 
 def prepare(cfg: dict) -> dict:
     data_dir = ROOT / cfg["dataset_dir"]
-    frozen = data_dir / "batch41_frozen"
+    frozen = frozen_dir(cfg)
     manifest_path = frozen / "manifest.json"
     if manifest_path.exists():
         return audit(cfg)
@@ -396,7 +415,8 @@ def prepare(cfg: dict) -> dict:
         public[scene_id] = queries
         private[scene_id] = {"tracks": private_tracks}
         scenes.append({
-            "name": scene_id, "source_key": key, "split": split,
+            "name": scene_id, "source_key": key,
+            "episode_id": episode_id_from_key(key), "split": split,
             "frames": frame_rel, "frames_sha256": sha_file(frame_path),
             "nframes": int(len(frames)), "height": int(height), "width": int(width),
             "source_track_count": int(points.shape[0]), "nqueries": len(queries),
@@ -414,7 +434,7 @@ def prepare(cfg: dict) -> dict:
         "source_members": download_manifest["members"],
         "download_manifest_sha256": sha_file(data_dir / "download_manifest.json"),
         "selection_salt": SALT,
-        "selection_rule": "video-id hash only; track ids hash only; first-visible query protocol",
+        "selection_rule": "episode-id hash only; one camera view per episode chosen by view hash; track ids hash only; first-visible query protocol",
         "dev_videos": int(cfg["dev_videos"]), "test_videos": int(cfg["test_videos"]),
         "oracle_sha256": sha_bytes(json_bytes(private)),
         "public_queries_sha256": sha_bytes(json_bytes(public)),
@@ -433,7 +453,7 @@ def prepare(cfg: dict) -> dict:
 
 def audit(cfg: dict, verify_sources: bool = False) -> dict:
     data_dir = ROOT / cfg["dataset_dir"]
-    frozen = data_dir / "batch41_frozen"
+    frozen = frozen_dir(cfg)
     manifest_path = frozen / "manifest.json"
     if not manifest_path.is_file():
         raise RuntimeError("ROBOTAP_FROZEN_MANIFEST_MISSING")
@@ -451,7 +471,9 @@ def audit(cfg: dict, verify_sources: bool = False) -> dict:
     if (len(scenes) != expected
             or [s["split"] for s in scenes]
             != ["dev"] * int(cfg["dev_videos"]) + ["test"] * int(cfg["test_videos"])
-            or len({s["source_key"] for s in scenes}) != len(scenes)):
+            or len({s["source_key"] for s in scenes}) != len(scenes)
+            or len({s["episode_id"] for s in scenes}) != len(scenes)
+            or any(episode_id_from_key(s["source_key"]) != s["episode_id"] for s in scenes)):
         raise RuntimeError("ROBOTAP_SCENE_SPLIT_OR_IDENTITY_DRIFT")
     for scene in scenes:
         frame_path = frozen / scene["frames"]
@@ -484,7 +506,7 @@ def audit(cfg: dict, verify_sources: bool = False) -> dict:
 
 
 def load_gold(cfg: dict) -> dict:
-    frozen = ROOT / cfg["dataset_dir"] / "batch41_frozen"
+    frozen = frozen_dir(cfg)
     manifest = json.loads((frozen / "manifest.json").read_text())
     path = frozen / "oracle-private.json"
     if sha_file(path) != manifest["oracle_sha256"]:
