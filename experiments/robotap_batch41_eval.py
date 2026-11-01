@@ -314,7 +314,7 @@ def predict_query(gray: list[np.ndarray], query: dict, matrices: list,
 
 def predict(split: str, cfg: dict) -> None:
     manifest = src.audit(cfg)
-    queries = load_json(ROOT / cfg["dataset_dir"] / "batch41_frozen/queries-public.json")
+    queries = load_json(src.frozen_dir(cfg) / "queries-public.json")
     frozen = src.frozen_dir(cfg)
     output_dir = ROOT / cfg["output_dir"]
     output_dir.mkdir(parents=True, exist_ok=True)
