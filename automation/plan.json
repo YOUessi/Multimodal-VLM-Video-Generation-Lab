@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-02-batch41-robotap-visibility-affine-v1",
+  "version": "2026-11-02-batch41b-robotap-episode-disjoint-v2",
   "enabled": true,
-  "description": "Batch41 uses two official RoboTAP shards (synthetic robotics, CC BY 4.0), a hash-only 6 DEV / 14 TEST video split, first-visible point queries, CPU KLT/template/affine-stabilized baselines, SmolVLM2-500M visibility classification, immutable predictions, one-time TEST scoring, and final source/data audit. TEST labels may not drive any selection.",
+  "description": "Batch41B uses two official RoboTAP shards (synthetic robotics, CC BY 4.0), groups camera views by recording episode before hash sampling, chooses one view per episode, freezes 6 DEV / 14 TEST episodes, evaluates CPU KLT/template/affine-stabilized baselines and SmolVLM2-500M visibility classification, pins predictions, scores TEST once, and audits source/data hashes. The rejected view-level freeze is preserved separately; TEST labels may not drive selection.",
   "stages": [
     {
       "id": "R00_install_optional_mediapy_pickle_dependency",
@@ -32,7 +32,7 @@
       ]
     },
     {
-      "id": "R02_prepare_frozen_scene_disjoint_RoboTAP_manifest",
+      "id": "R02_prepare_episode_disjoint_RoboTAP_manifest",
       "gpu": false,
       "timeout_seconds": 7200,
       "max_attempts": 1,
@@ -50,7 +50,7 @@
       ]
     },
     {
-      "id": "R03_public_manifest_frame_and_query_audit",
+      "id": "R03_episode_split_public_frame_and_query_audit",
       "gpu": false,
       "timeout_seconds": 2400,
       "max_attempts": 1,
@@ -62,9 +62,9 @@
         "configs/robotap_batch41.json"
       ],
       "requires_files": [
-        "data/robotap_batch41/batch41_frozen/manifest.json",
-        "data/robotap_batch41/batch41_frozen/queries-public.json",
-        "data/robotap_batch41/batch41_frozen/oracle-private.json"
+        "data/robotap_batch41/batch41_grouped_frozen/manifest.json",
+        "data/robotap_batch41/batch41_grouped_frozen/queries-public.json",
+        "data/robotap_batch41/batch41_grouped_frozen/oracle-private.json"
       ]
     },
     {
@@ -96,8 +96,8 @@
         "configs/robotap_batch41.json"
       ],
       "requires_files": [
-        "data/robotap_batch41/batch41_frozen/manifest.json",
-        "data/robotap_batch41/batch41_frozen/queries-public.json"
+        "data/robotap_batch41/batch41_grouped_frozen/manifest.json",
+        "data/robotap_batch41/batch41_grouped_frozen/queries-public.json"
       ]
     },
     {
@@ -113,7 +113,7 @@
         "configs/robotap_batch41.json"
       ],
       "requires_files": [
-        "outputs/robotap_batch41/dev_predictions.json.sha256"
+        "outputs/robotap_batch41_grouped/dev_predictions.json.sha256"
       ]
     },
     {
@@ -129,7 +129,7 @@
         "configs/robotap_batch41.json"
       ],
       "requires_files": [
-        "outputs/robotap_batch41/dev_results.json"
+        "outputs/robotap_batch41_grouped/dev_results.json"
       ]
     },
     {
@@ -148,7 +148,7 @@
       ],
       "requires_files": [
         "../models/SmolVLM2-500M-Video-Instruct/model.safetensors",
-        "data/robotap_batch41/batch41_frozen/queries-public.json"
+        "data/robotap_batch41/batch41_grouped_frozen/queries-public.json"
       ],
       "min_free_mib": 10000
     },
@@ -167,7 +167,7 @@
         "configs/robotap_batch41.json"
       ],
       "requires_files": [
-        "outputs/robotap_batch41/vlm_visibility_dev_predictions.json.sha256"
+        "outputs/robotap_batch41_grouped/vlm_visibility_dev_predictions.json.sha256"
       ]
     },
     {
@@ -183,7 +183,7 @@
         "configs/robotap_batch41.json"
       ],
       "requires_files": [
-        "outputs/robotap_batch41/vlm_visibility_dev_results.json.sha256"
+        "outputs/robotap_batch41_grouped/vlm_visibility_dev_results.json.sha256"
       ]
     },
     {
@@ -199,7 +199,7 @@
         "configs/robotap_batch41.json"
       ],
       "requires_files": [
-        "outputs/robotap_batch41/dev_selection.json.sha256"
+        "outputs/robotap_batch41_grouped/dev_selection.json.sha256"
       ]
     },
     {
@@ -217,8 +217,8 @@
         "configs/robotap_batch41.json"
       ],
       "requires_files": [
-        "outputs/robotap_batch41/vlm_visibility_dev_gate.json.sha256",
-        "outputs/robotap_batch41/test_predictions.json.sha256"
+        "outputs/robotap_batch41_grouped/vlm_visibility_dev_gate.json.sha256",
+        "outputs/robotap_batch41_grouped/test_predictions.json.sha256"
       ],
       "min_free_mib": 10000
     },
@@ -235,7 +235,7 @@
         "configs/robotap_batch41.json"
       ],
       "requires_files": [
-        "outputs/robotap_batch41/test_predictions.json.sha256"
+        "outputs/robotap_batch41_grouped/test_predictions.json.sha256"
       ]
     },
     {
@@ -253,7 +253,7 @@
         "configs/robotap_batch41.json"
       ],
       "requires_files": [
-        "outputs/robotap_batch41/vlm_visibility_test_predictions.json.sha256"
+        "outputs/robotap_batch41_grouped/vlm_visibility_test_predictions.json.sha256"
       ]
     },
     {
@@ -266,7 +266,7 @@
         "experiments/source_security_guard.py"
       ],
       "requires_files": [
-        "outputs/robotap_batch41/test_results.json"
+        "outputs/robotap_batch41_grouped/test_results.json"
       ]
     },
     {
@@ -282,12 +282,12 @@
         "tests"
       ],
       "requires_files": [
-        "outputs/robotap_batch41/test_results.json",
-        "outputs/robotap_batch41/vlm_visibility_test_results.json"
+        "outputs/robotap_batch41_grouped/test_results.json",
+        "outputs/robotap_batch41_grouped/vlm_visibility_test_results.json"
       ]
     },
     {
-      "id": "R17_generate_Batch41_results_report",
+      "id": "R17_generate_Batch41B_results_report",
       "gpu": false,
       "timeout_seconds": 900,
       "max_attempts": 1,
@@ -299,13 +299,13 @@
         "configs/robotap_batch41.json"
       ],
       "requires_files": [
-        "outputs/robotap_batch41/dev_selection.json",
-        "outputs/robotap_batch41/test_results.json",
-        "outputs/robotap_batch41/vlm_visibility_test_results.json"
+        "outputs/robotap_batch41_grouped/dev_selection.json",
+        "outputs/robotap_batch41_grouped/test_results.json",
+        "outputs/robotap_batch41_grouped/vlm_visibility_test_results.json"
       ]
     },
     {
-      "id": "R18_final_data_prediction_and_source_SHA_audit",
+      "id": "R18_final_episode_data_prediction_and_source_SHA_audit",
       "gpu": false,
       "timeout_seconds": 1800,
       "max_attempts": 1,
@@ -317,7 +317,7 @@
         "configs/robotap_batch41.json"
       ],
       "requires_files": [
-        "outputs/robotap_batch41/BATCH41_RESULTS.md"
+        "outputs/robotap_batch41_grouped/BATCH41_RESULTS.md"
       ]
     }
   ]
