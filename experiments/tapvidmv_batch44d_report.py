@@ -1,6 +1,7 @@
 """Build a local-only Markdown report from sealed Batch44D DEV/TEST result artifacts."""
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -9,15 +10,84 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "experiments"))
 import tapvidmv_batch44d_data as src
 
-OUT = ROOT / "outputs/tapvidmv_batch44d"
-REPORT = OUT / "BATCH44B_TAPVIDMV_MULTIVIEW_REPORT.md"
+REPAIR_CONFIG = json.loads(
+    (ROOT / "configs/batch44e_report_repair.json").read_text(encoding="utf-8")
+)
+OUT = ROOT / REPAIR_CONFIG["output_dir"]
+REPORT = ROOT / REPAIR_CONFIG["report_path"]
+EXPECTED_BATCH44D_SOURCE_SHA = REPAIR_CONFIG["batch44d_source_sha"]
+PINNED_RESULT_JSONS = (
+    "dev_results.json", "test_results.json", "dev_selection.json",
+    "dev_vlm_results.json", "dev_vlm_gate.json", "test_vlm_results.json",
+)
+PINNED_PREDICTION_JSONS = (
+    "dev_predictions.json", "test_predictions.json",
+    "dev_vlm_predictions.json", "test_vlm_predictions.json",
+)
+
+
+def require_pin(path: Path) -> str:
+    pin_path = path.with_suffix(path.suffix + ".sha256")
+    if not path.is_file() or not pin_path.is_file():
+        raise RuntimeError("BATCH44D_REPORT_INPUT_PIN_MISSING:" + path.name)
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    if pin_path.read_text(encoding="utf-8").strip() != digest:
+        raise RuntimeError("BATCH44D_REPORT_INPUT_PIN_DRIFT:" + path.name)
+    return digest
 
 
 def load(name: str) -> dict:
     path = OUT / name
-    if not path.is_file():
-        raise RuntimeError("BATCH44B_REPORT_INPUT_MISSING:" + name)
+    require_pin(path)
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def require_source_commit(payload: dict, artifact: str) -> None:
+    if payload.get("source_commit") != EXPECTED_BATCH44D_SOURCE_SHA:
+        raise RuntimeError("BATCH44D_REPORT_SOURCE_COMMIT_MISMATCH:" + artifact)
+
+
+def verify_inputs() -> dict:
+    """Verify existing Batch44D artifacts only; never open or rescore private TEST labels."""
+    manifest = src.audit_public()
+    payloads = {name: load(name) for name in PINNED_RESULT_JSONS}
+    predictions = {name: load(name) for name in PINNED_PREDICTION_JSONS}
+    for name, payload in {**payloads, **predictions}.items():
+        require_source_commit(payload, name)
+    dev = payloads["dev_results.json"]
+    test = payloads["test_results.json"]
+    selection = payloads["dev_selection.json"]
+    gate = payloads["dev_vlm_gate.json"]
+    test_vlm = payloads["test_vlm_results.json"]
+    if dev.get("split") != "dev" or test.get("split") != "test":
+        raise RuntimeError("BATCH44D_REPORT_SPLIT_MISMATCH")
+    if selection.get("selection_source") != "DEV only" or selection.get("split") != "dev":
+        raise RuntimeError("BATCH44D_REPORT_SELECTION_NOT_DEV_ONLY")
+    if gate.get("status") != "BLOCK" or test_vlm.get("status") != "SKIPPED_DEV_GATE_BLOCKED":
+        raise RuntimeError("BATCH44D_REPORT_VLM_GATE_CONTRACT_DRIFT")
+    manifest_sha = src.sha256_file(src.FROZEN / "manifest.json")
+    config_sha = src.sha256_bytes(src.json_bytes(src.config()))
+    for name, result in (("dev_results.json", dev), ("test_results.json", test)):
+        if result.get("manifest_sha256") != manifest_sha or result.get("config_sha256") != config_sha:
+            raise RuntimeError("BATCH44D_REPORT_DATA_CONFIG_PIN_MISMATCH:" + name)
+    for name, result in (("dev_predictions.json", dev), ("test_predictions.json", test)):
+        actual = hashlib.sha256((OUT / name).read_bytes()).hexdigest()
+        if result.get("sealed_prediction_sha256") != actual:
+            raise RuntimeError("BATCH44D_REPORT_PREDICTION_HASH_MISMATCH:" + name)
+    for name, split in (("dev_predictions.json", "dev"), ("test_predictions.json", "test"),
+                        ("dev_vlm_predictions.json", "dev"), ("test_vlm_predictions.json", "test")):
+        if predictions[name].get("split") != split:
+            raise RuntimeError("BATCH44D_REPORT_PREDICTION_SPLIT_MISMATCH:" + name)
+    return {
+        "manifest": manifest,
+        "dev": dev,
+        "test": test,
+        "selection": selection,
+        "dev_vlm": payloads["dev_vlm_results.json"],
+        "gate": gate,
+        "test_vlm": test_vlm,
+        "manifest_sha256": manifest_sha,
+    }
 
 
 def pct(value):
@@ -49,26 +119,22 @@ def metric_table(results: dict) -> str:
 
 
 def build() -> str:
-    manifest = src.audit_public()
-    dev = load("dev_results.json")
-    test = load("test_results.json")
-    selection = load("dev_selection.json")
-    dev_vlm = load("dev_vlm_results.json")
-    gate = load("dev_vlm_gate.json")
-    test_vlm = load("test_vlm_results.json")
-    for result in (dev, test, dev_vlm, test_vlm, selection, gate):
-        if result.get("source_commit") != dev.get("source_commit"):
-            raise RuntimeError("BATCH44B_REPORT_SOURCE_COMMIT_MISMATCH")
-    if dev.get("split") != "dev" or test.get("split") != "test":
-        raise RuntimeError("BATCH44B_REPORT_SPLIT_MISMATCH")
+    inputs = verify_inputs()
+    manifest = inputs["manifest"]
+    dev = inputs["dev"]
+    test = inputs["test"]
+    selection = inputs["selection"]
+    dev_vlm = inputs["dev_vlm"]
+    gate = inputs["gate"]
+    test_vlm = inputs["test_vlm"]
     dev_scenes = [x for x in manifest["scenes"] if x["split"] == "dev"]
     test_scenes = [x for x in manifest["scenes"] if x["split"] == "test"]
     total_queries = sum(x["query_count"] for x in manifest["scenes"])
     source_sha = manifest["source_index_sha256"]
-    manifest_sha = src.sha256_file(src.FROZEN / "manifest.json")
+    manifest_sha = inputs["manifest_sha256"]
 
     lines = [
-        "# Batch44D — fresh TAPVid-MV groups with calibrated cross-view consensus",
+        "# Batch44D — TAPVid-MV collection-group holdout with calibrated cross-view consensus",
         "",
         f"- Frozen source commit: {dev['source_commit']}",
         f"- Public source index SHA-256: {source_sha}",
@@ -179,6 +245,7 @@ def build() -> str:
         "## Dataset and evaluation limitations",
         "",
         "- This is a 21-sequence exploratory subset, not a broad benchmark-wide generalization claim.",
+        "- These 21 sequences were unused in Batch43 but were used for DEV-only pipeline repair in Batch44C; Batch44C did not score TEST. This is a held-out TEST within the same source groups, not a new dataset-family generalization experiment.",
         "- The Rerun viewer recordings display a subsampled point-track set; metadata-declared track counts are not the number of rendered track identities.",
         "- Per-view visibility is inferred from exact released depth point-cloud snapshots rather than a separate official binary occlusion annotation. Frames without snapshots remain UNKNOWN.",
         "- The 3-D track IDs and depth snapshots remain evaluation-only. The joint method uses public camera poses/intrinsics but no 3-D target coordinates or depth labels.",
@@ -203,10 +270,14 @@ def main() -> None:
     import hashlib
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=("build", "verify"))
+    parser.add_argument("action", choices=("build", "verify", "verify-inputs"))
     action = parser.parse_args().action
     pin_path = REPORT.with_suffix(REPORT.suffix + ".sha256")
-    if action == "build":
+    if action == "verify-inputs":
+        inputs = verify_inputs()
+        print("TAPVIDMV_BATCH44D_INPUT_AUDIT_PASS",
+              inputs["dev"]["source_commit"], inputs["manifest_sha256"])
+    elif action == "build":
         OUT.mkdir(parents=True, exist_ok=True)
         report = build()
         encoded = report.encode("utf-8")

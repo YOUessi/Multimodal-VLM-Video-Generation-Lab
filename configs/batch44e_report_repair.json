@@ -1,0 +1,7 @@
+{
+  "version": "2026-11-02-batch44e-report-repair-v1",
+  "batch44d_source_sha": "1cd9c017bd28e3d9f4d0342f720c4b4b4e6668de",
+  "output_dir": "outputs/tapvidmv_batch44d",
+  "report_path": "outputs/tapvidmv_batch44d/BATCH44D_TAPVIDMV_MULTIVIEW_REPORT.md",
+  "policy": "Report-only repair. Reuse only SHA-256-pinned Batch44D result and prediction artifacts. Do not read, regenerate, or rescore private TEST oracles; do not run GPU inference."
+}

@@ -1,8 +1,22 @@
 # Multimodal VLM & Video Generation Lab
 
-## Active prospective multi-view evaluation — Batch44D TAPVid-MV EgoExo4D/PACE (2026-11-02)
+## Latest multi-view motion evaluation — Batch44D; report repair Batch44E (2026-11-02)
 
-Batch44C completed the 11-scene DEV prediction and scoring path, then was deliberately paused before VLM or TEST stages when a timing audit found that `xview cpu_query_ms` recorded only shared consensus overhead and omitted the base per-camera RGB tracker time. Batch44D corrects the metric contract: per-camera end-to-end query cost is base RGB tracking time plus one third of the shared three-view consensus wall time; the scorer divides by post-query target-frame count. Finite/nonnegative durations and positive camera counts are enforced and directly regression-tested. OpenCV OpenCL remains disabled so the CPU-only tracker cannot silently allocate an NVIDIA context. Batch44D regenerates the same 21 previously unused-in-Batch43 EgoExo4D/PACE RRD groups under a new frozen source SHA; Batch44C did not score TEST, and Batch44D still uses DEV-only tracker/VLM selection before any one-time TEST scoring. This is a repair of measurement integrity, not yet a new independent dataset-family result. Pre-freeze verification passed **29/29 targeted tests and 420/420 full-project tests** (three unrelated existing Pillow deprecation warnings). Protocol and timing details: [Batch44D CPU timing repair](docs/BATCH44D_END_TO_END_CPU_LATENCY_2026-11-02.md).
+Batch44D's RGB/cross-view research stages R00–R20 completed. The final report-pin stage found a copied Batch44B filename in the report builder; Batch44E fixes the filename and adds input-pin verification without rerunning any prediction or TEST scoring. The old Batch44D state/logs and the incorrectly named report are preserved. Batch44E is a **report-only** repair: 7/7 stages, 32 targeted tests and 423 full-project tests passed; no private TEST oracle was reopened and no GPU was used.
+
+**Data:** 21 TAPVid-MV EgoExo4D/PACE sequences, 11 DEV / 10 TEST collection groups, 189 query instances (90 TEST). These sequences were unused in Batch43 but were used for DEV-only pipeline repair in Batch44C; Batch44C did not score TEST. This is a within-source-family holdout, not a new dataset-family generalization result.
+
+**DEV selected** calibrated three-view `xview_klt_forward_12px`: visible PCK@8 **52.48%**, coverage **55.36%**, occlusion false accept **11.67%**, CPU P50/P95 **0.1601/0.1889 ms per target frame**.
+
+**TEST, without tuning:** the frozen selected method reached visible PCK@8 **43.80%**, coverage **50.68%**, accepted precision@8 **86.43%**, occlusion false accept **31.44% (61/194)**, out-of-frame false accept **0.48% (2/416)**, CPU P50/P95 **0.1684/0.1950 ms/frame**. It exceeded the predeclared 25% occlusion false-accept limit. KLT-FB, although ineligible under DEV constraints, scored 54.67% PCK@8 / 58.95% coverage / 23.71% occlusion false accept on TEST; this is a post-score diagnostic, **not** a replacement selection.
+
+**World-relative motion:** screen-vs-world-only cosine averaged **0.1696**, while oracle camera-subtracted residual vs world-only cosine was **0.8911**; the camera-only screen-displacement share proxy averaged **0.8395**. ORB affine compensation reached only **0.3109** mean residual/world cosine, with 2.85 px median / 17.19 px P90 static-point reprojection error and 540 ms mean registration cost per camera-video. Calibrated poses matter; screen-space affine is not a physical camera-motion estimator.
+
+**3-D cross-view:** the selected method triangulated **8/20** all-three-visible TEST groups (40% coverage), mean world error **3.34 cm**, P50/P90 **2.39/6.27 cm**, 87.5% within 5 cm and 100% within 10 cm. KLT-FB triangulated 5/20 groups (25%) with all accepted groups within 5 cm; KLT Forward triangulated 10/20 but had 5.93 cm mean / 11.13 cm P90 error.
+
+**VLM negative result:** SmolVLM2-500M predicted VISIBLE for all 99 DEV queries; it falsely accepted all 7 non-visible points (2 occluded, 5 out-of-frame), balanced accuracy 50%, non-visible false-accept 100%. DEV gate blocked, so TEST VLM inference/scoring was skipped.
+
+[Complete sealed Batch44D report](docs/BATCH44D_TAPVIDMV_MULTIVIEW_RESULTS_2026-11-02.md) · [Batch44E report repair and process notes](docs/BATCH44E_REPORT_REPAIR_2026-11-02.md) · [Batch44D end-to-end CPU timing contract](docs/BATCH44D_END_TO_END_CPU_LATENCY_2026-11-02.md).
 
 
 ## Latest sealed natural-video point/visibility evaluation — Batch41E RoboTAP (2026-11-02)

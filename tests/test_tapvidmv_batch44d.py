@@ -15,6 +15,7 @@ sys.path.insert(0, str(ROOT / "experiments"))
 import tapvidmv_batch44d_data as data
 import tapvidmv_batch44d_eval as evaluation
 import tapvidmv_batch44d_vlm as vlm
+import tapvidmv_batch44d_report as report
 
 
 def synthetic_records(cfg):
@@ -436,3 +437,27 @@ def test_vlm_dev_gate_passes_only_when_all_frozen_checks_pass(tmp_path, monkeypa
     gate = vlm.make_dev_gate()
     assert gate["status"] == "PASS"
     assert all(gate["checks"].values())
+
+
+def test_batch44d_report_filename_matches_frozen_plan():
+    assert report.REPORT.name == "BATCH44D_TAPVIDMV_MULTIVIEW_REPORT.md"
+
+
+def test_report_load_requires_a_matching_sha256_pin(tmp_path, monkeypatch):
+    import hashlib
+
+    monkeypatch.setattr(report, "OUT", tmp_path)
+    path = tmp_path / "dev_results.json"
+    payload = {"source_commit": report.EXPECTED_BATCH44D_SOURCE_SHA}
+    encoded = json.dumps(payload, sort_keys=True).encode()
+    path.write_bytes(encoded)
+    path.with_suffix(path.suffix + ".sha256").write_text(hashlib.sha256(encoded).hexdigest() + "\n")
+    assert report.load("dev_results.json") == payload
+    path.write_text('{"source_commit":"tampered"}')
+    with pytest.raises(RuntimeError, match="BATCH44D_REPORT_INPUT_PIN_DRIFT"):
+        report.load("dev_results.json")
+
+
+def test_report_source_commit_guard_rejects_other_frozen_batch():
+    with pytest.raises(RuntimeError, match="BATCH44D_REPORT_SOURCE_COMMIT_MISMATCH"):
+        report.require_source_commit({"source_commit": "not-batch44d"}, "test_results.json")
