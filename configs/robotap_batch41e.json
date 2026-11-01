@@ -1,0 +1,67 @@
+{
+  "version": "2026-11-02-batch41e-robotap-query-path-repair-v1",
+  "dataset_dir": "data/robotap_batch41",
+  "output_dir": "outputs/robotap_batch41e_grouped",
+  "archive_url": "https://storage.googleapis.com/dm-tapnet/robotap/robotap.zip",
+  "archive_size": 13558087507,
+  "archive_etag": "\"08dc00f12b10a7d70e0afd53ab822762\"",
+  "archive_members": [
+    "robotap/robotap_split0.pkl",
+    "robotap/robotap_split1.pkl"
+  ],
+  "dev_videos": 6,
+  "test_videos": 14,
+  "max_tracks_per_video": 4,
+  "vlm_target_fractions": [
+    0.5,
+    0.9
+  ],
+  "vlm_model_id": "HuggingFaceTB/SmolVLM2-500M-Video-Instruct",
+  "vlm_max_new_tokens": 8,
+  "vlm_dev_gate": {
+    "max_invalid_rate": 0.2,
+    "min_coverage": 0.6
+  },
+  "dev_selection": {
+    "candidate_methods": [
+      "klt_fb",
+      "template_recover4",
+      "affine_stabilized_klt"
+    ],
+    "min_visible_coverage": 0.4,
+    "max_occluded_false_accept_rate": 0.25,
+    "objective": "maximize TAP-Vid Jaccard@8, then visible coverage",
+    "fallback_method": "klt_fb",
+    "selection_source": "DEV only"
+  },
+  "tracker": {
+    "fb_error_px": 1.5,
+    "patch_size": 21,
+    "template_search_radius_px": 32,
+    "template_ncc_min": 0.75,
+    "template_max_consecutive_misses": 4,
+    "affine_min_matches": 12,
+    "affine_min_inliers": 8,
+    "affine_min_inlier_ratio": 0.25,
+    "affine_ransac_reprojection_px": 3
+  },
+  "evaluation": {
+    "point_threshold_px": 8,
+    "bootstrap_seed": 20261102,
+    "bootstrap_replicates": 2000
+  },
+  "provenance": {
+    "dataset": "RoboTAP / TAP-Vid",
+    "source_type": "synthetic robotics videos; not natural camera footage",
+    "license": "CC BY 4.0",
+    "official_reference": "https://github.com/google-deepmind/tapnet",
+    "protocol_version": "episode-grouped-one-view-per-recording"
+  },
+  "frozen_subdir": "batch41_grouped_frozen",
+  "repair_lineage": {
+    "reuses_frozen_manifest_from": "Batch41B episode-disjoint RoboTAP freeze",
+    "reason": "Batch41D stopped at DEV scoring before any TEST predictions or TEST label reads; this run isolates outputs and validates the configured frozen-subdirectory path",
+    "test_labels_opened_in_failed_run": false,
+    "prior_predictions_reused": false
+  }
+}
