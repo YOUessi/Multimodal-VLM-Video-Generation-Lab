@@ -19,11 +19,11 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE = ROOT.parent
-DATA = WORKSPACE / "data/tapvidmv_multiview_batch44bb"
+DATA = WORKSPACE / "data/tapvidmv_multiview_batch44b"
 SOURCE = DATA / "source"
 RRD_DIR = SOURCE / "rrd"
-FROZEN = DATA / "batch44bb_frozen"
-CONFIG = ROOT / "configs/tapvidmv_batch44bb.json"
+FROZEN = DATA / "batch44b_frozen"
+CONFIG = ROOT / "configs/tapvidmv_batch44b.json"
 STATUS = {"unknown": 0, "visible": 1, "occluded": 2, "out": 3, "missing": 4}
 
 
