@@ -7,9 +7,9 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "data/tapvid_kinetics_batch45c/batch45c_frozen"
-OUT = ROOT / "outputs/kinetics_batch45c"
-REPORT = OUT / "BATCH45C_KINETICS_FRESH_HOLDOUT_REPORT.md"
+DATA = ROOT / "data/tapvid_kinetics_batch45d/batch45d_frozen"
+OUT = ROOT / "outputs/kinetics_batch45d"
+REPORT = OUT / "BATCH45D_KINETICS_FRESH_HOLDOUT_REPORT.md"
 
 
 def sha_file(path: Path) -> str:
@@ -42,7 +42,7 @@ def num(value, digits=3):
 
 def verify_inputs() -> dict:
     manifest = read(DATA / "manifest.json")
-    selection = read(ROOT / "data/tapvid_kinetics_batch45c/preflight/selection.json")
+    selection = read(ROOT / "data/tapvid_kinetics_batch45d/preflight/selection.json")
     dev = read(OUT / "dev_results.json")
     test = read(OUT / "test_results.json")
     selected = read(OUT / "dev_selection.json")
@@ -99,7 +99,7 @@ def build() -> str:
     methods = list(dev["methods"])
     selected_method = selected["selected_method"]
     lines = [
-        "# Batch45C — fresh Kinetics action-class-disjoint tracking and VLM visibility",
+        "# Batch45D — fresh Kinetics action-class-disjoint tracking and VLM visibility",
         "",
         f"- Frozen source SHA: {data['source_sha']}",
         f"- Dataset: TAP-Vid-Kinetics / Kinetics-700-2020 validation; {len(selection['videos'])} new YouTube video IDs from {len({x['label'] for x in selection['videos']})} action classes, all disjoint from Batch42.",

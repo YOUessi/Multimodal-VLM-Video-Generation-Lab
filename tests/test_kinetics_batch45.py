@@ -149,7 +149,7 @@ def test_manifest_provenance_pins_all_upstream_hashes(tmp_path, monkeypatch):
     path_list = tmp_path / "path-list.txt"
     download_manifest = tmp_path / "download-manifest.json"
     path_list.write_text("official-shard-list\\n", encoding="utf-8")
-    download_manifest.write_text("{\\"shards\\":{}}\\n", encoding="utf-8")
+    download_manifest.write_text('{"shards":{}}\\n', encoding="utf-8")
     monkeypatch.setattr(data, "PATH_LIST", path_list)
     monkeypatch.setattr(data, "DOWNLOAD_MANIFEST", download_manifest)
     selection = {"previous_video_ids_sha256": "e" * 64}

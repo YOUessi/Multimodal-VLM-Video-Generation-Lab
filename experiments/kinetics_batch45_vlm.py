@@ -16,8 +16,8 @@ import kinetics_batch45_data as src
 import kinetics_batch45_eval as ev
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "data/tapvid_kinetics_batch45c/batch45c_frozen"
-OUT = ROOT / "outputs/kinetics_batch45c"
+DATA = ROOT / "data/tapvid_kinetics_batch45d/batch45d_frozen"
+OUT = ROOT / "outputs/kinetics_batch45d"
 PROMPT = (
     "Image A is the first-visible query frame. A red cross marks one exact physical "
     "surface point. Image B is a crop centered on that same marked point and is only "

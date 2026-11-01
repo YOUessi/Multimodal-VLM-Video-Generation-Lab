@@ -1,7 +1,7 @@
 {
-  "version": "batch45c-kinetics-fresh-class-disjoint-gradient-vlm-strict-parser-manifest-audit-20261102-v3",
+  "version": "batch45d-kinetics-fresh-class-disjoint-gradient-vlm-strict-parser-manifest-audit-20261102-v4",
   "enabled": true,
-  "description": "Batch45C corrected freeze: fresh TAP-Vid-Kinetics Kinetics-700-2020 validation holdout, 12 new videos/classes, 6 DEV / 6 TEST. Includes strict VLM full-token parsing, pinned manifest provenance and a Batch45C-specific final audit.",
+  "description": "Batch45D corrected freeze: fresh TAP-Vid-Kinetics holdout, 12 new video IDs/classes, 6 DEV / 6 TEST; strict VLM parser, manifest provenance, previous-video/class overlap checks and Batch45-specific final audit. Fixes a test-fixture quoting error found in Batch45C preflight.",
   "source_of_truth": "GitHub main; runner freezes clean checkout SHA in .automation/state.json. Raw videos, shards, frames, private point tracks, predictions and model weights remain local on Tang.",
   "failure_policy": "Single attempt per frozen stage; fail closed. Preserve failed logs and partial downloads. Any repair requires a new GitHub source SHA and a new repo-batch*-tested directory. Never tune on TEST.",
   "test_policy": "Selection is deterministic and video/action-class disjoint from Batch42. CPU tracker selection and VLM admission use DEV only. CPU and VLM TEST predictions are SHA-pinned before one-time scoring. If the VLM DEV gate blocks, TEST VLM inference is skipped and the TEST VLM oracle is never opened.",
@@ -69,9 +69,9 @@
       "timeout_seconds": 10800,
       "max_attempts": 1,
       "requires_files": [
-        "data/tapvid_kinetics_batch45c/preflight/selection.json",
-        "data/tapvid_kinetics_batch45c/preflight/download_manifest.json",
-        "data/tapvid_kinetics_batch45c/preflight/k700_2020_val_path.txt"
+        "data/tapvid_kinetics_batch45d/preflight/selection.json",
+        "data/tapvid_kinetics_batch45d/preflight/download_manifest.json",
+        "data/tapvid_kinetics_batch45d/preflight/k700_2020_val_path.txt"
       ]
     },
     {
@@ -84,8 +84,8 @@
       "timeout_seconds": 3600,
       "max_attempts": 1,
       "requires_files": [
-        "data/tapvid_kinetics_batch45c/batch45c_frozen/manifest.json",
-        "data/tapvid_kinetics_batch45c/batch45c_frozen/queries-public.json"
+        "data/tapvid_kinetics_batch45d/batch45d_frozen/manifest.json",
+        "data/tapvid_kinetics_batch45d/batch45d_frozen/queries-public.json"
       ]
     },
     {
@@ -99,8 +99,8 @@
       "max_attempts": 1,
       "requires_files": [
         "configs/kinetics_batch45.json",
-        "data/tapvid_kinetics_batch45c/batch45c_frozen/manifest.json",
-        "data/tapvid_kinetics_batch45c/batch45c_frozen/queries-public.json"
+        "data/tapvid_kinetics_batch45d/batch45d_frozen/manifest.json",
+        "data/tapvid_kinetics_batch45d/batch45d_frozen/queries-public.json"
       ]
     },
     {
@@ -113,9 +113,9 @@
       "timeout_seconds": 3600,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45c/dev_predictions.json",
-        "outputs/kinetics_batch45c/dev_predictions.json.sha256",
-        "data/tapvid_kinetics_batch45c/batch45c_frozen/oracle-private.json"
+        "outputs/kinetics_batch45d/dev_predictions.json",
+        "outputs/kinetics_batch45d/dev_predictions.json.sha256",
+        "data/tapvid_kinetics_batch45d/batch45d_frozen/oracle-private.json"
       ]
     },
     {
@@ -128,7 +128,7 @@
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45c/dev_results.json",
+        "outputs/kinetics_batch45d/dev_results.json",
         "configs/kinetics_batch45.json"
       ]
     },
@@ -145,10 +145,10 @@
       "min_free_mib": 11000,
       "requires_files": [
         "configs/kinetics_batch45.json",
-        "data/tapvid_kinetics_batch45c/batch45c_frozen/manifest.json",
-        "data/tapvid_kinetics_batch45c/batch45c_frozen/queries-public.json",
-        "outputs/kinetics_batch45c/dev_selection.json",
-        "outputs/kinetics_batch45c/dev_selection.json.sha256",
+        "data/tapvid_kinetics_batch45d/batch45d_frozen/manifest.json",
+        "data/tapvid_kinetics_batch45d/batch45d_frozen/queries-public.json",
+        "outputs/kinetics_batch45d/dev_selection.json",
+        "outputs/kinetics_batch45d/dev_selection.json.sha256",
         "models/SmolVLM2-2.2B-Instruct/model.safetensors.index.json",
         "models/SmolVLM2-2.2B-Instruct/model-00001-of-00002.safetensors",
         "models/SmolVLM2-2.2B-Instruct/model-00002-of-00002.safetensors"
@@ -164,10 +164,10 @@
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45c/dev_vlm_predictions.json",
-        "outputs/kinetics_batch45c/dev_vlm_predictions.json.sha256",
-        "outputs/kinetics_batch45c/dev_predictions.json",
-        "outputs/kinetics_batch45c/dev_predictions.json.sha256"
+        "outputs/kinetics_batch45d/dev_vlm_predictions.json",
+        "outputs/kinetics_batch45d/dev_vlm_predictions.json.sha256",
+        "outputs/kinetics_batch45d/dev_predictions.json",
+        "outputs/kinetics_batch45d/dev_predictions.json.sha256"
       ]
     },
     {
@@ -180,7 +180,7 @@
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45c/dev_vlm_results.json",
+        "outputs/kinetics_batch45d/dev_vlm_results.json",
         "configs/kinetics_batch45.json"
       ]
     },
@@ -194,9 +194,9 @@
       "timeout_seconds": 10800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45c/dev_selection.json",
-        "outputs/kinetics_batch45c/dev_selection.json.sha256",
-        "data/tapvid_kinetics_batch45c/batch45c_frozen/manifest.json"
+        "outputs/kinetics_batch45d/dev_selection.json",
+        "outputs/kinetics_batch45d/dev_selection.json.sha256",
+        "data/tapvid_kinetics_batch45d/batch45d_frozen/manifest.json"
       ]
     },
     {
@@ -209,10 +209,10 @@
       "timeout_seconds": 3600,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45c/test_predictions.json",
-        "outputs/kinetics_batch45c/test_predictions.json.sha256",
-        "outputs/kinetics_batch45c/dev_selection.json",
-        "data/tapvid_kinetics_batch45c/batch45c_frozen/oracle-private.json"
+        "outputs/kinetics_batch45d/test_predictions.json",
+        "outputs/kinetics_batch45d/test_predictions.json.sha256",
+        "outputs/kinetics_batch45d/dev_selection.json",
+        "data/tapvid_kinetics_batch45d/batch45d_frozen/oracle-private.json"
       ]
     },
     {
@@ -227,10 +227,10 @@
       "gpu": true,
       "min_free_mib": 11000,
       "requires_files": [
-        "outputs/kinetics_batch45c/dev_vlm_gate.json",
-        "outputs/kinetics_batch45c/dev_vlm_gate.json.sha256",
-        "outputs/kinetics_batch45c/test_predictions.json",
-        "outputs/kinetics_batch45c/test_predictions.json.sha256",
+        "outputs/kinetics_batch45d/dev_vlm_gate.json",
+        "outputs/kinetics_batch45d/dev_vlm_gate.json.sha256",
+        "outputs/kinetics_batch45d/test_predictions.json",
+        "outputs/kinetics_batch45d/test_predictions.json.sha256",
         "models/SmolVLM2-2.2B-Instruct/model.safetensors.index.json",
         "models/SmolVLM2-2.2B-Instruct/model-00001-of-00002.safetensors",
         "models/SmolVLM2-2.2B-Instruct/model-00002-of-00002.safetensors"
@@ -246,10 +246,10 @@
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45c/test_vlm_predictions.json",
-        "outputs/kinetics_batch45c/test_vlm_predictions.json.sha256",
-        "outputs/kinetics_batch45c/test_predictions.json",
-        "outputs/kinetics_batch45c/test_predictions.json.sha256"
+        "outputs/kinetics_batch45d/test_vlm_predictions.json",
+        "outputs/kinetics_batch45d/test_vlm_predictions.json.sha256",
+        "outputs/kinetics_batch45d/test_predictions.json",
+        "outputs/kinetics_batch45d/test_predictions.json.sha256"
       ]
     },
     {
@@ -262,12 +262,12 @@
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45c/dev_results.json",
-        "outputs/kinetics_batch45c/test_results.json",
-        "outputs/kinetics_batch45c/dev_selection.json",
-        "outputs/kinetics_batch45c/dev_vlm_gate.json",
-        "outputs/kinetics_batch45c/dev_vlm_results.json",
-        "outputs/kinetics_batch45c/test_vlm_results.json"
+        "outputs/kinetics_batch45d/dev_results.json",
+        "outputs/kinetics_batch45d/test_results.json",
+        "outputs/kinetics_batch45d/dev_selection.json",
+        "outputs/kinetics_batch45d/dev_vlm_gate.json",
+        "outputs/kinetics_batch45d/dev_vlm_results.json",
+        "outputs/kinetics_batch45d/test_vlm_results.json"
       ]
     },
     {
@@ -280,9 +280,9 @@
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45c/dev_predictions.json.sha256",
-        "outputs/kinetics_batch45c/test_predictions.json.sha256",
-        "outputs/kinetics_batch45c/dev_selection.json.sha256"
+        "outputs/kinetics_batch45d/dev_predictions.json.sha256",
+        "outputs/kinetics_batch45d/test_predictions.json.sha256",
+        "outputs/kinetics_batch45d/dev_selection.json.sha256"
       ]
     },
     {
@@ -295,9 +295,9 @@
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45c/dev_vlm_gate.json.sha256",
-        "outputs/kinetics_batch45c/dev_vlm_predictions.json.sha256",
-        "outputs/kinetics_batch45c/test_vlm_predictions.json.sha256"
+        "outputs/kinetics_batch45d/dev_vlm_gate.json.sha256",
+        "outputs/kinetics_batch45d/dev_vlm_predictions.json.sha256",
+        "outputs/kinetics_batch45d/test_vlm_predictions.json.sha256"
       ]
     },
     {
@@ -312,7 +312,7 @@
       "max_attempts": 1,
       "requires_files": [
         "tests/test_kinetics_batch45.py",
-        "outputs/kinetics_batch45c/BATCH45C_KINETICS_FRESH_HOLDOUT_REPORT.md"
+        "outputs/kinetics_batch45d/BATCH45D_KINETICS_FRESH_HOLDOUT_REPORT.md"
       ]
     },
     {
@@ -338,8 +338,8 @@
       "timeout_seconds": 3600,
       "max_attempts": 1,
       "requires_files": [
-        "data/tapvid_kinetics_batch45c/batch45c_frozen/manifest.json",
-        "data/tapvid_kinetics_batch45c/batch45c_frozen/oracle-private.json"
+        "data/tapvid_kinetics_batch45d/batch45d_frozen/manifest.json",
+        "data/tapvid_kinetics_batch45d/batch45d_frozen/oracle-private.json"
       ]
     },
     {
@@ -352,8 +352,8 @@
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45c/BATCH45C_KINETICS_FRESH_HOLDOUT_REPORT.md",
-        "outputs/kinetics_batch45c/BATCH45C_KINETICS_FRESH_HOLDOUT_REPORT.md.sha256"
+        "outputs/kinetics_batch45d/BATCH45D_KINETICS_FRESH_HOLDOUT_REPORT.md",
+        "outputs/kinetics_batch45d/BATCH45D_KINETICS_FRESH_HOLDOUT_REPORT.md.sha256"
       ]
     }
   ]
