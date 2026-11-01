@@ -150,6 +150,10 @@ def test_absence_and_mask_shrink_scored_as_distinct_conditions():
     assert result["mask_area_shrink_wrong_accepted"] == 1
     assert result["visible_correct_accepted"] == 0
     assert result["visible_wrong_accepted"] == 1
+    # Regression for Batch37 V5: NumPy booleans in += used to create int64,
+    # silently passing numeric assertions but crashing JSON report export.
+    assert json.loads(json.dumps(result)) == result
+    assert all(type(value) is int for value in result.values())
 
 
 def test_prediction_path_cannot_read_any_future_oracle(monkeypatch, tmp_path):

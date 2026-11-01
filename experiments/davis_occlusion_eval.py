@@ -228,13 +228,13 @@ def occlusion_proxies(gold: dict, rows: list, records: dict,
                 continue
             if xy is not None:
                 error = np.linalg.norm(np.subtract(xy, gt["center"]))
-                correct_visible += error <= 8
-                wrong_visible += error > 8
+                correct_visible += int(error <= 8)
+                wrong_visible += int(error > 8)
             if gt["pixels"] < threshold * first_area:
                 shrunk_total += 1
                 shrunk_accepted += xy is not None
-                shrunk_wrong += xy is not None and np.linalg.norm(
-                    np.subtract(xy, gt["center"])) > 8
+                shrunk_wrong += int(xy is not None and np.linalg.norm(
+                    np.subtract(xy, gt["center"])) > 8)
     return {
         "absent_positions": absent_total,
         "absent_false_acceptances": absent_accepted,

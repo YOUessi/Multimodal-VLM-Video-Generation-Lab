@@ -1,39 +1,26 @@
 {
-  "version": "2026-11-02-batch-37-real-davis-long-horizon-v1",
+  "version": "2026-11-02-batch-37B-frozen-JSON-serialization-recovery-v1",
   "enabled": true,
-  "description": "Pre-TEST fixed all method thresholds; fresh DAVIS scene-disjoint real-camera clips, 16 frames x12; no historical test tuning; label-blind predictions hash pinned, CPU only; absent-object and shrink proxy metrics; no media/weights/secrets on GitHub.",
+  "description": "New code+SHA after Batch37 DEV-only JSON int64 serializer failure. Audit byte-identical original 384 official DAVIS assets; unchanged predeclared methods and TEST split; regenerate DEV and TEST predictions on new source SHA, score TEST once. Failed prior batch retained and paused. CPU only.",
   "stages": [
     {
-      "id": "V1_new_scene_disjoint_384_official_JPEG_PNG_range_acquisition",
+      "id": "W1_audit_frozen_384_new_real_DAVIS_media_without_redownload",
       "gpu": false,
       "timeout_seconds": 1800,
       "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/davis_real_data.py",
-        "acquire",
-        "--config",
-        "configs/davis_occlusion_v2.json"
-      ]
-    },
-    {
-      "id": "V2_new_source_SHA_CRC_manifest_and_query_audit",
-      "gpu": false,
-      "timeout_seconds": 1800,
-      "max_attempts": 1,
-      "requires_files": [
-        "data/davis_occlusion_v2/manifest.json"
-      ],
       "argv": [
         "{python}",
         "experiments/davis_real_data.py",
         "audit",
         "--config",
         "configs/davis_occlusion_v2.json"
+      ],
+      "requires_files": [
+        "data/davis_occlusion_v2/manifest.json"
       ]
     },
     {
-      "id": "V3_165plus_regressions_and_future_label_firewall",
+      "id": "W3_165plus_regressions_and_future_label_firewall",
       "gpu": false,
       "timeout_seconds": 1800,
       "max_attempts": 1,
@@ -46,7 +33,7 @@
       ]
     },
     {
-      "id": "V4_only_DEV_predict_and_pin_frozen_trajectories",
+      "id": "W4_only_DEV_predict_and_pin_frozen_trajectories",
       "gpu": false,
       "timeout_seconds": 1800,
       "max_attempts": 1,
@@ -60,7 +47,7 @@
       ]
     },
     {
-      "id": "V5_only_DEV_score_and_log_failures",
+      "id": "W5_only_DEV_score_and_log_failures",
       "gpu": false,
       "timeout_seconds": 1800,
       "max_attempts": 1,
@@ -74,7 +61,7 @@
       ]
     },
     {
-      "id": "V6_first_TEST_label_blind_pred_and_SHA_lock",
+      "id": "W6_first_TEST_label_blind_pred_and_SHA_lock",
       "gpu": false,
       "timeout_seconds": 1800,
       "max_attempts": 1,
@@ -88,7 +75,7 @@
       ]
     },
     {
-      "id": "V7_first_and_only_TEST_private_oracle_scoring",
+      "id": "W7_first_and_only_TEST_private_oracle_scoring",
       "gpu": false,
       "timeout_seconds": 1800,
       "max_attempts": 1,
@@ -102,7 +89,7 @@
       ]
     },
     {
-      "id": "V8_no_media_weights_secrets_publication_guard",
+      "id": "W8_no_media_weights_secrets_publication_guard",
       "gpu": false,
       "timeout_seconds": 1800,
       "max_attempts": 1,
@@ -115,7 +102,7 @@
       ]
     },
     {
-      "id": "V9_final_all_regressions_and_source_freeze",
+      "id": "W9_final_all_regressions_and_source_freeze",
       "gpu": false,
       "timeout_seconds": 1800,
       "max_attempts": 1,
