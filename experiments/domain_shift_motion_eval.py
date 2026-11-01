@@ -277,6 +277,23 @@ def report(cfg):
                     "gate_correct":correctgate,"gate_wrong":wronggate}
             summary["metrics"][method][variant]=result
             lines.append(f"| {method} | {variant} | {exact}/{len(sampled)} | {attempted} | {accepted} | {correctgate} | {wronggate} |")
+    # Direct tracker delta: paired source scenes, not independent reversed MP4s.
+    summary["direct_tracker_paired"]={}
+    lines+=["","## Plain HSV vs camera-registered direct tracker accuracy",
+       "","| Nuisance mode | New correct - plain correct (pp) | Scene-cluster 95% CI pp |",
+       "|---|---:|---|"]
+    for variant in MODES:
+        group=grouped[variant]
+        plain_scores={r["id"]:cvbyid[r["id"]]["plain"]["direction"]==r["gold_direction"]
+                      for r in group}
+        stable_scores={r["id"]:cvbyid[r["id"]]["stabilized"]["direction"]==r["gold_direction"]
+                       for r in group}
+        ids={r["id"]:r["pair_id"] for r in group}
+        ci=bootstrap_scene(plain_scores,stable_scores,ids,
+                          seed=cfg["bootstrap_seed"]+len(variant))
+        summary["direct_tracker_paired"][variant]=ci
+        lines.append(f"| {variant} | {ci['delta_pp']:+.2f} | {ci['cluster_bootstrap_95ci_pp']} |")
+
     lines+=["","## Frozen VLM-only and gated tool fallback", "",
        "| Model | Frames | VLM correct/200 | Plain HSV gate+VLM | Camera-stabilized gate+VLM |",
        "|---|---:|---:|---:|---:|"]
