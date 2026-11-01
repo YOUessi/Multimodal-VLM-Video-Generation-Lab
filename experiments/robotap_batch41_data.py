@@ -357,8 +357,15 @@ def prepare(cfg: dict) -> dict:
             if query is None or query["query_time"] >= len(frames) - 1:
                 continue
             queries.append(query)
+            private_xy = []
+            for frame_index, xy in enumerate(points_px[track_id]):
+                if (bool(occluded[track_id, frame_index])
+                        or not np.isfinite(xy).all()):
+                    private_xy.append(None)
+                else:
+                    private_xy.append([float(v) for v in xy])
             private_tracks[query["id"]] = {
-                "xy": [[float(v) for v in xy] for xy in points_px[track_id]],
+                "xy": private_xy,
                 "occluded": [bool(v) for v in occluded[track_id]],
             }
         if not queries:
