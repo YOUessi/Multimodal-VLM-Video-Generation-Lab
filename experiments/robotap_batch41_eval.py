@@ -323,9 +323,11 @@ def predict(split: str, cfg: dict) -> None:
     if split == "test":
         if not selection_path.is_file():
             raise RuntimeError("ROBOTAP_DEV_SELECTION_MISSING")
+        require_pin(selection_path)
         selection = load_json(selection_path)
         if (selection.get("source_commit") != current_sha()
-                or selection.get("status") != "selected_from_dev_only"):
+                or selection.get("status") != "selected_from_dev_only"
+                or selection.get("selected_method") not in METHODS):
             raise RuntimeError("ROBOTAP_DEV_SELECTION_SOURCE_DRIFT")
     output = output_dir / f"{split}_predictions.json"
     if output.exists():
@@ -510,11 +512,14 @@ def score(split: str, cfg: dict) -> dict:
     require_pin(prediction_path)
     saved = load_json(prediction_path)
     selection_path = output_dir / "dev_selection.json"
+    if split == "test":
+        require_pin(selection_path)
     selection = load_json(selection_path) if split == "test" else None
     if split == "test" and (
             selection is None
             or selection.get("source_commit") != current_sha()
-            or selection.get("status") != "selected_from_dev_only"):
+            or selection.get("status") != "selected_from_dev_only"
+            or selection.get("selected_method") not in METHODS):
         raise RuntimeError("ROBOTAP_TEST_SELECTION_MISSING_OR_STALE")
     expected_selection_sha = sha_file(selection_path) if selection else None
     if (saved.get("source_commit") != current_sha()
@@ -575,6 +580,7 @@ def score(split: str, cfg: dict) -> dict:
     }
     result_path = output_dir / f"{split}_results.json"
     write_once(result_path, result)
+    pin(result_path)
     print("ROBOTAP_SCORED", split, json.dumps(summary, sort_keys=True), flush=True)
     return result
 
@@ -619,7 +625,9 @@ def select_dev(cfg: dict) -> dict:
         "reason": reason,
         "test_labels_or_predictions_read": False,
     }
-    write_once(output_dir / "dev_selection.json", doc)
+    selection_path = output_dir / "dev_selection.json"
+    write_once(selection_path, doc)
+    pin(selection_path)
     print("ROBOTAP_DEV_SELECTED", selected, reason, flush=True)
     return doc
 
@@ -731,13 +739,16 @@ def report(cfg: dict) -> Path:
 def final_audit(cfg: dict) -> None:
     manifest = src.audit(cfg, verify_sources=True)
     output_dir = ROOT / cfg["output_dir"]
-    selection = load_json(output_dir / "dev_selection.json")
+    selection_path = output_dir / "dev_selection.json"
+    require_pin(selection_path)
+    selection = load_json(selection_path)
     if selection.get("source_commit") != current_sha():
         raise RuntimeError("ROBOTAP_FINAL_SELECTION_SHA_DRIFT")
     for split in ("dev", "test"):
         prediction_path = output_dir / f"{split}_predictions.json"
         result_path = output_dir / f"{split}_results.json"
         require_pin(prediction_path)
+        require_pin(result_path)
         prediction = load_json(prediction_path)
         result = load_json(result_path)
         if (prediction.get("source_commit") != current_sha()
@@ -749,10 +760,14 @@ def final_audit(cfg: dict) -> None:
     vlm_prediction = output_dir / "vlm_visibility_dev_predictions.json"
     if vlm_prediction.exists():
         require_pin(vlm_prediction)
+        test_vlm_prediction = output_dir / "vlm_visibility_test_predictions.json"
+        if test_vlm_prediction.exists():
+            require_pin(test_vlm_prediction)
         for split in ("dev", "test"):
             result_path = output_dir / f"vlm_visibility_{split}_results.json"
             if not result_path.exists():
                 raise RuntimeError("ROBOTAP_FINAL_VLM_RESULT_MISSING:" + split)
+            require_pin(result_path)
     if not (output_dir / "BATCH41_RESULTS.md").is_file():
         raise RuntimeError("ROBOTAP_FINAL_REPORT_MISSING")
     print("ROBOTAP_FINAL_AUDIT_PASS", current_sha(),
