@@ -15,6 +15,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<10"]
+robotap = ["mediapy>=1.2.7,<2"]
 gpu = [
   "transformers==4.57.6",
   "accelerate>=1.8,<2",
