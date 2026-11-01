@@ -1,5 +1,21 @@
 # Multimodal VLM & Video Generation Lab
 
+## Latest execution — batch 32, new locked camera-translation benchmark (2026-11-01)
+
+**10/10 stages completed on Tang; 112/112 regression tests passed.** After a batch31 source-data directory contract error, batch32 was rebuilt from a new frozen SHA, with the error preserved in its logs.
+
+An independent procedural 2D render-shift set contains **40 dev source scene pairs (80 MP4s) + 100 test scene pairs (200 MP4s)**, balanced across five world-relative motion directions and four conditions: clean, changing illumination, partial occlusion, and camera translation. The test is synthetic, not natural video.
+
+The predeclared camera-stabilized tracker estimates **background motion from image phase correlation** and subtracts it from the target's on-screen displacement, using the SAME HSV object finder. Test camera-pan accuracy: **36/50 plain HSV → 50/50 stabilized HSV**, **+28pp, paired source-scene bootstrap 95% CI [+12,+48]pp**. Other nuisance accuracy was unchanged. Direct tracker accuracy across all test videos: **182/200 raw vs 196/200 stabilized**.
+
+VLM 3-frame accuracy on this specially rendered 5-option synthetic task was **40/200** for both 500M and 2.2B; camera-stabilized conservative tool fallback reached **171/200** and **157/200**, respectively. This is a measured domain-specific deterministic computer-vision engineering gain, **NOT** VLM architecture, real-camera or natural-video generalization. The stabilized tracker was accepted on 157/200 and correct on all 157 accepted under these narrow source conditions; do **not** extrapolate its precision. Tracker median CPU time: raw **14.83 ms**, stabilized **26.64 ms** per video.
+
+All 280 generated clips, raw predictions, local videos and review page remain on Tang, not GitHub. [Full new source hashes, statistical results, limits and executable paths](docs/BATCH32_NEW_CAMERA_SHIFT_HELDOUT_2026-11-01.md).
+
+The Tang cron checks/executes approved stages every **10 minutes**. In addition, an enabled **hourly ChatGPT research-continuation automation** now checks for completed batches, reviews actual results and attempts to implement the next frozen batch. This is an actual separate scheduled agent, not a claim that the cron itself can invent or code new research tasks. Automation failures, permission issues or untested claims must be reported.
+
+---
+
 ## New research milestone: object-centric motion tool + VLM (batches 27–30, 2026-11-01)
 
 The project moved beyond heuristic visual-frame selection to ask **whether a VLM can use explicit object motion evidence and whether a gated deterministic tool can improve direction QA**.
@@ -19,7 +35,7 @@ The project moved beyond heuristic visual-frame selection to ask **whether a VLM
 - **Critical qualification:** CLEVRER is rendered simulation, not natural camera video, and this benchmark was **already analyzed in earlier studies**. No blind out-of-domain independent effectiveness claim, generalized tracker reliability, or novel model architecture is made. The gated tool costs CPU time and can make wrong overrides.
 - See [the complete batch30 200-video external tracker benchmark and limitations](docs/BATCH30_HSV_TRACKER_GATED_CLEVRER_2026-11-01.md).
 
-**Engineering status:** the latest frozen batch30 passed **103/103 tests**, all four stages succeeded, and the local Tang every-10-minute cron remains enabled. The approved batch has finished, so cron now checks status only until another tested plan is installed. Raw model outputs, videos, review HTML, weights and LoRA adapters remain local on Tang, not committed to GitHub.
+**Historical batch30 status:** four approved stages and 103 tests passed. Later batches have since completed; see the latest execution section above for the active state. Raw model outputs, videos, review HTML, weights and LoRA adapters remain local on Tang, not committed to GitHub.
 
 ---
 
