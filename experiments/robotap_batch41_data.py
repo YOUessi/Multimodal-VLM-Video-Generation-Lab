@@ -290,7 +290,11 @@ def normalized_to_pixels(points: np.ndarray, occluded: np.ndarray,
 
 def first_visible_query(track_id: int, points_px: np.ndarray,
                         occluded: np.ndarray, width: int, height: int) -> dict | None:
-    visible = np.flatnonzero(~np.asarray(occluded, dtype=bool))
+    points_px = np.asarray(points_px, dtype=np.float64)
+    occluded = np.asarray(occluded, dtype=bool)
+    if points_px.ndim != 2 or points_px.shape[1] != 2 or occluded.shape != (points_px.shape[0],):
+        raise ValueError("ROBOTAP_QUERY_TRACK_SHAPE_INVALID")
+    visible = np.flatnonzero(~occluded)
     if not len(visible):
         return None
     query_time = int(visible[0])
