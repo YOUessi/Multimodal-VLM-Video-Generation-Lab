@@ -1,0 +1,84 @@
+{
+  "version": "2026-11-01-batch34-world-parallax-identity-v1",
+  "dataset_dir": "data/parallax_identity_v1",
+  "output_dir": "outputs/parallax_identity_v1",
+  "dev_pairs": 40,
+  "test_pairs": 100,
+  "dev_seed": 261740392,
+  "test_seed": 496317203,
+  "width": 256,
+  "height": 256,
+  "frames": 10,
+  "fps": 6,
+  "hue_tolerance": 15,
+  "min_saturation": 42,
+  "min_value": 35,
+  "gray_saturation_max": 32,
+  "gray_value_max": 190,
+  "brown_value_max": 190,
+  "min_component_pixels": 40,
+  "min_component_fraction": 0.0002,
+  "max_component_pixels": 6000,
+  "max_component_fraction": 0.04,
+  "roi_min_x": 0.02,
+  "roi_max_x": 0.98,
+  "roi_min_y": 0.02,
+  "roi_max_y": 0.98,
+  "max_candidate_count": 7,
+  "first_frame_dominance_ratio": 1.2,
+  "max_step_displacement_px": 130,
+  "association_margin_px": 12,
+  "direction_deadzone_px": 9,
+  "gate_min_dxdy": 20,
+  "min_registration_response": 0.12,
+  "frame_budgets": {
+    "500m": [
+      3
+    ],
+    "2b": [
+      3,
+      5
+    ]
+  },
+  "models": {
+    "500m": {
+      "model_dir": "models/SmolVLM2-500M-Video-Instruct",
+      "revision": "7b375e1b73b11138ff12fe22c8f2822d8fe03467",
+      "weight_files": {
+        "model.safetensors": 2029990624
+      }
+    },
+    "2b": {
+      "model_dir": "models/SmolVLM2-2.2B-Instruct",
+      "revision": "482adb537c021c86670beed01cd58990d01e72e4",
+      "weight_files": {
+        "model-00001-of-00002.safetensors": 4959390584,
+        "model-00002-of-00002.safetensors": 4027833472
+      }
+    }
+  },
+  "max_new_tokens": 40,
+  "bootstrap_seed": 34422026,
+  "source_data_type": "new 2.5D 3-depth-layer procedural parallax; same-color different-shape or same-shape targets, occlusion and nonuniform shadows",
+  "world_motion_definition": "Target world coordinates; screen-relative camera parallax is NOT world-relative direction",
+  "camera_registration_method": "video-only ORB/RANSAC dominant partial affine; 3 separate simulated scene depths, no true transforms in estimator",
+  "study_question": "Can query-grounded contour shape, cautious target-identity abstention and a fixed background-flow consensus threshold improve risk-adjusted world motion under parallax without hiding wrong overrides?",
+  "predeclare_no_test_tuning": true,
+  "not_natural_video": true,
+  "privacy": "Do not publish generated videos, private manifests, test predictions or weights",
+  "orb_features": 1100,
+  "orb_ratio": 0.8,
+  "affine_min_matches": 18,
+  "affine_min_inliers": 14,
+  "affine_min_inlier_fraction": 0.4,
+  "affine_ransac_px": 3.0,
+  "affine_max_median_error_px": 2.6,
+  "affine_scale_min": 0.72,
+  "affine_scale_max": 1.29,
+  "affine_angle_max_deg": 35,
+  "affine_max_translation_px": 115,
+  "new_test_protocol": "40 independent development source pairs, 100 never-scored independent test source pairs, 5 directions x 4 nuisance modes, forward/reverse duplicates clustered by pair",
+  "identity_polygon_epsilon": 0.038,
+  "identity_min_background_inlier_fraction": 0.72,
+  "study_prior_batch33_scored_no_tuning": true
+}

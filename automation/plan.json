@@ -1,147 +1,147 @@
 {
-  "version": "2026-11-01-batch-33",
+  "version": "2026-11-01-batch-34",
   "enabled": true,
-  "description": "NEW independent synthetic heldout camera rotation, zoom, translation and near-same-color target occlusion. Dev 40 source pairs, heldout 100 source pairs; 280 generated MP4s, reverse-paired. Compare frozen HSV pixel tracker, frozen global phase shift, new ORB+RANSAC partial affine under predeclared thresholds; image-plane/world-relative labels separated. All test predictions saved before answer scoring; 500M and 2.2B actual GPU inference, scene-pair bootstrap CIs, gate wrong override, camera mapping oracle only at final report. No retuning against batch32 heldout, no private videos/weights/keys committed.",
+  "description": "PRE-REGISTERED separate independent 2.5D three-depth synthetic parallax and shape-target-identity stress-test, 40 DEV source pairs and 100 unscored TEST source pairs, forward/reverse dependent videos. Compare frozen plain HSV, ORB/RANSAC affine HSV, and query-grounded contour-shape with depth-consensus abstention. All parameters frozen from DEV only. Persist 200 CV predictions and 600 genuine GPU VLM predictions before first test scoring. Pair-cluster bootstrap, full denominator, wrong gate override, latency, and explicit no natural video or 3D-geometry claim. No Batch32/33 TEST tuning. No videos/weights/secrets in GitHub.",
   "stages": [
     {
-      "id": "R1_frozen_280_new_affine_camera_and_ambiguity_MPEG4",
+      "id": "S1_freeze_280_new_2p5D_PARALLAX_MPEG4",
       "gpu": false,
-      "timeout_seconds": 1000,
+      "timeout_seconds": 1200,
       "max_attempts": 1,
       "argv": [
         "{python}",
-        "experiments/affine_domain_data.py",
+        "experiments/parallax_identity_data.py",
         "--config",
-        "configs/affine_camera_motion_v1.json"
+        "configs/parallax_identity_v1.json"
       ]
     },
     {
-      "id": "R2_source_video_SHA_and_reversed_pair_audit",
+      "id": "S2_audit_280_media_SHA_and_independent_pair_grid",
       "gpu": false,
-      "timeout_seconds": 700,
+      "timeout_seconds": 500,
       "max_attempts": 1,
       "requires_files": [
-        "data/affine_camera_motion_v1/manifest.json"
+        "data/parallax_identity_v1/manifest.json"
       ],
       "argv": [
         "{python}",
-        "experiments/affine_motion_eval.py",
+        "experiments/parallax_identity_eval.py",
         "audit",
         "--config",
-        "configs/affine_camera_motion_v1.json"
+        "configs/parallax_identity_v1.json"
       ]
     },
     {
-      "id": "R3_new_development_only_geometry_abstention_preflight",
+      "id": "S3_only_DEV_identity_abstention_and_parallax_preflight",
       "gpu": false,
-      "timeout_seconds": 700,
+      "timeout_seconds": 900,
       "max_attempts": 1,
       "requires_files": [
-        "data/affine_camera_motion_v1/manifest.json"
+        "data/parallax_identity_v1/manifest.json"
       ],
       "argv": [
         "{python}",
-        "experiments/affine_motion_eval.py",
+        "experiments/parallax_identity_eval.py",
         "dev",
         "--config",
-        "configs/affine_camera_motion_v1.json"
+        "configs/parallax_identity_v1.json"
       ]
     },
     {
-      "id": "R4_save_all200_pixel_only_three_baselines_before_test_scoring",
+      "id": "S4_save_all_200_blind_test_CV_predictions",
       "gpu": false,
-      "timeout_seconds": 1000,
+      "timeout_seconds": 1300,
       "max_attempts": 1,
       "requires_files": [
-        "data/affine_camera_motion_v1/manifest.json"
+        "data/parallax_identity_v1/manifest.json"
       ],
       "argv": [
         "{python}",
-        "experiments/affine_motion_eval.py",
+        "experiments/parallax_identity_eval.py",
         "tracker",
         "--config",
-        "configs/affine_camera_motion_v1.json"
+        "configs/parallax_identity_v1.json"
       ]
     },
     {
-      "id": "R5_500M_three_frame_GPU_baseline",
+      "id": "S5_real_GPU_frozen_500M_three_frame_baseline",
       "gpu": true,
-      "timeout_seconds": 2700,
+      "timeout_seconds": 2900,
       "max_attempts": 1,
       "min_free_mib": 11000,
       "requires_files": [
-        "outputs/affine_camera_motion_v1/cv_predictions.json",
+        "outputs/parallax_identity_v1/cv_predictions.json",
         "models/SmolVLM2-500M-Video-Instruct/model.safetensors"
       ],
       "argv": [
         "{python}",
-        "experiments/affine_motion_eval.py",
+        "experiments/parallax_identity_eval.py",
         "model",
         "--model",
         "500m",
         "--config",
-        "configs/affine_camera_motion_v1.json"
+        "configs/parallax_identity_v1.json"
       ]
     },
     {
-      "id": "R6_2B_three_and_five_frame_GPU_baselines",
+      "id": "S6_real_GPU_frozen_2B_three_and_five_frame_baselines",
       "gpu": true,
       "timeout_seconds": 4500,
       "max_attempts": 1,
       "min_free_mib": 12000,
       "requires_files": [
-        "outputs/affine_camera_motion_v1/500m.json",
+        "outputs/parallax_identity_v1/500m.json",
         "models/SmolVLM2-2.2B-Instruct/model-00001-of-00002.safetensors",
         "models/SmolVLM2-2.2B-Instruct/model-00002-of-00002.safetensors"
       ],
       "argv": [
         "{python}",
-        "experiments/affine_motion_eval.py",
+        "experiments/parallax_identity_eval.py",
         "model",
         "--model",
         "2b",
         "--config",
-        "configs/affine_camera_motion_v1.json"
+        "configs/parallax_identity_v1.json"
       ]
     },
     {
-      "id": "R7_first_and_only_heldout_score_scene_clustered_CIs_and_camera_residuals",
+      "id": "S7_first_test_scoring_scene_pair_CIs_wrong_override_and_cost",
       "gpu": false,
-      "timeout_seconds": 550,
+      "timeout_seconds": 900,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/affine_camera_motion_v1/cv_predictions.json",
-        "outputs/affine_camera_motion_v1/500m.json",
-        "outputs/affine_camera_motion_v1/2b.json"
+        "outputs/parallax_identity_v1/cv_predictions.json",
+        "outputs/parallax_identity_v1/500m.json",
+        "outputs/parallax_identity_v1/2b.json"
       ],
       "argv": [
         "{python}",
-        "experiments/affine_motion_eval.py",
+        "experiments/parallax_identity_eval.py",
         "report",
         "--config",
-        "configs/affine_camera_motion_v1.json"
+        "configs/parallax_identity_v1.json"
       ]
     },
     {
-      "id": "R8_local_forward_reverse_rotation_zoom_ambiguity_review",
+      "id": "S8_local_only_forward_reverse_four_nuisance_video_review",
       "gpu": false,
-      "timeout_seconds": 300,
+      "timeout_seconds": 180,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/affine_camera_motion_v1/results.json"
+        "outputs/parallax_identity_v1/results.json"
       ],
       "argv": [
         "{python}",
-        "experiments/affine_motion_eval.py",
+        "experiments/parallax_identity_eval.py",
         "viewer",
         "--config",
-        "configs/affine_camera_motion_v1.json"
+        "configs/parallax_identity_v1.json"
       ]
     },
     {
-      "id": "R9_complete_new_and_old_regression_suite",
+      "id": "S9_all_project_regressions_and_new_identity_tests",
       "gpu": false,
-      "timeout_seconds": 500,
+      "timeout_seconds": 600,
       "max_attempts": 1,
       "argv": [
         "{python}",
@@ -152,9 +152,9 @@
       ]
     },
     {
-      "id": "R10_no_weight_video_or_secret_commit_guard",
+      "id": "S10_source_media_weights_credentials_publication_guard",
       "gpu": false,
-      "timeout_seconds": 180,
+      "timeout_seconds": 240,
       "max_attempts": 1,
       "argv": [
         "{python}",

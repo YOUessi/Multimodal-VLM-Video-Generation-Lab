@@ -1,5 +1,9 @@
 # Multimodal VLM & Video Generation Lab
 
+## New prospective experiment — Batch 34: independent 2.5D parallax and target identity (2026-11-01)
+
+**Implemented, 135/135 code regressions passed, and 280 new synthetic MP4 bytes audited; heldout answers remain unscored.** The new independent 40-pair DEV/100-pair TEST source uses three depth layers with unequal apparent camera motion, same-color different-shape distractors, visually identical distractors and moving shadows. **DEV-only negative finding:** plain HSV 38/80, old ORB affine 32/80, new query-grounded shape+affine abstention only **7/80**, with 73/80 abstentions and 0 wrong over just 7 accepted. This high selective precision does **not** establish better task accuracy, especially on heldout data. The source and all 10 frozen stages are predeclared; TEST scoring is forbidden until CV and actual 500M/2.2B GPU outputs are saved. **These are procedural 2.5D videos, not real camera recordings or 3D scene reconstruction.** [Prospective protocol and DEV measurements](docs/BATCH34_PARALLAX_IDENTITY_PROSPECTIVE_2026-11-01.md).
+
 
 ## Latest verified experiment — Batch 33: independently frozen 2D camera rotation, zoom and identity ambiguity (2026-11-01)
 

@@ -10,6 +10,12 @@ The previous Tang user crontab ran `automation/runner.py tick --max-stages 2` ev
 2. **Separate enabled ChatGPT hourly research-continuation task**, titled *项目4｜自动续研与验收*, checks Tang and GitHub, reads actual results and code, and is instructed to do substantive next-batch implementation when a batch completes: source changes, tests, frozen config, GitHub commit, new Tang snapshot and execution. This is a scheduled AI continuation, not the CPU cron inventing research. **Once an hour is the fastest ChatGPT automation recurrence** supported; cron remains ten minutes. Failure to connect or obtain permission must be reported rather than fabricated.
 3. GitHub `main` is the sole source of code and documents. Each batch uses an independent frozen local directory `repo-batchN-tested` with a pinned upstream commit hash, local snapshot SHA and `.automation/state.json`. No weights, generated videos, original benchmark MP4s, API credentials or raw private material are committed.
 
+## Batch 34 prospective — new independent 2.5D parallax / identity stress test
+
+- Independent 40 DEV/100 TEST scene pairs (80/200 videos), three differently moving depth planes and four nuisance modes. TEST manifest and gold answers remain local; no previously scored batch was reused for threshold decisions.
+- The new shape-aware and mixed-depth-abstaining gate is intentionally conservative. DEV: plain HSV 38/80 with 11 wrong overrides, older affine HSV 32/80 with 2 wrong overrides, new shape gate **7/80 with 73 abstentions** and 0 wrong among 7 accepted. This is a meaningful **negative coverage result**, not success at identifying object motion.
+- The source plan pins 10 ordered stages, frozen 500M/2.2B GPU baselines, blind CV predictions before scoring and source-pair bootstrap. Full source protocol: [BATCH34 prospective](BATCH34_PARALLAX_IDENTITY_PROSPECTIVE_2026-11-01.md). GitHub code and plan are the only source of implementation truth; raw MP4s and model weights remain private. Pending blind TEST outcomes must not be presented as completed.
+
 ## Latest actually verified science (Batch 33; supersedes Batch 32)
 
 - `repo-batch33-tested` was frozen at GitHub source SHA `a6fbb8dc6e2715304c339ba1012b1ca1d23e3bd2`. **10/10 approved stages passed**, **121/121 frozen regression tests passed**, publication guard passed. Dataset manifest SHA256 `5303647d2a910fba29b91691cfc1fff40c1b9ad58b4217ac4c6c1be8eccdc7ce`, all 280 source MP4 byte hashes audited.
