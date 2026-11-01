@@ -1,42 +1,143 @@
 {
-  "version": "2026-11-01-batch-30",
+  "version": "2026-11-01-batch-31",
   "enabled": true,
-  "description": "Generic named HSV+component-association tracker, no calibration from CLEVRER labels, 40/40 synthetic dev preflight, full 200 public CLEVRER moving-direction source videos, conservative high-delta gate, preserved frozen 500M/2.2B baseline predictions. All errors/abstentions included; exploratory domain transfer only.",
+  "description": "NEW independent 2D render-shift heldout: 40 dev + 100 test original scene pairs, forward/reversed, clean/illumination/occlusion/camera-pan (balanced by 5 world directions); source SHA and label-blind tracker. Compare original HSV and source-pixel global-background phase-correlation corrected HSV; confidence-gated fallback to frozen 500M and 2.2B VLM baselines, 3/5-frame image budgets, scene-cluster bootstrap, local video audit. No tuning based on test.",
   "stages": [
     {
-      "id": "M1_generic_HSV_dev_only_40_video_sanity",
+      "id": "P1_generate_frozen_280_new_domain_shift_clips",
       "gpu": false,
-      "timeout_seconds": 200,
+      "timeout_seconds": 900,
       "max_attempts": 1,
-      "requires_files": [
-        "data/object_motion_counterfactual_v1/manifest.json"
-      ],
       "argv": [
         "{python}",
-        "experiments/appearance_hsv_tracker.py",
+        "experiments/domain_shift_motion_data.py",
         "--config",
-        "configs/appearance_hsv_transfer_v1.json"
+        "configs/domain_shift_motion_v1.json"
       ]
     },
     {
-      "id": "M2_all200_untuned_HSV_CLEVRER_transfer_and_frozen_gated_VLM",
+      "id": "P2_full_video_SHA_pair_and_nuisance_grid_audit",
       "gpu": false,
-      "timeout_seconds": 1500,
+      "timeout_seconds": 600,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/capacity_temporal_v1/manifest.json",
-        "outputs/capacity_temporal_v1/2b.json",
-        "outputs/capacity_temporal_v1/500m.json"
+        "data/motion_render_shift_v1/manifest.json"
       ],
       "argv": [
         "{python}",
-        "experiments/appearance_hsv_transfer.py",
+        "experiments/domain_shift_motion_eval.py",
+        "audit",
         "--config",
-        "configs/appearance_hsv_transfer_v1.json"
+        "configs/domain_shift_motion_v1.json"
       ]
     },
     {
-      "id": "M3_full_source_regression_suite",
+      "id": "P3_dev_only_plain_HSV_vs_camera_stabilized_preflight",
+      "gpu": false,
+      "timeout_seconds": 600,
+      "max_attempts": 1,
+      "requires_files": [
+        "data/motion_render_shift_v1/manifest.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/domain_shift_motion_eval.py",
+        "dev",
+        "--config",
+        "configs/domain_shift_motion_v1.json"
+      ]
+    },
+    {
+      "id": "P4_all200_unlabeled_test_pixel_tracking_predictions",
+      "gpu": false,
+      "timeout_seconds": 1000,
+      "max_attempts": 1,
+      "requires_files": [
+        "data/motion_render_shift_v1/manifest.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/domain_shift_motion_eval.py",
+        "tracker",
+        "--config",
+        "configs/domain_shift_motion_v1.json"
+      ]
+    },
+    {
+      "id": "P5_500m_VLM_three_frame_real_GPU_inference",
+      "gpu": true,
+      "min_free_mib": 11000,
+      "timeout_seconds": 2700,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/motion_render_shift_v1/cv_predictions.json",
+        "models/SmolVLM2-500M-Video-Instruct/model.safetensors"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/domain_shift_motion_eval.py",
+        "model",
+        "--model",
+        "500m",
+        "--config",
+        "configs/domain_shift_motion_v1.json"
+      ]
+    },
+    {
+      "id": "P6_2b_VLM_3and5_frame_real_GPU_inference",
+      "gpu": true,
+      "min_free_mib": 12000,
+      "timeout_seconds": 4500,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/motion_render_shift_v1/500m.json",
+        "models/SmolVLM2-2.2B-Instruct/model-00001-of-00002.safetensors",
+        "models/SmolVLM2-2.2B-Instruct/model-00002-of-00002.safetensors"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/domain_shift_motion_eval.py",
+        "model",
+        "--model",
+        "2b",
+        "--config",
+        "configs/domain_shift_motion_v1.json"
+      ]
+    },
+    {
+      "id": "P7_scene_clustered_direct_tracker_vs_gated_VLM_report",
+      "gpu": false,
+      "timeout_seconds": 300,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/motion_render_shift_v1/500m.json",
+        "outputs/motion_render_shift_v1/2b.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/domain_shift_motion_eval.py",
+        "report",
+        "--config",
+        "configs/domain_shift_motion_v1.json"
+      ]
+    },
+    {
+      "id": "P8_local_forward_reverse_4_environment_video_viewer",
+      "gpu": false,
+      "timeout_seconds": 300,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/motion_render_shift_v1/results.json"
+      ],
+      "argv": [
+        "{python}",
+        "experiments/domain_shift_review.py",
+        "--config",
+        "configs/domain_shift_motion_v1.json"
+      ]
+    },
+    {
+      "id": "P9_frozen_source_complete_regression_suite",
       "gpu": false,
       "timeout_seconds": 300,
       "max_attempts": 1,
@@ -49,7 +150,7 @@
       ]
     },
     {
-      "id": "M4_no_weight_or_private_video_commit_guard",
+      "id": "P10_source_media_weight_secrets_publication_guard",
       "gpu": false,
       "timeout_seconds": 120,
       "max_attempts": 1,
