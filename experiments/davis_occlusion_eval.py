@@ -23,6 +23,8 @@ ROOT = Path(__file__).resolve().parents[1]
 METHODS = (
     "stationary_pixel", "klt_forward_backward",
     "klt_fb_consensus", "klt_fb_guarded",
+    "klt_fb_appearance_045", "klt_fb_appearance_055",
+    "klt_fb_appearance_065",
 )
 THRESHOLDS = (4, 8, 16)
 
@@ -32,8 +34,17 @@ def load(path: Path) -> dict:
 
 
 def current_sha() -> str:
+    status = subprocess.run(
+        ["git", "-C", str(ROOT), "status", "--porcelain", "--untracked-files=all"],
+        capture_output=True, text=True, timeout=10,
+    )
+    if status.returncode:
+        raise RuntimeError("DAVIS_SOURCE_STATUS_CHECK_FAILED")
+    if status.stdout.strip():
+        raise RuntimeError("DAVIS_DIRTY_SOURCE_TREE_CANNOT_PIN_PREDICTIONS")
     return subprocess.check_output(
-        ["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip()
+        ["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True, timeout=10
+    ).strip()
 
 
 def verify_split(cfg: dict, rows: list) -> None:
@@ -47,6 +58,30 @@ def verify_split(cfg: dict, rows: list) -> None:
         raise RuntimeError("BATCH37_SCENE_SPLIT_NOT_FROZEN")
 
 
+def patch_ncc(
+    previous_gray: np.ndarray, current_gray: np.ndarray,
+    previous_xy: np.ndarray, current_xy: np.ndarray, size: int = 11,
+) -> float:
+    """Mean-normalized local patch correlation; illumination offset is removed."""
+    if size < 5 or size % 2 == 0:
+        raise ValueError("PATCH_SIZE_MUST_BE_ODD_AND_AT_LEAST_5")
+    half = size // 2
+    h, w = previous_gray.shape
+    x0, y0 = map(float, previous_xy)
+    x1, y1 = map(float, current_xy)
+    if min(x0, y0, x1, y1) < half + 1 or x0 >= w-half-1 or x1 >= w-half-1 or y0 >= h-half-1 or y1 >= h-half-1:
+        return -1.0
+    a = cv2.getRectSubPix(previous_gray, (size, size), (x0, y0)).astype(np.float32)
+    b = cv2.getRectSubPix(current_gray, (size, size), (x1, y1)).astype(np.float32)
+    a -= float(a.mean())
+    b -= float(b.mean())
+    denominator = float(np.linalg.norm(a) * np.linalg.norm(b))
+    if not np.isfinite(denominator) or denominator < 1e-6:
+        return -1.0
+    score = float(np.sum(a * b) / denominator)
+    return score if np.isfinite(score) else -1.0
+
+
 def consensus_track(
     frames: list[np.ndarray],
     initial_mask: np.ndarray,
@@ -57,6 +92,8 @@ def consensus_track(
     max_step_px: float,
     inlier_residual_px: float,
     min_consensus_ratio: float,
+    patch_ncc_min: float | None = None,
+    patch_size: int = 11,
 ) -> list[list[float] | None]:
     """Initial-target sparse LK with per-step FB and robust motion consensus.
 
@@ -113,6 +150,12 @@ def consensus_track(
             & (x[:, 0] >= 0) & (x[:, 0] < w)
             & (x[:, 1] >= 0) & (x[:, 1] < h)
         )
+        if patch_ncc_min is not None:
+            ncc = np.asarray([
+                patch_ncc(gray[k - 1], gray[k], p0, p1, patch_size)
+                for p0, p1 in zip(previous, x)
+            ], dtype=np.float32)
+            valid &= np.isfinite(ncc) & (ncc >= patch_ncc_min)
         if np.count_nonzero(valid) < min_features:
             trace.extend([None] * (len(gray) - k))
             break
@@ -185,12 +228,25 @@ def predict(cfg: dict, split: str) -> None:
     manifest = raw.check(cfg, include_future_masks_and_gold=False)
     verify_split(cfg, manifest["rows"])
     mh = raw.sha256((dataset / "manifest.json").read_bytes())
+    selection_path = ROOT / cfg["output_dir"] / "dev_selection.json"
+    selection = None
+    if split == "test":
+        if not selection_path.is_file():
+            raise RuntimeError("BATCH40_DEV_SELECTION_MISSING")
+        selection = load(selection_path)
+        if (selection.get("source_commit") != current_sha()
+                or selection.get("selected_method") not in METHODS):
+            raise RuntimeError("BATCH40_DEV_SELECTION_SOURCE_OR_METHOD_DRIFT")
     output = ROOT / cfg["output_dir"] / (split + "_predictions.json")
     if output.is_file():
         doc = load(output)
+        expected_selection_sha = raw.sha256(selection_path.read_bytes()) if selection else None
+        expected_selected_method = selection.get("selected_method") if selection else None
         if (doc.get("manifest_sha256") != mh
                 or doc.get("methods") != list(METHODS)
                 or doc.get("source_commit") != current_sha()
+                or doc.get("dev_selection_sha256") != expected_selection_sha
+                or doc.get("dev_selected_method") != expected_selected_method
                 or doc.get("split") != split):
             raise RuntimeError("BATCH37_EXISTING_PREDICTION_CODE_OR_DATA_DRIFT")
         base.pin_prediction_bytes(output)
@@ -203,6 +259,8 @@ def predict(cfg: dict, split: str) -> None:
     base.write_once(output, {
         "methods": list(METHODS), "split": split,
         "source_commit": current_sha(), "manifest_sha256": mh,
+        "dev_selection_sha256": raw.sha256(selection_path.read_bytes()) if selection else None,
+        "dev_selected_method": selection.get("selected_method") if selection else None,
         "no_future_gold_in_inference": True, "nscenes": len(rows),
         "records": result,
     })
@@ -267,9 +325,20 @@ def score(cfg: dict, split: str) -> None:
     path = ROOT / cfg["output_dir"] / (split + "_predictions.json")
     base.require_pinned_prediction(path)
     sealed = load(path)
+    selection_path = ROOT / cfg["output_dir"] / "dev_selection.json"
+    selection = load(selection_path) if split == "test" and selection_path.is_file() else None
+    if split == "test" and (
+            selection is None
+            or selection.get("source_commit") != current_sha()
+            or selection.get("status") != "selected_from_dev_only"):
+        raise RuntimeError("BATCH40_TEST_DEV_SELECTION_MISSING_OR_STALE")
+    expected_selection_sha = raw.sha256(selection_path.read_bytes()) if selection else None
+    expected_selected_method = selection.get("selected_method") if selection else None
     if (sealed.get("manifest_sha256") != raw.sha256((dataset / "manifest.json").read_bytes())
             or sealed.get("methods") != list(METHODS)
             or sealed.get("source_commit") != current_sha()
+            or sealed.get("dev_selection_sha256") != expected_selection_sha
+            or sealed.get("dev_selected_method") != expected_selected_method
             or sealed.get("no_future_gold_in_inference") is not True
             or sealed.get("split") != split
             or sealed.get("nscenes") != len(rows)):
@@ -299,10 +368,12 @@ def score(cfg: dict, split: str) -> None:
         "world_relative_motion_not_labeled": True,
         "future_labels_never_used_for_inference": True,
         "methods": aggregate, "background_2d_registration_accepted": camera_count,
-        "scene_bootstrap_consensus_minus_klt_fb_pp_ci95": bootstrap_ci(
-            gold, rows, records, "klt_fb_consensus"),
-        "scene_bootstrap_guarded_minus_klt_fb_pp_ci95": bootstrap_ci(
-            gold, rows, records, "klt_fb_guarded"),
+        "dev_selected_method": sealed.get("dev_selected_method"),
+        "dev_selection_sha256": sealed.get("dev_selection_sha256"),
+        "scene_bootstrap_pck8_vs_klt_fb_pp_ci95": {
+            method: bootstrap_ci(gold, rows, records, method)
+            for method in METHODS if method != "klt_forward_backward"
+        },
         "caveats": [
             "Mask-center is not a material point; changing masks shift the proxy.",
             "Mask-area shrink is not a validated occlusion annotation.",
@@ -327,18 +398,74 @@ def score(cfg: dict, split: str) -> None:
     }, sort_keys=True), flush=True)
 
 
+def select_dev(cfg: dict) -> dict:
+    output_dir = ROOT / cfg["output_dir"]
+    results_path = output_dir / "dev_results.json"
+    if not results_path.is_file():
+        raise RuntimeError("BATCH40_DEV_RESULTS_MISSING")
+    results = load(results_path)
+    if results.get("source_commit") != current_sha() or results.get("split") != "dev":
+        raise RuntimeError("BATCH40_DEV_RESULTS_SOURCE_DRIFT")
+    rule = cfg["dev_selection"]
+    eligible = []
+    diagnostics = {}
+    for method in rule["candidate_methods"]:
+        if method not in results["methods"]:
+            raise RuntimeError("BATCH40_DEV_CANDIDATE_METHOD_MISSING:" + method)
+        m = results["methods"][method]
+        absent_n = int(m["invisible_evaluations"])
+        visible_n = int(m["visible_evaluations"])
+        absent_rate = (m["absent_false_accepted"] / absent_n) if absent_n else None
+        coverage = (m["visible_accepted"] / visible_n) if visible_n else 0.0
+        diagnostics[method] = {
+            "visible_pck8_unconditional": m["visible_pck8_unconditional"],
+            "visible_coverage": round(coverage, 6),
+            "absent_false_accept_rate": None if absent_rate is None else round(absent_rate, 6),
+            "visible_evaluations": visible_n,
+            "invisible_evaluations": absent_n,
+        }
+        if (absent_n >= int(rule["minimum_absent_evaluations"])
+                and absent_rate is not None
+                and absent_rate <= float(rule["max_absent_false_accept_rate"])
+                and coverage >= float(rule["min_visible_coverage"])):
+            eligible.append(method)
+    selected = (
+        max(eligible, key=lambda name: (
+            results["methods"][name]["visible_pck8_unconditional"],
+            diagnostics[name]["visible_coverage"], name,
+        )) if eligible else rule["fallback_method"]
+    )
+    doc = {
+        "status": "selected_from_dev_only",
+        "source_commit": current_sha(),
+        "dev_results_sha256": raw.sha256(results_path.read_bytes()),
+        "candidate_diagnostics": diagnostics,
+        "eligible_methods": eligible,
+        "selection_rule": rule,
+        "selected_method": selected,
+        "fallback_used": not bool(eligible),
+        "test_labels_read": False,
+    }
+    base.write_once(output_dir / "dev_selection.json", doc)
+    print("BATCH40_DEV_SELECTED_METHOD", selected, json.dumps(doc, sort_keys=True), flush=True)
+    return doc
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=(
-        "predict-dev", "score-dev", "predict-test", "score-test"))
-    parser.add_argument("--config", default="configs/davis_occlusion_v2.json")
+        "predict-dev", "score-dev", "select-dev", "predict-test", "score-test"))
+    parser.add_argument("--config", default="configs/davis_occlusion_v3.json")
     args = parser.parse_args()
     cfg = load(ROOT / args.config)
-    action, split = args.action.split("-")
-    if action == "predict":
-        predict(cfg, split)
+    if args.action == "select-dev":
+        select_dev(cfg)
     else:
-        score(cfg, split)
+        action, split = args.action.split("-")
+        if action == "predict":
+            predict(cfg, split)
+        else:
+            score(cfg, split)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,107 @@
+{
+  "version": "2026-11-02-batch40-davis-appearance-consensus-vlm-visibility-v1",
+  "official_url": "https://data.vision.ee.ethz.ch/csergi/share/davis/DAVIS-2017-trainval-480p.zip",
+  "dataset_dir": "data/davis_occlusion_v3",
+  "output_dir": "outputs/davis_occlusion_v3",
+  "split_salt": "batch40-independent-davis-appearance-consensus-20261102-cobalt-731",
+  "dev_scenes": 4,
+  "test_scenes": 8,
+  "source_frames": 16,
+  "source_stride": 2,
+  "download_workers": 8,
+  "frame_resolution": "original DAVIS 480p",
+  "initial_mask_only": true,
+  "world_relative_gold": false,
+  "exclude_scenes": [
+    "paragliding-launch",
+    "rallye",
+    "loading",
+    "surf",
+    "dogs-jump",
+    "dancing",
+    "lady-running",
+    "paragliding",
+    "soccerball",
+    "india",
+    "hike",
+    "breakdance-flare"
+  ],
+  "predeclared_models": {
+    "klt_fb_consensus": {
+      "min_features": 7,
+      "fb_error_px": 1.5,
+      "max_step_px": 45,
+      "inlier_residual_px": 4,
+      "min_consensus_ratio": 0.55
+    },
+    "klt_fb_guarded": {
+      "min_features": 9,
+      "fb_error_px": 1.25,
+      "max_step_px": 30,
+      "inlier_residual_px": 2.5,
+      "min_consensus_ratio": 0.7
+    },
+    "klt_fb_appearance_045": {
+      "min_features": 7,
+      "fb_error_px": 1.5,
+      "max_step_px": 45,
+      "inlier_residual_px": 4,
+      "min_consensus_ratio": 0.55,
+      "patch_ncc_min": 0.45,
+      "patch_size": 11
+    },
+    "klt_fb_appearance_055": {
+      "min_features": 7,
+      "fb_error_px": 1.5,
+      "max_step_px": 45,
+      "inlier_residual_px": 4,
+      "min_consensus_ratio": 0.55,
+      "patch_ncc_min": 0.55,
+      "patch_size": 11
+    },
+    "klt_fb_appearance_065": {
+      "min_features": 7,
+      "fb_error_px": 1.5,
+      "max_step_px": 45,
+      "inlier_residual_px": 4,
+      "min_consensus_ratio": 0.55,
+      "patch_ncc_min": 0.65,
+      "patch_size": 11
+    }
+  },
+  "dev_selection": {
+    "candidate_methods": [
+      "klt_fb_appearance_045",
+      "klt_fb_appearance_055",
+      "klt_fb_appearance_065"
+    ],
+    "max_absent_false_accept_rate": 0.35,
+    "min_visible_coverage": 0.5,
+    "objective": "maximize visible_pck8_unconditional, then visible coverage",
+    "fallback_method": "klt_fb_guarded",
+    "minimum_absent_evaluations": 3
+  },
+  "vlm_target_frame_indices": [
+    3,
+    7,
+    11,
+    15
+  ],
+  "vlm_model_id": "HuggingFaceTB/SmolVLM2-500M-Video-Instruct",
+  "vlm_prompt_version": "davis-mask-highlight-binary-visibility-v1",
+  "vlm_max_new_tokens": 8,
+  "vlm_dev_gate": {
+    "max_invalid_rate": 0.2,
+    "min_coverage": 0.6
+  },
+  "evaluation_thresholds_px": [
+    4,
+    8,
+    16
+  ],
+  "visibility_heuristic": "future annotation object pixels > 0; only for scoring",
+  "shrink_proxy_threshold": 0.4,
+  "prohibit_test_selection": true,
+  "license_citation": "DAVIS 2017 480p source attribution; media local only; individual footage terms not assumed",
+  "source_provenance": "official DAVIS trainval verified ZIP byte ranges; new scene-disjoint draw, never selected from prior TEST labels"
+}

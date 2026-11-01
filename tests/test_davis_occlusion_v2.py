@@ -13,6 +13,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "experiments"))
 import davis_occlusion_eval as m
 import davis_real_data as raw
+import davis_vlm_visibility as vis
 
 
 def cfg():
@@ -47,7 +48,9 @@ def test_config_is_prospective_and_disjoint():
     assert c["prohibit_test_selection"] is True
     assert m.METHODS == (
         "stationary_pixel", "klt_forward_backward",
-        "klt_fb_consensus", "klt_fb_guarded")
+        "klt_fb_consensus", "klt_fb_guarded",
+        "klt_fb_appearance_045", "klt_fb_appearance_055",
+        "klt_fb_appearance_065")
 
 
 def test_selection_excludes_prior_scenes_and_short_clips(monkeypatch):
@@ -169,6 +172,10 @@ def test_prediction_path_cannot_read_any_future_oracle(monkeypatch, tmp_path):
     queries = {r["name"]: {"center": [0, 0], "query_mask": "initial.png"}
                for r in rows}
     (data_path / "initial_queries.json").write_text(json.dumps(queries))
+    (root / config["output_dir"]).mkdir(parents=True)
+    (root / config["output_dir"] / "dev_selection.json").write_text(json.dumps({
+        "source_commit": "frozen-code", "selected_method": "klt_fb_guarded"
+    }))
     monkeypatch.setattr(m, "ROOT", root)
     monkeypatch.setattr(m, "current_sha", lambda: "frozen-code")
     monkeypatch.setattr(m.raw, "check", lambda cfg, include_future_masks_and_gold: (
@@ -197,8 +204,12 @@ def test_wrong_source_hash_or_method_refuses_existing(monkeypatch, tmp_path):
     out_path.mkdir(parents=True)
     (data_path / "manifest.json").write_text("{}")
     (out_path / "test_predictions.json").write_text('{"methods": ["old"]}')
+    (out_path / "dev_selection.json").write_text(json.dumps({
+        "source_commit": "frozen-source", "selected_method": "klt_fb_guarded"
+    }))
     rows = [{"name": f"new-{i}", "split": "dev" if i < 4 else "test"}
             for i in range(12)]
+    monkeypatch.setattr(m, "current_sha", lambda: "frozen-source")
     monkeypatch.setattr(m, "ROOT", tmp_path)
     monkeypatch.setattr(m.raw, "check", lambda *args, **kwargs: {"rows": rows})
     with pytest.raises(RuntimeError, match="CODE_OR_DATA_DRIFT"):
@@ -217,3 +228,146 @@ def test_new_config_is_valid_json_and_frozen_signature():
     assert data["initial_mask_only"] and not data["world_relative_gold"]
     assert data["predeclared_models"]["klt_fb_guarded"]["min_features"] == 9
     assert data["predeclared_models"]["klt_fb_consensus"]["min_features"] == 7
+
+
+
+def cfg_v3():
+    return json.loads((ROOT / "configs/davis_occlusion_v3.json").read_text())
+
+
+def test_patch_ncc_is_robust_to_brightness_offset_but_rejects_replacement():
+    rng = np.random.default_rng(401)
+    a = np.zeros((80, 100), np.uint8)
+    b = np.zeros_like(a)
+    c = np.zeros_like(a)
+    patch = rng.integers(20, 220, (21, 21), dtype=np.uint8)
+    a[29:50, 39:60] = patch
+    b[29:50, 39:60] = np.clip(patch.astype(np.float32) * 0.65 + 42, 0, 255).astype(np.uint8)
+    c[29:50, 39:60] = rng.integers(20, 220, (21, 21), dtype=np.uint8)
+    same = m.patch_ncc(a, b, np.array([49., 39.]), np.array([49., 39.]), 11)
+    different = m.patch_ncc(a, c, np.array([49., 39.]), np.array([49., 39.]), 11)
+    assert same > 0.98
+    assert different < 0.5
+
+
+def test_appearance_consensus_abstains_after_full_target_patch_replacement():
+    frames, mask, center = synthetic()
+    rng = np.random.default_rng(402)
+    for k in range(4, len(frames)):
+        x0, y0 = 40 + 2*k, 38 + k
+        replacement = rng.integers(0, 255, (49, 50, 3), dtype=np.uint8)
+        frames[k][y0:y0+49, x0:x0+50] = replacement
+    result = m.consensus_track(
+        frames, mask, center,
+        min_features=7, fb_error_px=1.5, max_step_px=45.0,
+        inlier_residual_px=4.0, min_consensus_ratio=0.55,
+        patch_ncc_min=0.65, patch_size=11,
+    )
+    assert result[1] is not None
+    assert result[4] is None
+    assert all(point is None for point in result[4:])
+
+
+def test_dirty_source_tree_cannot_be_pinned(monkeypatch):
+    class Status:
+        returncode = 0
+        stdout = " M experiments/davis_occlusion_eval.py\\n"
+    monkeypatch.setattr(m.subprocess, "run", lambda *args, **kwargs: Status())
+    with pytest.raises(RuntimeError, match="DIRTY_SOURCE_TREE_CANNOT_PIN"):
+        m.current_sha()
+
+
+def test_dev_selection_uses_only_predeclared_dev_candidates(monkeypatch, tmp_path):
+    config = cfg_v3()
+    config["output_dir"] = "outputs/sim"
+    out = tmp_path / "outputs" / "sim"
+    out.mkdir(parents=True)
+    monkeypatch.setattr(m, "ROOT", tmp_path)
+    monkeypatch.setattr(m, "current_sha", lambda: "frozen-source")
+    result = {
+        "split": "dev", "source_commit": "frozen-source",
+        "methods": {
+            "klt_fb_appearance_045": {
+                "visible_pck8_unconditional": 0.70, "visible_accepted": 8,
+                "visible_evaluations": 10, "invisible_evaluations": 4,
+                "absent_false_accepted": 2,
+            },
+            "klt_fb_appearance_055": {
+                "visible_pck8_unconditional": 0.65, "visible_accepted": 8,
+                "visible_evaluations": 10, "invisible_evaluations": 4,
+                "absent_false_accepted": 1,
+            },
+            "klt_fb_appearance_065": {
+                "visible_pck8_unconditional": 0.60, "visible_accepted": 9,
+                "visible_evaluations": 10, "invisible_evaluations": 4,
+                "absent_false_accepted": 0,
+            },
+        },
+    }
+    (out / "dev_results.json").write_text(json.dumps(result))
+    selected = m.select_dev(config)
+    assert selected["selected_method"] == "klt_fb_appearance_055"
+    assert selected["eligible_methods"] == [
+        "klt_fb_appearance_055", "klt_fb_appearance_065"
+    ]
+    assert selected["test_labels_read"] is False
+
+
+def test_vlm_visibility_parser_and_prompt_are_binary_with_abstention():
+    assert vis.parse_visibility("VISIBLE") == ("VISIBLE", "valid_visible")
+    assert vis.parse_visibility("The object is not visible.") == ("ABSENT", "valid_absent")
+    assert vis.parse_visibility("ABSENT") == ("ABSENT", "valid_absent")
+    assert vis.parse_visibility("UNCERTAIN") == ("UNCERTAIN", "valid_uncertain")
+    assert vis.parse_visibility("visible or absent") == ("ABSENT", "valid_absent")
+    assert vis.parse_visibility("maybe it is there") == (None, "invalid_format")
+    assert "VISIBLE, ABSENT, or UNCERTAIN" in vis.PROMPT
+    assert "pixel coordinates" not in vis.PROMPT.lower()
+
+
+def test_vlm_reference_overlay_uses_only_the_initial_mask(tmp_path):
+    frame = np.zeros((48, 64, 3), np.uint8)
+    mask = np.zeros((48, 64), np.uint8)
+    mask[10:30, 15:35] = 255
+    path = tmp_path / "mask.png"
+    assert cv2.imwrite(str(path), mask)
+    result = np.asarray(vis.highlighted_reference(frame, path))
+    assert result[20, 25, 0] > result[20, 25, 1]
+    assert np.array_equal(result[2, 2], np.array([0, 0, 0], dtype=np.uint8))
+
+
+def test_vlm_visibility_dev_gate_checks_format_and_coverage(monkeypatch, tmp_path):
+    monkeypatch.setattr(vis, "OUT", tmp_path)
+    monkeypatch.setattr(vis, "source_sha", lambda: "frozen-source")
+    result = {
+        "split": "dev", "source_commit": "frozen-source",
+        "query_count": 16, "invalid": 1, "coverage": 0.75,
+    }
+    (tmp_path / "vlm_visibility_dev_results.json").write_text(json.dumps(result))
+    gate = vis.dev_gate(cfg_v3())
+    assert gate["status"] == "passed"
+    assert gate["selection_basis"].startswith("format and decision coverage")
+    (tmp_path / "vlm_visibility_dev_results.json").write_text(json.dumps({
+        "split": "dev", "source_commit": "frozen-source",
+        "query_count": 16, "invalid": 5, "coverage": 0.75,
+    }))
+    with pytest.raises(RuntimeError, match="INTERFACE_GATE_FAILED"):
+        vis.dev_gate(cfg_v3())
+
+
+def test_vlm_visibility_predictor_does_not_reference_future_private_masks():
+    assert "gold-private.json" not in vis.predict.__code__.co_consts
+    assert "gold-private.json" in vis.score.__code__.co_consts
+
+
+
+def test_v3_protocol_predeclares_appearance_sweep_and_vlm_visibility_endpoints():
+    config = cfg_v3()
+    assert config["dataset_dir"] == "data/davis_occlusion_v3"
+    assert (config["dev_scenes"], config["test_scenes"]) == (4, 8)
+    assert config["vlm_target_frame_indices"] == [3, 7, 11, 15]
+    models = config["predeclared_models"]
+    assert [models[name]["patch_ncc_min"] for name in (
+        "klt_fb_appearance_045", "klt_fb_appearance_055",
+        "klt_fb_appearance_065")] == [0.45, 0.55, 0.65]
+    assert config["dev_selection"]["max_absent_false_accept_rate"] == 0.35
+    assert config["prohibit_test_selection"] is True

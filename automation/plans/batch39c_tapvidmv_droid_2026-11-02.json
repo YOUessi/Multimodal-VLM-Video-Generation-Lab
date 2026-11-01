@@ -1,0 +1,231 @@
+{
+  "version": "2026-11-02-batch39C-tapvidmv-droid-clean-source-multiview-v1",
+  "enabled": true,
+  "description": "TAPVid-MV DROID public Rerun viewer subset; 4 DEV + 8 TEST collection groups; 3 calibrated RGB views; 2 frame-0 depth-visible queries per camera; CPU point tracking, ORB affine camera diagnostic and SmolVLM2-500M endpoint baseline; clean-source SHA, DEV-only interface gate, sealed one-time TEST scoring, GPU lock and fail-closed stages.",
+  "stages": [
+    {
+      "id": "C01_public_source_manifest_and_errata_audit",
+      "gpu": false,
+      "timeout_seconds": 1200,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_data.py",
+        "audit"
+      ],
+      "requires_files": [
+        "../data/tapvidmv_droid_batch39/source/source_manifest.json",
+        "../data/tapvidmv_droid_batch39/batch39b_frozen/manifest-errata.json"
+      ]
+    },
+    {
+      "id": "C02_full_project_regression_suite",
+      "gpu": false,
+      "timeout_seconds": 1200,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests"
+      ],
+      "requires_files": [
+        "tests/test_tapvidmv_droid_batch39.py"
+      ]
+    },
+    {
+      "id": "C03_DEV_CPU_labelblind_predictions_and_SHA_pin",
+      "gpu": false,
+      "timeout_seconds": 2400,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_eval.py",
+        "predict-dev"
+      ],
+      "requires_files": [
+        "../data/tapvidmv_droid_batch39/batch39b_frozen/queries-public.json"
+      ]
+    },
+    {
+      "id": "C04_DEV_CPU_oracle_score",
+      "gpu": false,
+      "timeout_seconds": 1200,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_eval.py",
+        "score-dev"
+      ],
+      "requires_files": [
+        "outputs/tapvidmv_droid_batch39c/dev_predictions.json.sha256"
+      ]
+    },
+    {
+      "id": "C05_DEV_GPU_SmolVLM2_500M_endpoint_predictions",
+      "gpu": true,
+      "min_free_mib": 10000,
+      "timeout_seconds": 3600,
+      "max_attempts": 1,
+      "argv": [
+        "env",
+        "MVVG_VLM_MODEL=../models/SmolVLM2-500M-Video-Instruct",
+        "{python}",
+        "experiments/tapvidmv_vlm.py",
+        "predict-dev"
+      ],
+      "requires_files": [
+        "../models/SmolVLM2-500M-Video-Instruct/model.safetensors",
+        "outputs/tapvidmv_droid_batch39c/dev_predictions.json.sha256"
+      ]
+    },
+    {
+      "id": "C06_DEV_VLM_oracle_score",
+      "gpu": false,
+      "timeout_seconds": 1200,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_vlm.py",
+        "score-dev"
+      ],
+      "requires_files": [
+        "outputs/tapvidmv_droid_batch39c/dev_vlm_predictions.json.sha256"
+      ]
+    },
+    {
+      "id": "C07_predeclared_DEV_output_format_gate",
+      "gpu": false,
+      "timeout_seconds": 600,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_gate.py",
+        "dev-gate"
+      ],
+      "requires_files": [
+        "outputs/tapvidmv_droid_batch39c/dev_vlm_results.json"
+      ]
+    },
+    {
+      "id": "C08_TEST_CPU_labelblind_predictions_and_SHA_pin",
+      "gpu": false,
+      "timeout_seconds": 3600,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_eval.py",
+        "predict-test"
+      ],
+      "requires_files": [
+        "outputs/tapvidmv_droid_batch39c/DEV_GATE_PASSED.json"
+      ]
+    },
+    {
+      "id": "C09_TEST_GPU_SmolVLM2_500M_endpoint_predictions",
+      "gpu": true,
+      "min_free_mib": 10000,
+      "timeout_seconds": 5400,
+      "max_attempts": 1,
+      "argv": [
+        "env",
+        "MVVG_VLM_MODEL=../models/SmolVLM2-500M-Video-Instruct",
+        "{python}",
+        "experiments/tapvidmv_vlm.py",
+        "predict-test"
+      ],
+      "requires_files": [
+        "outputs/tapvidmv_droid_batch39c/test_predictions.json.sha256",
+        "../models/SmolVLM2-500M-Video-Instruct/model.safetensors"
+      ]
+    },
+    {
+      "id": "C10_first_only_TEST_CPU_oracle_score",
+      "gpu": false,
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_eval.py",
+        "score-test"
+      ],
+      "requires_files": [
+        "outputs/tapvidmv_droid_batch39c/test_predictions.json.sha256",
+        "outputs/tapvidmv_droid_batch39c/test_vlm_predictions.json.sha256"
+      ]
+    },
+    {
+      "id": "C11_first_only_TEST_VLM_oracle_score",
+      "gpu": false,
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_vlm.py",
+        "score-test"
+      ],
+      "requires_files": [
+        "outputs/tapvidmv_droid_batch39c/test_results.json"
+      ]
+    },
+    {
+      "id": "C12_source_media_weights_secrets_publication_guard",
+      "gpu": false,
+      "timeout_seconds": 900,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/source_security_guard.py"
+      ],
+      "requires_files": [
+        "outputs/tapvidmv_droid_batch39c/test_vlm_results.json"
+      ]
+    },
+    {
+      "id": "C13_final_full_regression_suite",
+      "gpu": false,
+      "timeout_seconds": 1200,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests"
+      ],
+      "requires_files": [
+        "outputs/tapvidmv_droid_batch39c/test_vlm_results.json"
+      ]
+    },
+    {
+      "id": "C14_generate_sealed_results_report",
+      "gpu": false,
+      "timeout_seconds": 600,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_gate.py",
+        "report"
+      ],
+      "requires_files": [
+        "outputs/tapvidmv_droid_batch39c/test_vlm_results.json",
+        "outputs/tapvidmv_droid_batch39c/DEV_GATE_PASSED.json"
+      ]
+    },
+    {
+      "id": "C15_final_data_prediction_and_source_SHA_audit",
+      "gpu": false,
+      "timeout_seconds": 900,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_gate.py",
+        "final-audit"
+      ],
+      "requires_files": [
+        "outputs/tapvidmv_droid_batch39c/BATCH39C_RESULTS.md"
+      ]
+    }
+  ]
+}
