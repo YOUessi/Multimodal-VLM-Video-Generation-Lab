@@ -1,0 +1,294 @@
+{
+  "version": "2026-11-02-batch40-davis-appearance-consensus-vlm-visibility-v1",
+  "enabled": true,
+  "description": "New scene-disjoint DAVIS 2017 real-camera video draw (4 DEV + 8 TEST, 16 frames each); multi-feature KLT appearance-consistency sweep, DEV-only threshold selection, SmolVLM2-500M VISIBLE/ABSENT/UNCERTAIN two-image baseline, SHA-pinned label-blind TEST predictions, one-time future-mask scoring, GPU-exclusive VLM stages.",
+  "stages": [
+    {
+      "id": "D01_acquire_new_scene_disjoint_DAVIS_frames_and_masks",
+      "gpu": false,
+      "timeout_seconds": 5400,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/davis_real_data.py",
+        "acquire",
+        "--config",
+        "configs/davis_occlusion_v3.json"
+      ]
+    },
+    {
+      "id": "D02_full_DAVIS_asset_query_and_private_gold_audit",
+      "gpu": false,
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/davis_real_data.py",
+        "audit",
+        "--config",
+        "configs/davis_occlusion_v3.json"
+      ],
+      "requires_files": [
+        "data/davis_occlusion_v3/manifest.json",
+        "data/davis_occlusion_v3/initial_queries.json",
+        "data/davis_occlusion_v3/gold-private.json"
+      ]
+    },
+    {
+      "id": "D03_full_project_regression_suite",
+      "gpu": false,
+      "timeout_seconds": 1200,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests"
+      ],
+      "requires_files": [
+        "tests/test_davis_occlusion_v2.py"
+      ]
+    },
+    {
+      "id": "D04_DEV_CPU_labelblind_multi_method_predictions",
+      "gpu": false,
+      "timeout_seconds": 2400,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/davis_occlusion_eval.py",
+        "predict-dev",
+        "--config",
+        "configs/davis_occlusion_v3.json"
+      ],
+      "requires_files": [
+        "data/davis_occlusion_v3/manifest.json",
+        "data/davis_occlusion_v3/initial_queries.json"
+      ]
+    },
+    {
+      "id": "D05_DEV_CPU_future_mask_score",
+      "gpu": false,
+      "timeout_seconds": 1200,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/davis_occlusion_eval.py",
+        "score-dev",
+        "--config",
+        "configs/davis_occlusion_v3.json"
+      ],
+      "requires_files": [
+        "outputs/davis_occlusion_v3/dev_predictions.json.sha256"
+      ]
+    },
+    {
+      "id": "D06_DEV_GPU_SmolVLM2_binary_visibility_predictions",
+      "gpu": true,
+      "min_free_mib": 10000,
+      "timeout_seconds": 3600,
+      "max_attempts": 1,
+      "argv": [
+        "env",
+        "MVVG_VLM_MODEL=../models/SmolVLM2-500M-Video-Instruct",
+        "{python}",
+        "experiments/davis_vlm_visibility.py",
+        "predict-dev",
+        "--config",
+        "configs/davis_occlusion_v3.json"
+      ],
+      "requires_files": [
+        "../models/SmolVLM2-500M-Video-Instruct/model.safetensors",
+        "data/davis_occlusion_v3/initial_queries.json"
+      ]
+    },
+    {
+      "id": "D07_DEV_VLM_visibility_score",
+      "gpu": false,
+      "timeout_seconds": 1200,
+      "max_attempts": 1,
+      "argv": [
+        "env",
+        "MVVG_VLM_MODEL=../models/SmolVLM2-500M-Video-Instruct",
+        "{python}",
+        "experiments/davis_vlm_visibility.py",
+        "score-dev",
+        "--config",
+        "configs/davis_occlusion_v3.json"
+      ],
+      "requires_files": [
+        "outputs/davis_occlusion_v3/vlm_visibility_dev_predictions.json.sha256"
+      ]
+    },
+    {
+      "id": "D08_select_appearance_threshold_from_DEV_only",
+      "gpu": false,
+      "timeout_seconds": 600,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/davis_occlusion_eval.py",
+        "select-dev",
+        "--config",
+        "configs/davis_occlusion_v3.json"
+      ],
+      "requires_files": [
+        "outputs/davis_occlusion_v3/dev_results.json"
+      ]
+    },
+    {
+      "id": "D09_predeclared_VLM_visibility_DEV_interface_gate",
+      "gpu": false,
+      "timeout_seconds": 600,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/davis_vlm_visibility.py",
+        "dev-gate",
+        "--config",
+        "configs/davis_occlusion_v3.json"
+      ],
+      "requires_files": [
+        "outputs/davis_occlusion_v3/vlm_visibility_dev_results.json"
+      ]
+    },
+    {
+      "id": "D10_TEST_CPU_labelblind_multi_method_predictions",
+      "gpu": false,
+      "timeout_seconds": 3600,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/davis_occlusion_eval.py",
+        "predict-test",
+        "--config",
+        "configs/davis_occlusion_v3.json"
+      ],
+      "requires_files": [
+        "outputs/davis_occlusion_v3/dev_selection.json",
+        "outputs/davis_occlusion_v3/vlm_visibility_dev_gate.json"
+      ]
+    },
+    {
+      "id": "D11_TEST_GPU_SmolVLM2_binary_visibility_predictions",
+      "gpu": true,
+      "min_free_mib": 10000,
+      "timeout_seconds": 3600,
+      "max_attempts": 1,
+      "argv": [
+        "env",
+        "MVVG_VLM_MODEL=../models/SmolVLM2-500M-Video-Instruct",
+        "{python}",
+        "experiments/davis_vlm_visibility.py",
+        "predict-test",
+        "--config",
+        "configs/davis_occlusion_v3.json"
+      ],
+      "requires_files": [
+        "outputs/davis_occlusion_v3/test_predictions.json.sha256",
+        "outputs/davis_occlusion_v3/vlm_visibility_dev_gate.json",
+        "../models/SmolVLM2-500M-Video-Instruct/model.safetensors"
+      ]
+    },
+    {
+      "id": "D12_first_only_TEST_CPU_future_mask_score",
+      "gpu": false,
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/davis_occlusion_eval.py",
+        "score-test",
+        "--config",
+        "configs/davis_occlusion_v3.json"
+      ],
+      "requires_files": [
+        "outputs/davis_occlusion_v3/test_predictions.json.sha256",
+        "outputs/davis_occlusion_v3/vlm_visibility_test_predictions.json.sha256"
+      ]
+    },
+    {
+      "id": "D13_first_only_TEST_VLM_visibility_score",
+      "gpu": false,
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "argv": [
+        "env",
+        "MVVG_VLM_MODEL=../models/SmolVLM2-500M-Video-Instruct",
+        "{python}",
+        "experiments/davis_vlm_visibility.py",
+        "score-test",
+        "--config",
+        "configs/davis_occlusion_v3.json"
+      ],
+      "requires_files": [
+        "outputs/davis_occlusion_v3/test_results.json"
+      ]
+    },
+    {
+      "id": "D14_source_media_weights_and_secrets_publication_guard",
+      "gpu": false,
+      "timeout_seconds": 900,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/source_security_guard.py"
+      ],
+      "requires_files": [
+        "outputs/davis_occlusion_v3/vlm_visibility_test_results.json"
+      ]
+    },
+    {
+      "id": "D15_final_full_regression_suite",
+      "gpu": false,
+      "timeout_seconds": 1200,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests"
+      ],
+      "requires_files": [
+        "outputs/davis_occlusion_v3/test_results.json",
+        "outputs/davis_occlusion_v3/vlm_visibility_test_results.json"
+      ]
+    },
+    {
+      "id": "D16_generate_sealed_Batch40_results_report",
+      "gpu": false,
+      "timeout_seconds": 600,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/davis_batch40_report.py",
+        "report",
+        "--config",
+        "configs/davis_occlusion_v3.json"
+      ],
+      "requires_files": [
+        "outputs/davis_occlusion_v3/dev_selection.json",
+        "outputs/davis_occlusion_v3/test_results.json",
+        "outputs/davis_occlusion_v3/vlm_visibility_test_results.json"
+      ]
+    },
+    {
+      "id": "D17_final_data_prediction_and_source_SHA_audit",
+      "gpu": false,
+      "timeout_seconds": 900,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/davis_batch40_report.py",
+        "final-audit",
+        "--config",
+        "configs/davis_occlusion_v3.json"
+      ],
+      "requires_files": [
+        "outputs/davis_occlusion_v3/BATCH40_RESULTS.md"
+      ]
+    }
+  ]
+}

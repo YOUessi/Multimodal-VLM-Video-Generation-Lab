@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-02-batch40-davis-appearance-consensus-vlm-visibility-v1",
+  "version": "2026-11-02-batch40b-davis-appearance-consensus-vlm-visibility-v1",
   "enabled": true,
-  "description": "New scene-disjoint DAVIS 2017 real-camera video draw (4 DEV + 8 TEST, 16 frames each); multi-feature KLT appearance-consistency sweep, DEV-only threshold selection, SmolVLM2-500M VISIBLE/ABSENT/UNCERTAIN two-image baseline, SHA-pinned label-blind TEST predictions, one-time future-mask scoring, GPU-exclusive VLM stages.",
+  "description": "Batch40B recovery of Batch40A plan-marker mismatch; reuse the same SHA-verified scene-disjoint DAVIS freeze, re-run all predictions under the new clean source SHA, correct Path.with_suffix('.sha256') marker requirements, then DEV-only appearance selection and one-time TEST scoring.",
   "stages": [
     {
       "id": "D01_acquire_new_scene_disjoint_DAVIS_frames_and_masks",
@@ -80,7 +80,7 @@
         "configs/davis_occlusion_v3.json"
       ],
       "requires_files": [
-        "outputs/davis_occlusion_v3/dev_predictions.json.sha256"
+        "outputs/davis_occlusion_v3/dev_predictions.sha256"
       ]
     },
     {
@@ -118,7 +118,7 @@
         "configs/davis_occlusion_v3.json"
       ],
       "requires_files": [
-        "outputs/davis_occlusion_v3/vlm_visibility_dev_predictions.json.sha256"
+        "outputs/davis_occlusion_v3/vlm_visibility_dev_predictions.sha256"
       ]
     },
     {
@@ -186,7 +186,7 @@
         "configs/davis_occlusion_v3.json"
       ],
       "requires_files": [
-        "outputs/davis_occlusion_v3/test_predictions.json.sha256",
+        "outputs/davis_occlusion_v3/test_predictions.sha256",
         "outputs/davis_occlusion_v3/vlm_visibility_dev_gate.json",
         "../models/SmolVLM2-500M-Video-Instruct/model.safetensors"
       ]
@@ -204,8 +204,8 @@
         "configs/davis_occlusion_v3.json"
       ],
       "requires_files": [
-        "outputs/davis_occlusion_v3/test_predictions.json.sha256",
-        "outputs/davis_occlusion_v3/vlm_visibility_test_predictions.json.sha256"
+        "outputs/davis_occlusion_v3/test_predictions.sha256",
+        "outputs/davis_occlusion_v3/vlm_visibility_test_predictions.sha256"
       ]
     },
     {
