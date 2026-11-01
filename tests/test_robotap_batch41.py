@@ -74,14 +74,14 @@ def test_first_visible_query_uses_first_visible_frame():
 def test_all_occluded_track_has_no_query():
     points = np.zeros((3, 2), dtype=np.float64)
     occ = np.ones(3, dtype=bool)
-    assert data.first_visible_query(0, points[0], occ[0], 100, 100) is None
+    assert data.first_visible_query(0, points, occ, 100, 100) is None
 
 
 def test_first_visible_query_out_of_bounds_fails():
     points = np.asarray([[[-1.0, 10.0], [10.0, 10.0]]])
     occ = np.asarray([False, True])
     with pytest.raises(RuntimeError, match="OUT_OF_BOUNDS"):
-        data.first_visible_query(0, points, occ, 100, 100)
+        data.first_visible_query(0, points[0], occ, 100, 100)
 
 
 class FakeResponse:
