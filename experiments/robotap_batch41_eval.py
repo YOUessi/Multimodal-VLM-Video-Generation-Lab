@@ -315,7 +315,7 @@ def predict_query(gray: list[np.ndarray], query: dict, matrices: list,
 def predict(split: str, cfg: dict) -> None:
     manifest = src.audit(cfg)
     queries = load_json(ROOT / cfg["dataset_dir"] / "batch41_frozen/queries-public.json")
-    frozen = ROOT / cfg["dataset_dir"] / "batch41_frozen"
+    frozen = src.frozen_dir(cfg)
     output_dir = ROOT / cfg["output_dir"]
     output_dir.mkdir(parents=True, exist_ok=True)
     selection_path = output_dir / "dev_selection.json"
@@ -506,7 +506,7 @@ def _background_relative_diagnostic(prediction: dict, gold_scene: dict) -> dict:
 
 def score(split: str, cfg: dict) -> dict:
     manifest = src.audit(cfg)
-    frozen = ROOT / cfg["dataset_dir"] / "batch41_frozen"
+    frozen = src.frozen_dir(cfg)
     output_dir = ROOT / cfg["output_dir"]
     prediction_path = output_dir / f"{split}_predictions.json"
     require_pin(prediction_path)
@@ -754,7 +754,7 @@ def final_audit(cfg: dict) -> None:
         if (prediction.get("source_commit") != current_sha()
                 or result.get("source_commit") != current_sha()
                 or prediction.get("manifest_sha256") != sha_file(
-                    ROOT / cfg["dataset_dir"] / "batch41_frozen/manifest.json"
+                    src.frozen_dir(cfg) / "manifest.json"
                 )):
             raise RuntimeError("ROBOTAP_FINAL_PREDICTION_OR_RESULT_SHA_DRIFT")
     vlm_prediction = output_dir / "vlm_visibility_dev_predictions.json"
