@@ -19,8 +19,9 @@
 ## Frozen sampling and split
 
 - Use only the two named official shards. Verify the archive ETag, total byte length, ZIP member CRC32, local member SHA-256 and member size.
-- Deterministically rank scene keys by SHA-256 under the fixed Batch41 salt; take 20 scenes. Do not inspect point trajectories or occlusion fractions to choose scenes.
-- Assign the first six hash-ranked scenes to DEV and the remaining fourteen to TEST.
+- Derive a recording/episode ID from the stable source prefix before the camera-view suffix (for example, gear_v2_17). Group all camera views with the same episode ID before sampling.
+- Deterministically rank distinct episode IDs by SHA-256 under the fixed Batch41 salt; take 20 distinct episodes. For each episode, choose exactly one camera view using a second independent view-key hash. Do not inspect point trajectories or occlusion fractions to choose episodes or views.
+- Assign the first six hash-ranked episode groups to DEV and the remaining fourteen to TEST. The manifest audit rejects any duplicate episode ID, including duplicate views within one split.
 - Within each scene, hash-rank point IDs and take at most four. For each selected point, query at its first annotated visible frame, matching TAP-Vid's first-query protocol. A point with no later frame is excluded by a predeclared rule.
 - Save full RGB arrays, public first-visible queries and a separate private oracle. The predictor process may read only RGB arrays, the public query file and source hashes; it must never load the private future coordinates or occlusion labels.
 - Freeze source-member hashes, frame-array hashes, public-query hash, private-oracle hash and manifest hash before prediction.
