@@ -39,7 +39,7 @@ def parse_visibility(reply: str) -> tuple[str | None, str]:
 
 
 def query_image(frame: np.ndarray, xy: list[float]) -> Image.Image:
-    image = Image.fromarray(np.asarray(frame, dtype=np.uint8), mode="RGB")
+    image = Image.fromarray(np.asarray(frame, dtype=np.uint8))
     draw = ImageDraw.Draw(image)
     x, y = float(xy[0]), float(xy[1])
     draw.ellipse((x - 8, y - 8, x + 8, y + 8), outline=(255, 0, 0), width=3)
@@ -54,10 +54,18 @@ def save_pair(frames: np.ndarray, scene: str, query: dict, target_index: int,
     prefix = f"{scene}_{query['id']}_t{target_index:04d}"
     reference_path = output_dir / (prefix + "_query.png")
     target_path = output_dir / (prefix + "_target.png")
-    if not reference_path.exists():
-        query_image(frames[int(query["query_time"])], query["query_xy"]).save(reference_path)
-    if not target_path.exists():
-        Image.fromarray(np.asarray(frames[target_index], dtype=np.uint8), mode="RGB").save(target_path)
+    reference = query_image(frames[int(query["query_time"])], query["query_xy"])
+    target = Image.fromarray(np.asarray(frames[target_index], dtype=np.uint8))
+    if reference_path.exists():
+        if not np.array_equal(np.asarray(Image.open(reference_path)), np.asarray(reference)):
+            raise RuntimeError("ROBOTAP_VLM_QUERY_IMAGE_CONFLICT")
+    else:
+        reference.save(reference_path)
+    if target_path.exists():
+        if not np.array_equal(np.asarray(Image.open(target_path)), np.asarray(target)):
+            raise RuntimeError("ROBOTAP_VLM_TARGET_IMAGE_CONFLICT")
+    else:
+        target.save(target_path)
     return reference_path, target_path
 
 
@@ -108,6 +116,7 @@ def predict(split: str, cfg: dict) -> None:
     if split == "test":
         if not gate_path.is_file():
             raise RuntimeError("ROBOTAP_VLM_DEV_GATE_MISSING")
+        ev.require_pin(gate_path)
         gate = ev.load_json(gate_path)
         gate_sha = ev.sha_file(gate_path)
         if gate.get("source_commit") != ev.current_sha():
@@ -220,6 +229,7 @@ def score(split: str, cfg: dict) -> dict:
     gate_path = output_dir / "vlm_visibility_dev_gate.json"
     gate_sha = ev.sha_file(gate_path) if split == "test" else None
     if split == "test":
+        ev.require_pin(gate_path)
         gate = ev.load_json(gate_path)
         if gate.get("status") != "passed" or gate.get("source_commit") != ev.current_sha():
             raise RuntimeError("ROBOTAP_VLM_TEST_SCORE_GATE_DRIFT")
@@ -311,10 +321,9 @@ def dev_gate(cfg: dict) -> dict:
     path = output_dir / "vlm_visibility_dev_results.json"
     if not path.is_file():
         raise RuntimeError("ROBOTAP_VLM_DEV_RESULTS_MISSING")
+    ev.require_pin(path)
     result = ev.load_json(path)
-    expected = sum(
-        1 for record in result.get("records", [])
-    )
+    expected = int(result.get("query_count", 0))
     if result.get("status") != "scored" or result.get("source_commit") != ev.current_sha():
         raise RuntimeError("ROBOTAP_VLM_DEV_RESULTS_SOURCE_DRIFT")
     invalid_rate = float(result["invalid_rate"] or 0.0)
