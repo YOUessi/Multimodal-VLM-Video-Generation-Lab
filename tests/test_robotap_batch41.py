@@ -18,7 +18,22 @@ import robotap_batch41_vlm as vlm
 
 def textured_video(n=7, dx=1, dy=1, seed=21):
     rng = np.random.default_rng(seed)
-    base = rng.integers(20, 236, (96, 96), dtype=np.uint8)
+    base = np.zeros((96, 96), dtype=np.uint8)
+    cv2.circle(base, (40, 40), 8, 225, -1)
+    cv2.rectangle(base, (26, 52), (57, 79), 140, 2)
+    for _ in range(24):
+        x = int(rng.integers(5, 88))
+        y = int(rng.integers(5, 88))
+        radius = int(rng.integers(3, 8))
+        value = int(rng.integers(80, 255))
+        cv2.circle(base, (x, y), radius, value, -1)
+    for _ in range(16):
+        x = int(rng.integers(2, 80))
+        y = int(rng.integers(2, 80))
+        width = int(rng.integers(5, 15))
+        height = int(rng.integers(5, 15))
+        value = int(rng.integers(80, 255))
+        cv2.rectangle(base, (x, y), (x + width, y + height), value, 1)
     return [
         cv2.warpAffine(
             base, np.float32([[1, 0, k * dx], [0, 1, k * dy]]),
@@ -26,7 +41,6 @@ def textured_video(n=7, dx=1, dy=1, seed=21):
         )
         for k in range(n)
     ]
-
 
 @pytest.mark.parametrize("seed", ["a", "b", "c", "d"])
 def test_scene_selection_is_hash_stable_and_order_independent(seed):
