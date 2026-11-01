@@ -7,9 +7,9 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "experiments"))
-import tapvidmv_batch44bb_data as src
+import tapvidmv_batch44b_data as src
 
-OUT = ROOT / "outputs/tapvidmv_batch44bb"
+OUT = ROOT / "outputs/tapvidmv_batch44b"
 REPORT = OUT / "BATCH44B_TAPVIDMV_MULTIVIEW_REPORT.md"
 
 
