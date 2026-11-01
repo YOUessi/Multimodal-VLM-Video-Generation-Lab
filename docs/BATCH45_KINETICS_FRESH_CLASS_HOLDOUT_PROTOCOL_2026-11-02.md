@@ -72,3 +72,8 @@ The VLM sees only the query frame, reference crop and one target frame; CPU trac
 Visible PCK@8 (unconditional), visible coverage, accepted precision@8, visible false abstention, invisible false acceptance, visibility accuracy, TAP-Vid Jaccard at 1/2/4/8/16 px, scene-macro and micro aggregates, per-scene strata, CPU P50/P95, affine registration latency, and VLM balanced accuracy / coverage / invalid format / non-visible false accepts.
 
 A high precision obtained by nearly zero coverage is not a success. A high PCK obtained by accepting all invisible points is not a success. A low affine residual is not proof of physical camera compensation.
+
+
+## Batch45B preflight correction
+
+The first targeted regression run caught that a regex parser accepted the substring VISIBLE inside an explanatory reply such as "probably visible". The failing run is preserved in `repo-batch45-tested/.automation/preflight-logs/targeted-parser-failure.log`. Batch45B changes the parser to a full-string match, permits only one exact label (with optional terminal period/exclamation), and rejects all explanatory prefixes/suffixes. The failed source snapshot is not reused for the experiment; the corrected source is frozen in a new Batch45B directory.

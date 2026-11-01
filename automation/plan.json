@@ -1,7 +1,7 @@
 {
-  "version": "batch45-kinetics-fresh-class-disjoint-gradient-vlm-20261102-v1",
+  "version": "batch45b-kinetics-fresh-class-disjoint-gradient-vlm-strict-parser-20261102-v2",
   "enabled": true,
-  "description": "Fresh TAP-Vid-Kinetics Kinetics-700-2020 validation holdout: 12 new video IDs from 12 new action classes, disjoint from Batch42 and prior manifest video IDs; 6 DEV / 6 TEST. Compare KLT, NCC, ORB affine proxy and Sobel-gradient identity gates; test local SmolVLM2-2.2B with marked query frame plus reference crop under a DEV-only admission gate.",
+  "description": "Fresh TAP-Vid-Kinetics Kinetics-700-2020 validation holdout: 12 new video IDs from 12 new action classes, disjoint from Batch42 and prior manifest video IDs; 6 DEV / 6 TEST. Compare KLT, NCC, ORB affine proxy and Sobel-gradient identity gates; test local SmolVLM2-2.2B with marked query frame plus reference crop under a DEV-only admission gate. Preflight regression fixed: VLM parser now requires a full-string single-token label; explanatory prefixes/suffixes are invalid.",
   "source_of_truth": "GitHub main; runner freezes clean checkout SHA in .automation/state.json. Raw videos, shards, frames, private point tracks, predictions and model weights remain local on Tang.",
   "failure_policy": "Single attempt per frozen stage; fail closed. Preserve failed logs and partial downloads. Any repair requires a new GitHub source SHA and a new repo-batch*-tested directory. Never tune on TEST.",
   "test_policy": "Selection is deterministic and video/action-class disjoint from Batch42. CPU tracker selection and VLM admission use DEV only. CPU and VLM TEST predictions are SHA-pinned before one-time scoring. If the VLM DEV gate blocks, TEST VLM inference is skipped and the TEST VLM oracle is never opened.",

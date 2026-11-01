@@ -108,6 +108,8 @@ def test_vlm_parser_accepts_only_one_unambiguous_label():
     assert vlm.parse_label("UNCERTAIN\n") == ("UNCERTAIN", "valid")
     assert vlm.parse_label("VISIBLE and NOT_VISIBLE") == ("UNCERTAIN", "invalid_format")
     assert vlm.parse_label("probably visible") == ("UNCERTAIN", "invalid_format")
+    assert vlm.parse_label("I think VISIBLE") == ("UNCERTAIN", "invalid_format")
+    assert vlm.parse_label("VISIBLE, maybe") == ("UNCERTAIN", "invalid_format")
 
 
 def test_vlm_reference_crop_is_square_and_edge_safe():

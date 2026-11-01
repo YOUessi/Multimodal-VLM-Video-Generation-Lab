@@ -75,10 +75,10 @@ def require_pin(path: Path) -> None:
 
 def parse_label(text: str) -> tuple[str, str]:
     raw = str(text).strip().upper()
-    tokens = re.findall(r"NOT[\s_-]*VISIBLE|VISIBLE|UNCERTAIN", raw)
-    if len(tokens) != 1:
+    match = re.fullmatch(r"(VISIBLE|NOT[\s_-]*VISIBLE|UNCERTAIN)[.!]?", raw)
+    if match is None:
         return "UNCERTAIN", "invalid_format"
-    token = re.sub(r"[\s_-]+", "_", tokens[0])
+    token = re.sub(r"[\s_-]+", "_", match.group(1))
     if token == "VISIBLE":
         return "VISIBLE", "valid"
     if token == "NOT_VISIBLE":

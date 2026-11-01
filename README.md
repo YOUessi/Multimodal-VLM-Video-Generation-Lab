@@ -224,3 +224,6 @@ PY
 - The new CPU candidate is an illumination-normalized Sobel-gradient identity gate layered on KLT-FB, evaluated against NCC appearance gates and a 2-D affine background proxy. A local SmolVLM2-2.2B baseline receives a marked query frame, a 64×64 reference crop and a later target frame; TEST inference is conditional on the frozen DEV gate.
 - Source code, tests, config and the pre-registered protocol are committed before any new shard download or TEST scoring. All videos, shards, frames, private point tracks, predictions and weights remain local on Tang.
 - [Batch45 prospective protocol](docs/BATCH45_KINETICS_FRESH_CLASS_HOLDOUT_PROTOCOL_2026-11-02.md).
+
+
+- Batch45 preflight regression (2026-11-02): the initial VLM parser incorrectly accepted "probably visible" because it searched for a label substring. The failing log was preserved; Batch45B switches to a full-string label parser and uses a new frozen source directory rather than reusing the failed snapshot.
