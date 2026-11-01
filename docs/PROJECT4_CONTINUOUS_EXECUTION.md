@@ -10,7 +10,19 @@ The previous Tang user crontab ran `automation/runner.py tick --max-stages 2` ev
 2. **Separate enabled ChatGPT hourly research-continuation task**, titled *项目4｜自动续研与验收*, checks Tang and GitHub, reads actual results and code, and is instructed to do substantive next-batch implementation when a batch completes: source changes, tests, frozen config, GitHub commit, new Tang snapshot and execution. This is a scheduled AI continuation, not the CPU cron inventing research. **Once an hour is the fastest ChatGPT automation recurrence** supported; cron remains ten minutes. Failure to connect or obtain permission must be reported rather than fabricated.
 3. GitHub `main` is the sole source of code and documents. Each batch uses an independent frozen local directory `repo-batchN-tested` with a pinned upstream commit hash, local snapshot SHA and `.automation/state.json`. No weights, generated videos, original benchmark MP4s, API credentials or raw private material are committed.
 
-## Latest actually verified science (Batch 32)
+## Latest actually verified science (Batch 33; supersedes Batch 32)
+
+- `repo-batch33-tested` was frozen at GitHub source SHA `a6fbb8dc6e2715304c339ba1012b1ca1d23e3bd2`. **10/10 approved stages passed**, **121/121 frozen regression tests passed**, publication guard passed. Dataset manifest SHA256 `5303647d2a910fba29b91691cfc1fff40c1b9ad58b4217ac4c6c1be8eccdc7ce`, all 280 source MP4 byte hashes audited.
+- **New 100 source-scene pair/200-video TEST** in synthetic 2D camera pan, rotation, zoom, same-color distractor with occlusion. Every clip has a reversed partner; truth is relative to the stationary world, rather than screen motion.
+- Correct direct motion predictions: **141/200 plain HSV**, **55/200 global-phase camera translation**, **179/200 ORB+RANSAC partial-affine camera compensation**. Affine versus plain **+19pp**, scene-pair clustered CI **[+12,+27]pp**. ORB+RANSAC is not a robust 3D/homography model.
+- Affine confidence gate accepted **144/200**: **143 right, 1 wrong**. Same-color/occlusion remains **34/50** on direct prediction; camera registration alone cannot resolve target identity. Affine CPU median **36.26ms** vs unregistered **10.79ms**.
+- **600 actual frozen VLM inferences**: 500M 3frames VLM-only 40/200, affine tool+VLM 156/200; 2.2B 3frames 41/200 → 147/200; 2.2B 5frames 45/200 → 152/200. The direct tool **179/200** is stronger; no standalone VLM reasoning gain established.
+- All raw videos, private manifests, model outputs, weights, and reviewer HTML remain local on Tang. [Full results and limitations](BATCH33_AFFINE_CAMERA_RESULTS_2026-11-01.md). Current Tang cron marker `MVVG_PROJECT4_10MIN` now points to frozen `repo-batch33-tested`; the finished plan must not be repurposed as a new batch.
+- **Next actual research bottleneck:** independent licensed/consented real camera videos and camera-/world-relative motion annotations; alternatively, create a separately frozen appearance/identity-ambiguity + parallax domain with a DEV-selected target correspondence uncertainty gate. Do **not** tune against the now-scored Batch33 heldout clips. Any implementation warrants a new code SHA, new immutable plan and independent data split.
+
+## Prior verified science (Batch 32)
+
+
 
 - Latest complete frozen project: `repo-batch32-tested`. All **10/10 stages passed**, **112/112 tests** passed, source guard passed.
 - Independent procedural test: 100 source scene pairs, each forward/reverse, 200 test clips. Four balanced nuisance modes (clean, illumination, partial occlusion, camera pan) × 5 directions. The 280 total dev+test videos are new 2D synthetic renderings.

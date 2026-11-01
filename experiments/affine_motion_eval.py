@@ -96,8 +96,11 @@ def predict_test(cfg):
     return doc
 
 
-def percentages(result):
-    return 100 * result / 200
+def vlm_table_row(model_name, budget, result, total):
+    """A six-column GitHub Markdown row; never concatenate cells without a pipe."""
+    cells = [model_name, str(budget), f"{result['base']}/{total}"]
+    cells.extend(f"{result['hybrids'][method]['correct']}/{total}" for method in METHODS)
+    return "| " + " | ".join(cells) + " |"
 
 
 def method_scores(method, items, preds, cfg):
@@ -314,8 +317,7 @@ def score(cfg):
                                             seed=cfg["bootstrap_seed"] + budget + len(m))
                 result["hybrids"][m] = {"correct": sum(gated.values()), **gain}
             summary["models"][model_name][str(budget)] = result
-            lines.append(f"| {model_name} | {budget} | {result['base']}/{len(test)} "
-                         + " | ".join(f"{result['hybrids'][m]['correct']}/{len(test)}" for m in METHODS) + " |")
+            lines.append(vlm_table_row(model_name, budget, result, len(test)))
     lines += [
         "", "## Interpretation and invalid claims",
         "- All methods use the same older HSV target segmenter; same-color distractor can create identity switches.",

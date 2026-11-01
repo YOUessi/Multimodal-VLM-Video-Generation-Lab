@@ -134,3 +134,12 @@ def test_abstain_when_registration_not_acceptable(tmp_path, monkeypatch):
     row = geometry.tracker(tmp_path / "unknown.mp4", "red circle", config(), "affine")
     assert row["direction"] is None and row["delta_xy"] is None
     assert geometry.gated_label(row, config())[0] is None
+
+
+def test_vlm_report_markdown_has_six_separate_columns():
+    # Regression for a presentation-only frozen Batch33 results table typo.
+    result = {"base": 4, "hybrids": {
+        "plain": {"correct": 7}, "phase": {"correct": 8}, "affine": {"correct": 9}}}
+    row = evaluation.vlm_table_row("2b", 5, result, 20)
+    assert row == "| 2b | 5 | 4/20 | 7/20 | 8/20 | 9/20 |"
+    assert len(row.split("|")) == 8
