@@ -154,6 +154,12 @@ def usable_sequences(index: dict) -> dict:
 
 def selection(index: dict, cfg: dict) -> list:
     scenes = usable_sequences(index)
+    # Batch37+ may require longer sequences and explicit *previous-scene*
+    # exclusion. Both constraints are metadata-only, never future gold masks.
+    required = cfg["source_frames"] * cfg["source_stride"]
+    excluded = set(cfg.get("exclude_scenes", []))
+    scenes = {name: entry for name, entry in scenes.items()
+              if name not in excluded and len(entry["frames"]) >= required}
     candidates = sorted(scenes, key=lambda name: sha256((cfg["split_salt"] + "/" + name).encode("utf8")))
     amount = cfg["dev_scenes"] + cfg["test_scenes"]
     if len(candidates) < amount:

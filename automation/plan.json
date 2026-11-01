@@ -1,27 +1,41 @@
 {
-  "version": "2026-11-01-batch-36-independent-real-davis-prospective-v1",
+  "version": "2026-11-02-batch-37-real-davis-long-horizon-v1",
   "enabled": true,
-  "description": "SHA-frozen 12 independent 480p DAVIS real-camera sequences (4 DEV, 8 TEST), 8 sampled frames each; first-mask-only non-VLM image-plane centroid tracking; source labels/private gold not loaded by prediction; byte-pinned heldout predictions scored once. Never reoptimize the 8 TEST scenes. CPU-only, media/weights/private gold ignored by Git.",
+  "description": "Pre-TEST fixed all method thresholds; fresh DAVIS scene-disjoint real-camera clips, 16 frames x12; no historical test tuning; label-blind predictions hash pinned, CPU only; absent-object and shrink proxy metrics; no media/weights/secrets on GitHub.",
   "stages": [
     {
-      "id": "U1_freeze_and_audit_192_original_DAVIS_assets",
+      "id": "V1_new_scene_disjoint_384_official_JPEG_PNG_range_acquisition",
       "gpu": false,
-      "timeout_seconds": 900,
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/davis_real_data.py",
+        "acquire",
+        "--config",
+        "configs/davis_occlusion_v2.json"
+      ]
+    },
+    {
+      "id": "V2_new_source_SHA_CRC_manifest_and_query_audit",
+      "gpu": false,
+      "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "data/davis_real_v1/manifest.json",
-        "data/davis_real_v1/initial_queries.json"
+        "data/davis_occlusion_v2/manifest.json"
       ],
       "argv": [
         "{python}",
         "experiments/davis_real_data.py",
-        "audit"
+        "audit",
+        "--config",
+        "configs/davis_occlusion_v2.json"
       ]
     },
     {
-      "id": "U2_153_complete_source_regressions",
+      "id": "V3_165plus_regressions_and_future_label_firewall",
       "gpu": false,
-      "timeout_seconds": 900,
+      "timeout_seconds": 1800,
       "max_attempts": 1,
       "argv": [
         "{python}",
@@ -32,69 +46,68 @@
       ]
     },
     {
-      "id": "U3_reverify_DEV_prediction_digest_before_oracle",
+      "id": "V4_only_DEV_predict_and_pin_frozen_trajectories",
       "gpu": false,
-      "timeout_seconds": 900,
+      "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/davis_real_v1/dev_predictions.json"
+        "data/davis_occlusion_v2/initial_queries.json"
       ],
       "argv": [
         "{python}",
-        "experiments/davis_real_eval.py",
+        "experiments/davis_occlusion_eval.py",
         "predict-dev"
       ]
     },
     {
-      "id": "U4_reproduce_DEV_only_4_scene_report",
+      "id": "V5_only_DEV_score_and_log_failures",
       "gpu": false,
-      "timeout_seconds": 900,
+      "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/davis_real_v1/dev_predictions.sha256"
+        "outputs/davis_occlusion_v2/dev_predictions.sha256"
       ],
       "argv": [
         "{python}",
-        "experiments/davis_real_eval.py",
+        "experiments/davis_occlusion_eval.py",
         "score-dev"
       ]
     },
     {
-      "id": "U5_write_first_and_pin_8_real_TEST_blind_pixel_trajectories",
+      "id": "V6_first_TEST_label_blind_pred_and_SHA_lock",
       "gpu": false,
-      "timeout_seconds": 900,
+      "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "data/davis_real_v1/manifest.json",
-        "data/davis_real_v1/initial_queries.json"
+        "data/davis_occlusion_v2/manifest.json"
       ],
       "argv": [
         "{python}",
-        "experiments/davis_real_eval.py",
+        "experiments/davis_occlusion_eval.py",
         "predict-test"
       ]
     },
     {
-      "id": "U6_score_once_8_real_TEST_scenes_from_only_sha_pinned_predictions",
+      "id": "V7_first_and_only_TEST_private_oracle_scoring",
       "gpu": false,
-      "timeout_seconds": 900,
+      "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/davis_real_v1/test_predictions.sha256"
+        "outputs/davis_occlusion_v2/test_predictions.sha256"
       ],
       "argv": [
         "{python}",
-        "experiments/davis_real_eval.py",
+        "experiments/davis_occlusion_eval.py",
         "score-test"
       ]
     },
     {
-      "id": "U7_media_weights_secrets_source_guard",
+      "id": "V8_no_media_weights_secrets_publication_guard",
       "gpu": false,
-      "timeout_seconds": 900,
+      "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/davis_real_v1/test_results.json"
+        "outputs/davis_occlusion_v2/test_results.json"
       ],
       "argv": [
         "{python}",
@@ -102,12 +115,12 @@
       ]
     },
     {
-      "id": "U8_final_full_regression_after_private_scoring",
+      "id": "V9_final_all_regressions_and_source_freeze",
       "gpu": false,
-      "timeout_seconds": 900,
+      "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/davis_real_v1/test_results.json"
+        "outputs/davis_occlusion_v2/test_results.json"
       ],
       "argv": [
         "{python}",

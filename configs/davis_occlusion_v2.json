@@ -1,0 +1,42 @@
+{
+  "version": "2026-11-02-batch37-new-real-davis-longer-track",
+  "official_url": "https://data.vision.ee.ethz.ch/csergi/share/davis/DAVIS-2017-trainval-480p.zip",
+  "dataset_dir": "data/davis_occlusion_v2",
+  "output_dir": "outputs/davis_occlusion_v2",
+  "split_salt": "batch37-independent-real-davis-longhorizon-20261102-forest-816",
+  "dev_scenes": 4,
+  "test_scenes": 8,
+  "source_frames": 16,
+  "source_stride": 2,
+  "download_workers": 8,
+  "frame_resolution": "original DAVIS 480p",
+  "initial_mask_only": true,
+  "world_relative_gold": false,
+  "exclude_scenes": [
+    "paragliding-launch", "rallye", "loading", "surf",
+    "dogs-jump", "dancing", "lady-running", "paragliding",
+    "soccerball", "india", "hike", "breakdance-flare"
+  ],
+  "predeclared_models": {
+    "klt_fb_consensus": {
+      "min_features": 7,
+      "fb_error_px": 1.5,
+      "max_step_px": 45.0,
+      "inlier_residual_px": 4.0,
+      "min_consensus_ratio": 0.55
+    },
+    "klt_fb_guarded": {
+      "min_features": 9,
+      "fb_error_px": 1.25,
+      "max_step_px": 30.0,
+      "inlier_residual_px": 2.5,
+      "min_consensus_ratio": 0.7
+    }
+  },
+  "evaluation_thresholds_px": [4, 8, 16],
+  "visibility_heuristic": "future annotation object pixels > 0; only for scoring",
+  "shrink_proxy_threshold": 0.4,
+  "prohibit_test_selection": true,
+  "license_citation": "DAVIS 2017 480p source attribution; media local only; individual footage terms not assumed",
+  "source_provenance": "official DAVIS trainval verified ZIP byte ranges; new scene-disjoint draw, never selected from prior TEST labels"
+}
