@@ -1,0 +1,263 @@
+{
+  "version": "2026-11-02-batch44c-query-frame-crossview-consensus-v1",
+  "dataset": "TAPVid-MV public Rerun viewer recordings from EgoExo4D and PACE collection groups unused in Batch43; same RRD bytes as failed Batch44B repair, with no TEST scoring in Batch44B; 3 synchronized RGB views, camera poses, 3-D point tracks and depth snapshots",
+  "source_index_url": "https://storage.googleapis.com/dm-tapnet/tapvidmv/rrd/index.html",
+  "source_index_sha256": "eb9ff78058eca50479af98eca5bba21716dcec183ce83d8e70349d9cea58f2f5",
+  "rrd_version": "0.35.0",
+  "source_license": "TAPVid-MV RRD viewer release; EgoExo4D and PACE source dataset terms apply. Local evaluation only; do not redistribute source recordings or extracted frames.",
+  "selection_salt": "MVVG-B44B-FRESH-GROUPS-XVIEW-QUERYFRAME-2026-11-02-v1",
+  "dev_groups": 11,
+  "test_groups": 10,
+  "subset_split_counts": {
+    "egoexo4d": {
+      "dev": 2,
+      "test": 2
+    },
+    "pace": {
+      "dev": 9,
+      "test": 8
+    }
+  },
+  "queries_per_camera": 3,
+  "target_fraction": 0.67,
+  "depth_visibility": {
+    "exact_cloud_snapshots_only": true,
+    "radius_px": 3,
+    "depth_margin_m": 0.05,
+    "status_codes": {
+      "unknown": 0,
+      "visible": 1,
+      "occluded": 2,
+      "out": 3,
+      "missing": 4
+    }
+  },
+  "camera_projection": {
+    "world_to_camera": "camera_xyz = R @ (world_xyz - translation)",
+    "pixel_projection": "[x/z, y/z, 1] @ Pinhole.image_from_camera",
+    "transform_matrix_layout": "row-major 3x3 as serialized by Rerun 0.35.0"
+  },
+  "sequences": [
+    {
+      "split": "dev",
+      "subset": "egoexo4d",
+      "group": "egoexo4d:cmu_soccer09",
+      "sequence": "cmu_soccer09_1",
+      "frames": 191,
+      "tracks_metadata": 500
+    },
+    {
+      "split": "dev",
+      "subset": "egoexo4d",
+      "group": "egoexo4d:cmu_soccer14",
+      "sequence": "cmu_soccer14_5",
+      "frames": 181,
+      "tracks_metadata": 500
+    },
+    {
+      "split": "dev",
+      "subset": "pace",
+      "group": "pace:scene06",
+      "sequence": "scene06_video00",
+      "frames": 214,
+      "tracks_metadata": 270
+    },
+    {
+      "split": "dev",
+      "subset": "pace",
+      "group": "pace:scene06",
+      "sequence": "scene06_video01",
+      "frames": 124,
+      "tracks_metadata": 486
+    },
+    {
+      "split": "dev",
+      "subset": "pace",
+      "group": "pace:scene06",
+      "sequence": "scene06_video02",
+      "frames": 135,
+      "tracks_metadata": 245
+    },
+    {
+      "split": "dev",
+      "subset": "pace",
+      "group": "pace:scene06",
+      "sequence": "scene06_video03",
+      "frames": 120,
+      "tracks_metadata": 318
+    },
+    {
+      "split": "dev",
+      "subset": "pace",
+      "group": "pace:scene06",
+      "sequence": "scene06_video04",
+      "frames": 140,
+      "tracks_metadata": 522
+    },
+    {
+      "split": "dev",
+      "subset": "pace",
+      "group": "pace:scene06",
+      "sequence": "scene06_video05",
+      "frames": 217,
+      "tracks_metadata": 255
+    },
+    {
+      "split": "dev",
+      "subset": "pace",
+      "group": "pace:scene06",
+      "sequence": "scene06_video06",
+      "frames": 195,
+      "tracks_metadata": 1021
+    },
+    {
+      "split": "dev",
+      "subset": "pace",
+      "group": "pace:scene06",
+      "sequence": "scene06_video07",
+      "frames": 222,
+      "tracks_metadata": 408
+    },
+    {
+      "split": "dev",
+      "subset": "pace",
+      "group": "pace:scene06",
+      "sequence": "scene06_video08",
+      "frames": 158,
+      "tracks_metadata": 512
+    },
+    {
+      "split": "test",
+      "subset": "egoexo4d",
+      "group": "egoexo4d:cmu_soccer15",
+      "sequence": "cmu_soccer15_5",
+      "frames": 99,
+      "tracks_metadata": 440
+    },
+    {
+      "split": "test",
+      "subset": "egoexo4d",
+      "group": "egoexo4d:iiith_soccer_006",
+      "sequence": "iiith_soccer_006_2",
+      "frames": 191,
+      "tracks_metadata": 500
+    },
+    {
+      "split": "test",
+      "subset": "pace",
+      "group": "pace:scene07",
+      "sequence": "scene07_video00",
+      "frames": 122,
+      "tracks_metadata": 206
+    },
+    {
+      "split": "test",
+      "subset": "pace",
+      "group": "pace:scene07",
+      "sequence": "scene07_video02",
+      "frames": 211,
+      "tracks_metadata": 250
+    },
+    {
+      "split": "test",
+      "subset": "pace",
+      "group": "pace:scene07",
+      "sequence": "scene07_video04",
+      "frames": 200,
+      "tracks_metadata": 454
+    },
+    {
+      "split": "test",
+      "subset": "pace",
+      "group": "pace:scene07",
+      "sequence": "scene07_video05",
+      "frames": 191,
+      "tracks_metadata": 326
+    },
+    {
+      "split": "test",
+      "subset": "pace",
+      "group": "pace:scene07",
+      "sequence": "scene07_video06",
+      "frames": 215,
+      "tracks_metadata": 155
+    },
+    {
+      "split": "test",
+      "subset": "pace",
+      "group": "pace:scene07",
+      "sequence": "scene07_video07",
+      "frames": 298,
+      "tracks_metadata": 298
+    },
+    {
+      "split": "test",
+      "subset": "pace",
+      "group": "pace:scene07",
+      "sequence": "scene07_video08",
+      "frames": 324,
+      "tracks_metadata": 643
+    },
+    {
+      "split": "test",
+      "subset": "pace",
+      "group": "pace:scene07",
+      "sequence": "scene07_video09",
+      "frames": 238,
+      "tracks_metadata": 579
+    }
+  ],
+  "selection": {
+    "candidate_methods": [
+      "klt_fb",
+      "klt_forward",
+      "xview_klt_fb_4px",
+      "xview_klt_fb_8px",
+      "xview_klt_fb_12px",
+      "xview_klt_forward_4px",
+      "xview_klt_forward_8px",
+      "xview_klt_forward_12px"
+    ],
+    "min_visible_coverage": 0.25,
+    "max_invisible_false_accept_rate": 0.25,
+    "objective": "maximize DEV scene-macro Jaccard mean among single-view and calibrated three-view consensus candidates subject to visible coverage >=25% and both occluded/out-of-frame false-accept rates <=25%; fallback is KLT-FB",
+    "fallback_method": "klt_fb",
+    "selection_source": "DEV only"
+  },
+  "vlm": {
+    "model_id": "HuggingFaceTB/SmolVLM2-500M-Video-Instruct",
+    "model_path": "../models/SmolVLM2-500M-Video-Instruct",
+    "max_new_tokens": 12,
+    "dev_gate": {
+      "max_invalid_rate": 0.2,
+      "min_coverage": 0.5,
+      "min_balanced_accuracy": 0.55,
+      "max_false_accept_nonvisible_rate": 0.25,
+      "min_visible_support": 8,
+      "min_nonvisible_support": 8
+    },
+    "inference": "one query frame with a red cross plus the exact public target-frame snapshot; deterministic greedy decoding"
+  },
+  "cross_view_consensus": {
+    "base_methods": [
+      "klt_fb",
+      "klt_forward"
+    ],
+    "thresholds_px": [
+      4,
+      8,
+      12
+    ],
+    "require_all_three_views": true,
+    "triangulation": "least-squares intersection of three calibrated world-frame camera rays",
+    "acceptance": "reproject triangulated point into all three synchronized cameras; accept only if every reprojection is in-frame and maximum residual to the corresponding RGB-only prediction is <= threshold",
+    "failure": "abstain in all three views for that track/frame",
+    "calibration_source": "public camera poses, intrinsics and resolutions only; no 3-D point tracks or depth clouds",
+    "selection_source": "DEV only"
+  },
+  "query_frame_selection": {
+    "policy": "earliest exact depth-cloud snapshot with at least queries_per_camera shared 3-D point IDs visible in all three synchronized camera views",
+    "min_future_frames": 30,
+    "label_use": "query initialization feasibility only; no tracker/VLM threshold, prompt or method selection"
+  }
+}

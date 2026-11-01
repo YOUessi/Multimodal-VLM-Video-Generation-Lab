@@ -1,8 +1,8 @@
 # Multimodal VLM & Video Generation Lab
 
-## Active prospective multi-view evaluation — Batch44B TAPVid-MV EgoExo4D/PACE (2026-11-02)
+## Active prospective multi-view evaluation — Batch44C TAPVid-MV EgoExo4D/PACE (2026-11-02)
 
-Batch44B repairs Batch44's frame-zero query assumption after its R01 preparation stage failed on `cmu_soccer09_1` with zero shared depth-visible tracks at frame 0. The failure occurred before prediction or scoring; Batch44 logs and its 21 downloaded RRDs are preserved. Batch44B uses the earliest exact depth snapshot with at least three shared points visible in all three synchronized cameras and at least 30 future frames as the fixed query frame. The same query-construction rule applies to 11 DEV and 10 collection-group-disjoint TEST sequences; only DEV can select trackers, cross-view residual thresholds or admit SmolVLM2-500M. RGB trackers receive only the query image/point and subsequent RGB frames. Public calibration exports camera poses, intrinsics and resolutions only; 3-D tracks, depth clouds and future visibility labels remain private. The new query-frame implementation passed **25/25 targeted and 364/364 full-project regression tests**. This is a prospective protocol and code-validation milestone, not yet a tracker result. [Batch44B protocol](docs/BATCH44B_QUERY_FRAME_INITIALIZATION_2026-11-02.md).
+Batch44C repairs the preserved Batch44B DEV-scoring failure. Batch44B completed data freezing and 99 DEV RGB predictions, but R06 failed because pre-query `camera_affine_meta` entries are intentionally `None` and the CPU-latency reducer called `.get()` on them; no DEV result was sealed and no TEST oracle was read. Batch44C skips null pre-query metadata and adds a regression test. It also explicitly disables OpenCV OpenCL so the nominally CPU-only tracker cannot silently allocate an NVIDIA context. The 21 RRDs are hard-linked from the preserved Batch44B download into a new Batch44C data namespace; new frozen RGB/calibration/oracle artifacts and all predictions are regenerated under the new source SHA. The 11 DEV / 10 TEST group split, 189 query design, earliest common-visible query-frame rule, three-view geometry and DEV-only method/VLM gates are unchanged. Pre-freeze verification passed **27/27 targeted tests and 391/391 full-project tests** (three unrelated existing Pillow deprecation warnings). This is a repair and measurement-integrity milestone, not yet a tracker result.
 
 
 ## Latest sealed natural-video point/visibility evaluation — Batch41E RoboTAP (2026-11-02)
@@ -194,3 +194,10 @@ PY
 - Batch44 R00 successfully downloaded and SHA-256-verified all 21 new TAPVid-MV RRD sequences. R01 failed before scoring because two EgoExo4D sequences did not have three common depth-visible point IDs at frame 0.
 - A read-only query-feasibility preflight found the earliest valid synchronized query frames at 18 for `cmu_soccer09_1` and 30 for `cmu_soccer15_5`; all other selected sequences qualify at frame 0.
 - Batch44B applies one fixed earliest-common-visible-snapshot rule to DEV and TEST, tracks only after that query frame, and excludes pre-query frames from metric denominators. The failed Batch44 state/logs and downloaded RRDs are retained.
+
+
+## Process diary — 2026-11-02 (Batch44C)
+
+- Batch44B froze 21 scenes/189 queries and generated 99 DEV RGB predictions, but R06 DEV scoring failed because the pre-query affine metadata is null. The failed log is preserved; no DEV result was sealed and no TEST oracle was read.
+- Batch44C repairs null-safe CPU-latency aggregation and explicitly disables OpenCV OpenCL after Batch44B's CPU stage unexpectedly created an NVIDIA context. Two regression tests cover both defects.
+- The same 21 RRDs are hard-linked into a separate Batch44C namespace; new frozen artifacts and predictions will be regenerated under the new GitHub SHA. No source media or prior outputs are deleted.
