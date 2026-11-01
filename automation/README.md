@@ -1,6 +1,12 @@
 # Tang staged execution: 10-minute local checks
 
-## Current approved research batch — Batch42 Kinetics visibility (2026-11-02)
+## Current approved research batch — Batch44B TAPVid-MV query-frame and three-view consensus (2026-11-02)
+
+Batch44B repairs the Batch44 initialization failure without changing the selected collection groups or scoring rules. The 21 sequence-group-disjoint EgoExo4D/PACE RRDs are reused by hard link from the preserved Batch44 download; no media is duplicated or deleted. Each scene starts at the earliest exact depth snapshot with at least three shared points visible in all three synchronized views and at least 30 future frames. This is a fixed query-definition rule applied identically to DEV and TEST; only DEV may select RGB/cross-view methods or admit the SmolVLM2 visibility baseline. Public calibration contains camera poses/intrinsics/resolution only; point tracks, depth clouds, future labels, predictions and weights remain local. The failed Batch44 state and logs remain untouched. See [Batch44B query-frame protocol](../docs/BATCH44B_QUERY_FRAME_INITIALIZATION_2026-11-02.md) and [frozen plan](plan.json).
+
+The Tang cron runs at most two approved stages per tick. Failed stages stop the batch; repairs require a new source SHA and new tested directory. GPU stages acquire `/tmp/tang_shared_gpu_experiments.lock`, require at least 11,000 MiB free, and reject any competing CUDA compute process.
+
+## Historical Batch42 Kinetics visibility plan (2026-11-02)
 
 The current frozen plan is `batch42-kinetics-real-camera-visibility-20261102-v1` with 20 fail-closed stages. It starts by verifying the official TAP-Vid-Kinetics source and local video/frame hashes, runs targeted and full regression, generates DEV CPU predictions, scores DEV once, seals DEV-only method selection, then runs the SmolVLM2-500M DEV baseline and a strict admission gate. Only after those steps does it produce TEST CPU predictions and score them once; TEST VLM inference is skipped unless every DEV gate passes. It finishes with report, source-security, data-hash and prediction-pin audits. The protocol is [BATCH42_KINETICS_PROTOCOL_2026-11-02.md](../docs/BATCH42_KINETICS_PROTOCOL_2026-11-02.md), and the machine plan is [batch42 JSON](plans/batch42_kinetics_real_camera_visibility_2026-11-02.json).
 

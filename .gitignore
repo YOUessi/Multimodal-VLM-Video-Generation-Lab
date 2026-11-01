@@ -1,12 +1,12 @@
 __pycache__/
 .pytest_cache/
-.venv/
+.venv
 *.py[cod]
 *.log
 .automation/
-models/
-outputs/
-data/
+models
+outputs
+data
 *.mov
 *.mp4
 *.safetensors

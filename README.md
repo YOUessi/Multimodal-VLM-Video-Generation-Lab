@@ -1,8 +1,8 @@
 # Multimodal VLM & Video Generation Lab
 
-## Active prospective multi-view evaluation — Batch43 TAPVid-MV EgoExo4D/PACE (2026-11-02)
+## Active prospective multi-view evaluation — Batch44B TAPVid-MV EgoExo4D/PACE (2026-11-02)
 
-A new independent 12-sequence synchronized three-camera study is prepared locally: 6 DEV + 6 TEST collection-group-disjoint scenes, 108 shared 3-D point queries across three views, 2.8 GiB of frozen RGB/point/depth artifacts, and 18/18 new targeted plus 317/317 full-project regression tests passing. The source index is SHA-pinned. DEV target-frame depth evidence contains 41 visible, 12 occluded and 1 out-of-frame query instances; this is a DEV data-support audit, **not a tracker result**. TEST labels have not been inspected for selection. The preceding Batch42 natural-video TEST exposed the key trade-off: KLT-FB reached 54.1% visible PCK@8 at 59.1% coverage with 13.0% occlusion false accepts; appearance-gated FB at NCC 0.70 reduced false accepts to 6.4% but coverage fell to 47.7%, and its VLM visibility gate was blocked (balanced accuracy 0.50, non-visible false accepts 100%). Batch43 therefore compares RGB-only KLT/template/appearance/affine baselines, calibrated three-view triangulation, camera-pose versus image-affine diagnostics, and a SmolVLM2-500M visibility baseline with a strict DEV-only admission gate. The 3-D geometry is an evaluation diagnostic; the RGB predictors do not receive oracle poses or point tracks. [Prospective protocol](docs/BATCH43_TAPVIDMV_MULTIVIEW_PROTOCOL_2026-11-02.md).
+Batch44B repairs Batch44's frame-zero query assumption after its R01 preparation stage failed on `cmu_soccer09_1` with zero shared depth-visible tracks at frame 0. The failure occurred before prediction or scoring; Batch44 logs and its 21 downloaded RRDs are preserved. Batch44B uses the earliest exact depth snapshot with at least three shared points visible in all three synchronized cameras and at least 30 future frames as the fixed query frame. The same query-construction rule applies to 11 DEV and 10 collection-group-disjoint TEST sequences; only DEV can select trackers, cross-view residual thresholds or admit SmolVLM2-500M. RGB trackers receive only the query image/point and subsequent RGB frames. Public calibration exports camera poses, intrinsics and resolutions only; 3-D tracks, depth clouds and future visibility labels remain private. The new query-frame implementation passed **25/25 targeted and 364/364 full-project regression tests**. This is a prospective protocol and code-validation milestone, not yet a tracker result. [Batch44B protocol](docs/BATCH44B_QUERY_FRAME_INITIALIZATION_2026-11-02.md).
 
 
 ## Latest sealed natural-video point/visibility evaluation — Batch41E RoboTAP (2026-11-02)
@@ -187,3 +187,10 @@ PY
 
 - Sealed Batch43 on fresh TAPVid-MV EgoExo4D/PACE sequences: independent RGB trackers remained high-risk on occlusion (KLT-FB 74.7% occluded false accepts; KLT-Forward 80.0%), calibrated three-view triangulation coverage was only 2/9 and 4/9 groups, and the SmolVLM2-500M DEV gate blocked TEST after a 100% non-visible false-accept rate.
 - Started Batch44 from the remaining unused TAPVid-MV collection groups. The new experiment exports camera pose/intrinsics/resolution as a separately hashed public calibration artifact (without point tracks or depth labels) and tests strict three-view triangulate/reproject consensus at 4/8/12 px thresholds. DEV-only selection and TEST sealing remain mandatory.
+
+
+## Process diary — 2026-11-02 (Batch44B)
+
+- Batch44 R00 successfully downloaded and SHA-256-verified all 21 new TAPVid-MV RRD sequences. R01 failed before scoring because two EgoExo4D sequences did not have three common depth-visible point IDs at frame 0.
+- A read-only query-feasibility preflight found the earliest valid synchronized query frames at 18 for `cmu_soccer09_1` and 30 for `cmu_soccer15_5`; all other selected sequences qualify at frame 0.
+- Batch44B applies one fixed earliest-common-visible-snapshot rule to DEV and TEST, tracks only after that query frame, and excludes pre-query frames from metric denominators. The failed Batch44 state/logs and downloaded RRDs are retained.
