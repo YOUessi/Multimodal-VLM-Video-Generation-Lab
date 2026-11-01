@@ -146,7 +146,7 @@ def video_frames(path):
     return total
 
 def build(cfg):
-    root=ROOT/cfg["output_dir"]
+    root=ROOT/cfg["dataset_dir"]
     root.mkdir(parents=True,exist_ok=True)
     rows=[];pair_summary=[]
     for split,pairs,seed in (("dev",cfg["dev_pairs"],cfg["dev_seed"]),
