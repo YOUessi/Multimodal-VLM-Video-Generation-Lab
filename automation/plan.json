@@ -4,6 +4,21 @@
   "description": "Batch41 uses two official RoboTAP shards (synthetic robotics, CC BY 4.0), a hash-only 6 DEV / 14 TEST video split, first-visible point queries, CPU KLT/template/affine-stabilized baselines, SmolVLM2-500M visibility classification, immutable predictions, one-time TEST scoring, and final source/data audit. TEST labels may not drive any selection.",
   "stages": [
     {
+      "id": "R00_install_optional_mediapy_pickle_dependency",
+      "gpu": false,
+      "timeout_seconds": 1200,
+      "max_attempts": 1,
+      "argv": [
+        "env",
+        "PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple",
+        "{python}",
+        "-m",
+        "pip",
+        "install",
+        "mediapy>=1.2.7,<2"
+      ]
+    },
+    {
       "id": "R01_range_extract_official_RoboTAP_shards",
       "gpu": false,
       "timeout_seconds": 10800,
@@ -134,7 +149,8 @@
       "requires_files": [
         "../models/SmolVLM2-500M-Video-Instruct/model.safetensors",
         "data/robotap_batch41/batch41_frozen/queries-public.json"
-      ]
+      ],
+      "min_free_mib": 10000
     },
     {
       "id": "R09_DEV_VLM_visibility_score",
@@ -203,7 +219,8 @@
       "requires_files": [
         "outputs/robotap_batch41/vlm_visibility_dev_gate.json.sha256",
         "outputs/robotap_batch41/test_predictions.json.sha256"
-      ]
+      ],
+      "min_free_mib": 10000
     },
     {
       "id": "R13_first_only_TEST_CPU_private_oracle_score",
