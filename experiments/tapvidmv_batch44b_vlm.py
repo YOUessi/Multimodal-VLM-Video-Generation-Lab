@@ -11,8 +11,8 @@ import time
 import numpy as np
 from PIL import Image, ImageDraw
 
-import tapvidmv_batch44bb_data as src
-import tapvidmv_batch44bb_eval as ev
+import tapvidmv_batch44b_data as src
+import tapvidmv_batch44b_eval as ev
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = src.FROZEN
