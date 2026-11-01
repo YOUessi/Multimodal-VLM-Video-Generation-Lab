@@ -12,9 +12,9 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "experiments"))
 
-import tapvidmv_batch44bb_data as data
-import tapvidmv_batch44bb_eval as evaluation
-import tapvidmv_batch44bb_vlm as vlm
+import tapvidmv_batch44b_data as data
+import tapvidmv_batch44b_eval as evaluation
+import tapvidmv_batch44b_vlm as vlm
 
 
 def synthetic_records(cfg):
