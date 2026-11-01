@@ -105,7 +105,7 @@ def weights_sha() -> str:
 
 def predict(split: str, cfg: dict) -> None:
     manifest = src.audit(cfg)
-    frozen = ROOT / cfg["dataset_dir"] / "batch41_frozen"
+    frozen = src.frozen_dir(cfg)
     queries = ev.load_json(frozen / "queries-public.json")
     output_dir = ROOT / cfg["output_dir"]
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -209,7 +209,7 @@ def predict(split: str, cfg: dict) -> None:
 
 def score(split: str, cfg: dict) -> dict:
     manifest = src.audit(cfg)
-    frozen = ROOT / cfg["dataset_dir"] / "batch41_frozen"
+    frozen = src.frozen_dir(cfg)
     output_dir = ROOT / cfg["output_dir"]
     prediction_path = output_dir / f"vlm_visibility_{split}_predictions.json"
     ev.require_pin(prediction_path)
