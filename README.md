@@ -181,3 +181,9 @@ PY
 **Status:** The three GPU experiment scripts and logs summary are committed here. The earlier complete CPU prototype (31 passing tests; annotated data tools and Wan dry-run CLI) is currently provided as a separate source ZIP, and **has not yet been fully pushed into this GitHub repository**. Do not assume that the repository currently contains those other modules.
 
 **Restrictions:** Never commit raw videos, model weights, LoRA adapter files, private paths or credentials. Real-video STAR SFT and independent MVBench scene-transition evaluation have been executed; Wan video generation has NOT been executed.
+
+
+## Process diary — 2026-11-02
+
+- Sealed Batch43 on fresh TAPVid-MV EgoExo4D/PACE sequences: independent RGB trackers remained high-risk on occlusion (KLT-FB 74.7% occluded false accepts; KLT-Forward 80.0%), calibrated three-view triangulation coverage was only 2/9 and 4/9 groups, and the SmolVLM2-500M DEV gate blocked TEST after a 100% non-visible false-accept rate.
+- Started Batch44 from the remaining unused TAPVid-MV collection groups. The new experiment exports camera pose/intrinsics/resolution as a separately hashed public calibration artifact (without point tracks or depth labels) and tests strict three-view triangulate/reproject consensus at 4/8/12 px thresholds. DEV-only selection and TEST sealing remain mandatory.
