@@ -1,0 +1,3 @@
+# Optional extractor-only dependency for TAPVid-MV Rerun recordings.
+# RRDs are version 0.35.0; keep this isolated from the base project extras.
+rerun-sdk==0.35.0

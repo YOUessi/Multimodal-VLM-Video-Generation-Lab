@@ -28,7 +28,18 @@ def atomic_json(path: Path, doc: dict):
     os.replace(tmp, path)
 
 def gitsha():
-    p = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True, timeout=10)
+    status = subprocess.run(
+        ["git", "-C", str(ROOT), "status", "--porcelain", "--untracked-files=all"],
+        capture_output=True, text=True, timeout=10,
+    )
+    if status.returncode:
+        raise RuntimeError("GIT_STATUS_NOT_READY: checkout the source repo before arming")
+    if status.stdout.strip():
+        raise RuntimeError("DIRTY_SOURCE_TREE_CANNOT_FREEZE_AUTOMATION")
+    p = subprocess.run(
+        ["git", "-C", str(ROOT), "rev-parse", "HEAD"],
+        capture_output=True, text=True, timeout=10,
+    )
     if p.returncode:
         raise RuntimeError("GIT_NOT_READY: checkout the source repo before arming")
     return p.stdout.strip()

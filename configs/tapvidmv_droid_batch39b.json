@@ -1,0 +1,129 @@
+{
+  "version": "2026-11-02-batch39b-tapvidmv-droid-multiview-v1",
+  "dataset": "TAPVid-MV DROID Rerun viewer recordings; 3-view calibrated RGB, released 3D point tracks, camera transforms and depth point-cloud snapshots",
+  "source_index_url": "https://storage.googleapis.com/dm-tapnet/tapvidmv/rrd/index.html",
+  "source_index_sha256": "eb9ff78058eca50479af98eca5bba21716dcec183ce83d8e70349d9cea58f2f5",
+  "rrd_version": "0.35.0",
+  "source_license": "DROID source dataset: CC BY 4.0; attribution required. TAPVid-MV annotations follow the respective source dataset terms.",
+  "selection_salt": "MVVG-B39-DROID-GROUP-SPLIT-2026-11-02-v1",
+  "excluded_preflight_sequence": "AUTOLab+0d4edc83+2023-10-21-19h-45m-29s",
+  "dev_groups": 4,
+  "test_groups": 8,
+  "queries_per_camera": 2,
+  "target_fraction": 0.67,
+  "depth_visibility": {
+    "exact_cloud_snapshots_only": true,
+    "radius_px": 3,
+    "depth_margin_m": 0.05,
+    "status_codes": {
+      "unknown": 0,
+      "visible": 1,
+      "occluded": 2,
+      "out": 3,
+      "missing": 4
+    }
+  },
+  "camera_projection": {
+    "world_to_camera": "camera_xyz = R @ (world_xyz - translation)",
+    "pixel_projection": "[x/z, y/z, 1] @ Pinhole.image_from_camera",
+    "transform_matrix_layout": "row-major 3x3 as serialized by Rerun 0.35.0"
+  },
+  "sequences": [
+    {
+      "split": "dev",
+      "group": "REAL",
+      "sequence": "REAL+4dbb5646+2023-07-25-14h-12m-17s",
+      "frames": 123,
+      "tracks_metadata": 600,
+      "url": "https://storage.googleapis.com/dm-tapnet/tapvidmv/rrd/droid/REAL%2B4dbb5646%2B2023-07-25-14h-12m-17s.rrd"
+    },
+    {
+      "split": "dev",
+      "group": "IRIS",
+      "sequence": "IRIS+ef107c48+2023-03-02-16h-37m-19s",
+      "frames": 157,
+      "tracks_metadata": 600,
+      "url": "https://storage.googleapis.com/dm-tapnet/tapvidmv/rrd/droid/IRIS%2Bef107c48%2B2023-03-02-16h-37m-19s.rrd"
+    },
+    {
+      "split": "dev",
+      "group": "GuptaLab",
+      "sequence": "GuptaLab+553d1bd5+2023-05-19-11h-00m-57s",
+      "frames": 86,
+      "tracks_metadata": 599,
+      "url": "https://storage.googleapis.com/dm-tapnet/tapvidmv/rrd/droid/GuptaLab%2B553d1bd5%2B2023-05-19-11h-00m-57s.rrd"
+    },
+    {
+      "split": "dev",
+      "group": "CLVR",
+      "sequence": "CLVR+236539bc+2023-05-17-19h-21m-00s",
+      "frames": 186,
+      "tracks_metadata": 600,
+      "url": "https://storage.googleapis.com/dm-tapnet/tapvidmv/rrd/droid/CLVR%2B236539bc%2B2023-05-17-19h-21m-00s.rrd"
+    },
+    {
+      "split": "test",
+      "group": "ILIAD",
+      "sequence": "ILIAD+7ae1bcff+2023-05-23-19h-07m-29s",
+      "frames": 101,
+      "tracks_metadata": 476,
+      "url": "https://storage.googleapis.com/dm-tapnet/tapvidmv/rrd/droid/ILIAD%2B7ae1bcff%2B2023-05-23-19h-07m-29s.rrd"
+    },
+    {
+      "split": "test",
+      "group": "RAIL",
+      "sequence": "RAIL+80edfcb1+2023-07-13-20h-54m-54s",
+      "frames": 92,
+      "tracks_metadata": 400,
+      "url": "https://storage.googleapis.com/dm-tapnet/tapvidmv/rrd/droid/RAIL%2B80edfcb1%2B2023-07-13-20h-54m-54s.rrd"
+    },
+    {
+      "split": "test",
+      "group": "TRI",
+      "sequence": "TRI+52ca9b6a+2023-12-13-15h-12m-57s",
+      "frames": 196,
+      "tracks_metadata": 600,
+      "url": "https://storage.googleapis.com/dm-tapnet/tapvidmv/rrd/droid/TRI%2B52ca9b6a%2B2023-12-13-15h-12m-57s.rrd"
+    },
+    {
+      "split": "test",
+      "group": "RPL",
+      "sequence": "RPL+cb4f6842+2023-05-25-11h-51m-38s",
+      "frames": 60,
+      "tracks_metadata": 599,
+      "url": "https://storage.googleapis.com/dm-tapnet/tapvidmv/rrd/droid/RPL%2Bcb4f6842%2B2023-05-25-11h-51m-38s.rrd"
+    },
+    {
+      "split": "test",
+      "group": "IPRL",
+      "sequence": "IPRL+edf28ef3+2023-12-19-09h-19m-31s",
+      "frames": 107,
+      "tracks_metadata": 590,
+      "url": "https://storage.googleapis.com/dm-tapnet/tapvidmv/rrd/droid/IPRL%2Bedf28ef3%2B2023-12-19-09h-19m-31s.rrd"
+    },
+    {
+      "split": "test",
+      "group": "WEIRD",
+      "sequence": "WEIRD+e604eeed+2023-11-21-19h-26m-17s",
+      "frames": 53,
+      "tracks_metadata": 597,
+      "url": "https://storage.googleapis.com/dm-tapnet/tapvidmv/rrd/droid/WEIRD%2Be604eeed%2B2023-11-21-19h-26m-17s.rrd"
+    },
+    {
+      "split": "test",
+      "group": "AUTOLab",
+      "sequence": "AUTOLab+cf2a60c6+2023-11-21-09h-59m-22s",
+      "frames": 88,
+      "tracks_metadata": 600,
+      "url": "https://storage.googleapis.com/dm-tapnet/tapvidmv/rrd/droid/AUTOLab%2Bcf2a60c6%2B2023-11-21-09h-59m-22s.rrd"
+    },
+    {
+      "split": "test",
+      "group": "PennPAL",
+      "sequence": "PennPAL+c5f808b7+2023-06-15-17h-08m-12s",
+      "frames": 142,
+      "tracks_metadata": 600,
+      "url": "https://storage.googleapis.com/dm-tapnet/tapvidmv/rrd/droid/PennPAL%2Bc5f808b7%2B2023-06-15-17h-08m-12s.rrd"
+    }
+  ]
+}
