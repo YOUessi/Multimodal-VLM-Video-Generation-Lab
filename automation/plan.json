@@ -1,91 +1,51 @@
 {
-  "version": "batch44e-batch44d-report-repair-20261102-v1",
+  "version": "batch45-kinetics-fresh-class-disjoint-gradient-vlm-20261102-v1",
   "enabled": true,
-  "description": "Report-only repair for Batch44D. R15 wrote a copied Batch44B filename although the report content and all result pins are Batch44D; R21 therefore waited. This plan validates all existing Batch44D result/prediction pins and public manifest/calibration, rebuilds the correctly named Batch44D report, and verifies it. It does not access private TEST oracle files, rerun prediction/scoring, or use the GPU.",
-  "source_of_truth": "GitHub main; runner freezes the clean checkout SHA into .automation/state.json. Only existing hash-pinned Batch44D outputs and public manifest/calibration are read; private oracles and media remain local and untouched.",
-  "source_index_sha256": "eb9ff78058eca50479af98eca5bba21716dcec183ce83d8e70349d9cea58f2f5",
-  "failure_policy": "One attempt per frozen stage; fail closed. Preserve Batch44D outputs and logs. Any source repair requires a new GitHub SHA and new repo-batch44e-tested worktree.",
-  "test_policy": "Report-only. Reuse only hash-pinned Batch44D DEV/TEST prediction and result JSONs. Do not open, regenerate, or rescore private TEST oracles; do not tune thresholds or prompts. Batch44D TEST scoring already ran once.",
-  "gpu_policy": "No GPU use and no model inference. No GPU lock acquisition required.",
+  "description": "Fresh TAP-Vid-Kinetics Kinetics-700-2020 validation holdout: 12 new video IDs from 12 new action classes, disjoint from Batch42 and prior manifest video IDs; 6 DEV / 6 TEST. Compare KLT, NCC, ORB affine proxy and Sobel-gradient identity gates; test local SmolVLM2-2.2B with marked query frame plus reference crop under a DEV-only admission gate.",
+  "source_of_truth": "GitHub main; runner freezes clean checkout SHA in .automation/state.json. Raw videos, shards, frames, private point tracks, predictions and model weights remain local on Tang.",
+  "failure_policy": "Single attempt per frozen stage; fail closed. Preserve failed logs and partial downloads. Any repair requires a new GitHub source SHA and a new repo-batch*-tested directory. Never tune on TEST.",
+  "test_policy": "Selection is deterministic and video/action-class disjoint from Batch42. CPU tracker selection and VLM admission use DEV only. CPU and VLM TEST predictions are SHA-pinned before one-time scoring. If the VLM DEV gate blocks, TEST VLM inference is skipped and the TEST VLM oracle is never opened.",
+  "gpu_policy": "VLM inference stages use /tmp/tang_shared_gpu_experiments.lock; require no other CUDA compute process and at least 11,000 MiB free. CPU stages explicitly disable OpenCV OpenCL.",
+  "data_policy": "Download only the 12 selected class shards from the official CVDF S3 path list. Preserve existing media and partial downloads. No video, frame, shard, private oracle, weight, generated media or secret may be committed.",
   "max_stages_per_tick": 2,
   "stages": [
     {
-      "id": "R00_VERIFY_BATCH44D_INPUT_PINS",
+      "id": "R00_SELECT_AND_DOWNLOAD_12_FRESH_CLASS_SHARDS",
       "argv": [
         "{python}",
-        "experiments/tapvidmv_batch44d_report.py",
-        "verify-inputs"
+        "experiments/kinetics_batch45_data.py",
+        "download"
       ],
-      "timeout_seconds": 1800,
+      "timeout_seconds": 5400,
       "max_attempts": 1,
       "requires_files": [
-        "configs/batch44e_report_repair.json",
-        "experiments/tapvidmv_batch44d_report.py",
-        "data/tapvidmv_multiview_batch44d/source/source_manifest.json",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/manifest.json",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/queries-public.json",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_00.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_01.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_02.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_03.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_04.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_05.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_06.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_07.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_08.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_09.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_10.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_11.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_12.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_13.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_14.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_15.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_16.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_17.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_18.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_19.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_20.npz",
-        "outputs/tapvidmv_batch44d/dev_results.json",
-        "outputs/tapvidmv_batch44d/test_results.json",
-        "outputs/tapvidmv_batch44d/dev_selection.json",
-        "outputs/tapvidmv_batch44d/dev_vlm_results.json",
-        "outputs/tapvidmv_batch44d/dev_vlm_gate.json",
-        "outputs/tapvidmv_batch44d/test_vlm_results.json",
-        "outputs/tapvidmv_batch44d/dev_predictions.json",
-        "outputs/tapvidmv_batch44d/test_predictions.json",
-        "outputs/tapvidmv_batch44d/dev_vlm_predictions.json",
-        "outputs/tapvidmv_batch44d/test_vlm_predictions.json",
-        "outputs/tapvidmv_batch44d/dev_results.json.sha256",
-        "outputs/tapvidmv_batch44d/test_results.json.sha256",
-        "outputs/tapvidmv_batch44d/dev_selection.json.sha256",
-        "outputs/tapvidmv_batch44d/dev_vlm_results.json.sha256",
-        "outputs/tapvidmv_batch44d/dev_vlm_gate.json.sha256",
-        "outputs/tapvidmv_batch44d/test_vlm_results.json.sha256",
-        "outputs/tapvidmv_batch44d/dev_predictions.json.sha256",
-        "outputs/tapvidmv_batch44d/test_predictions.json.sha256",
-        "outputs/tapvidmv_batch44d/dev_vlm_predictions.json.sha256",
-        "outputs/tapvidmv_batch44d/test_vlm_predictions.json.sha256"
+        "experiments/kinetics_batch45_data.py",
+        "configs/kinetics_batch45.json",
+        "data/tapvid_kinetics_batch41/tapvid_kinetics/tapvid_kinetics.csv",
+        "data/tapvid_kinetics_batch41/metadata/k700_2020_val.csv",
+        "data/tapvid_kinetics_batch41/tapvid_kinetics/val.txt"
       ]
     },
     {
-      "id": "R01_REPORT_REPAIR_TARGETED_TESTS",
+      "id": "R01_TARGETED_BATCH45_REGRESSION",
       "argv": [
         "{python}",
         "-m",
         "pytest",
         "-q",
-        "tests/test_tapvidmv_batch44d.py"
+        "tests/test_kinetics_batch45.py"
       ],
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "tests/test_tapvidmv_batch44d.py",
-        "experiments/tapvidmv_batch44d_report.py",
-        "configs/batch44e_report_repair.json"
+        "tests/test_kinetics_batch45.py",
+        "experiments/kinetics_batch45_data.py",
+        "experiments/kinetics_batch45_eval.py",
+        "experiments/kinetics_batch45_vlm.py"
       ]
     },
     {
-      "id": "R02_REPORT_REPAIR_FULL_PROJECT_TESTS",
+      "id": "R02_FULL_PROJECT_REGRESSION",
       "argv": [
         "{python}",
         "-m",
@@ -95,153 +55,305 @@
       "timeout_seconds": 3600,
       "max_attempts": 1,
       "requires_files": [
-        "tests/test_tapvidmv_batch44d.py",
-        "tests/test_source_security_guard.py"
+        "pyproject.toml",
+        "tests/test_kinetics_batch45.py"
       ]
     },
     {
-      "id": "R03_BUILD_BATCH44D_REPORT",
+      "id": "R03_FREEZE_12_FRESH_VIDEO_FRAMES_AND_PRIVATE_ORACLE",
       "argv": [
         "{python}",
-        "experiments/tapvidmv_batch44d_report.py",
+        "experiments/kinetics_batch45_data.py",
+        "prepare"
+      ],
+      "timeout_seconds": 10800,
+      "max_attempts": 1,
+      "requires_files": [
+        "data/tapvid_kinetics_batch45/preflight/selection.json",
+        "data/tapvid_kinetics_batch45/preflight/download_manifest.json",
+        "data/tapvid_kinetics_batch45/preflight/k700_2020_val_path.txt"
+      ]
+    },
+    {
+      "id": "R04_PUBLIC_DATA_AND_COORDINATE_AUDIT",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch45_data.py",
+        "audit-public"
+      ],
+      "timeout_seconds": 3600,
+      "max_attempts": 1,
+      "requires_files": [
+        "data/tapvid_kinetics_batch45/batch45_frozen/manifest.json",
+        "data/tapvid_kinetics_batch45/batch45_frozen/queries-public.json"
+      ]
+    },
+    {
+      "id": "R05_DEV_CPU_TRACKER_PREDICTIONS",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch45_eval.py",
+        "predict-dev"
+      ],
+      "timeout_seconds": 10800,
+      "max_attempts": 1,
+      "requires_files": [
+        "configs/kinetics_batch45.json",
+        "data/tapvid_kinetics_batch45/batch45_frozen/manifest.json",
+        "data/tapvid_kinetics_batch45/batch45_frozen/queries-public.json"
+      ]
+    },
+    {
+      "id": "R06_DEV_CPU_SCORING",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch45_eval.py",
+        "score-dev"
+      ],
+      "timeout_seconds": 3600,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch45/dev_predictions.json",
+        "outputs/kinetics_batch45/dev_predictions.json.sha256",
+        "data/tapvid_kinetics_batch45/batch45_frozen/oracle-private.json"
+      ]
+    },
+    {
+      "id": "R07_DEV_ONLY_TRACKER_SELECTION",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch45_eval.py",
+        "select-dev"
+      ],
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch45/dev_results.json",
+        "configs/kinetics_batch45.json"
+      ]
+    },
+    {
+      "id": "R08_DEV_SMOLVLM2_2_2B_REFERENCE_CROP_PREDICTIONS",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch45_vlm.py",
+        "predict-dev"
+      ],
+      "timeout_seconds": 10800,
+      "max_attempts": 1,
+      "gpu": true,
+      "min_free_mib": 11000,
+      "requires_files": [
+        "configs/kinetics_batch45.json",
+        "data/tapvid_kinetics_batch45/batch45_frozen/manifest.json",
+        "data/tapvid_kinetics_batch45/batch45_frozen/queries-public.json",
+        "outputs/kinetics_batch45/dev_selection.json",
+        "outputs/kinetics_batch45/dev_selection.json.sha256",
+        "models/SmolVLM2-2.2B-Instruct/model.safetensors.index.json",
+        "models/SmolVLM2-2.2B-Instruct/model-00001-of-00002.safetensors",
+        "models/SmolVLM2-2.2B-Instruct/model-00002-of-00002.safetensors"
+      ]
+    },
+    {
+      "id": "R09_DEV_VLM_SCORING",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch45_vlm.py",
+        "score-dev"
+      ],
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch45/dev_vlm_predictions.json",
+        "outputs/kinetics_batch45/dev_vlm_predictions.json.sha256",
+        "outputs/kinetics_batch45/dev_predictions.json",
+        "outputs/kinetics_batch45/dev_predictions.json.sha256"
+      ]
+    },
+    {
+      "id": "R10_DEV_VLM_ADMISSION_GATE",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch45_vlm.py",
+        "dev-gate"
+      ],
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch45/dev_vlm_results.json",
+        "configs/kinetics_batch45.json"
+      ]
+    },
+    {
+      "id": "R11_TEST_CPU_PREDICTIONS_PIN",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch45_eval.py",
+        "predict-test"
+      ],
+      "timeout_seconds": 10800,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch45/dev_selection.json",
+        "outputs/kinetics_batch45/dev_selection.json.sha256",
+        "data/tapvid_kinetics_batch45/batch45_frozen/manifest.json"
+      ]
+    },
+    {
+      "id": "R12_TEST_CPU_SCORING_ONCE",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch45_eval.py",
+        "score-test"
+      ],
+      "timeout_seconds": 3600,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch45/test_predictions.json",
+        "outputs/kinetics_batch45/test_predictions.json.sha256",
+        "outputs/kinetics_batch45/dev_selection.json",
+        "data/tapvid_kinetics_batch45/batch45_frozen/oracle-private.json"
+      ]
+    },
+    {
+      "id": "R13_TEST_VLM_PREDICTIONS_OR_DEV_GATE_SKIP",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch45_vlm.py",
+        "predict-test"
+      ],
+      "timeout_seconds": 10800,
+      "max_attempts": 1,
+      "gpu": true,
+      "min_free_mib": 11000,
+      "requires_files": [
+        "outputs/kinetics_batch45/dev_vlm_gate.json",
+        "outputs/kinetics_batch45/dev_vlm_gate.json.sha256",
+        "outputs/kinetics_batch45/test_predictions.json",
+        "outputs/kinetics_batch45/test_predictions.json.sha256",
+        "models/SmolVLM2-2.2B-Instruct/model.safetensors.index.json",
+        "models/SmolVLM2-2.2B-Instruct/model-00001-of-00002.safetensors",
+        "models/SmolVLM2-2.2B-Instruct/model-00002-of-00002.safetensors"
+      ]
+    },
+    {
+      "id": "R14_TEST_VLM_SCORING_OR_SKIP",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch45_vlm.py",
+        "score-test"
+      ],
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch45/test_vlm_predictions.json",
+        "outputs/kinetics_batch45/test_vlm_predictions.json.sha256",
+        "outputs/kinetics_batch45/test_predictions.json",
+        "outputs/kinetics_batch45/test_predictions.json.sha256"
+      ]
+    },
+    {
+      "id": "R15_BUILD_AGGREGATED_BATCH45_REPORT",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch45_report.py",
         "build"
       ],
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "configs/batch44e_report_repair.json",
-        "experiments/tapvidmv_batch44d_report.py",
-        "data/tapvidmv_multiview_batch44d/source/source_manifest.json",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/manifest.json",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/queries-public.json",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_00.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_01.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_02.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_03.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_04.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_05.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_06.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_07.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_08.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_09.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_10.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_11.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_12.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_13.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_14.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_15.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_16.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_17.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_18.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_19.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_20.npz",
-        "outputs/tapvidmv_batch44d/dev_results.json",
-        "outputs/tapvidmv_batch44d/test_results.json",
-        "outputs/tapvidmv_batch44d/dev_selection.json",
-        "outputs/tapvidmv_batch44d/dev_vlm_results.json",
-        "outputs/tapvidmv_batch44d/dev_vlm_gate.json",
-        "outputs/tapvidmv_batch44d/test_vlm_results.json",
-        "outputs/tapvidmv_batch44d/dev_predictions.json",
-        "outputs/tapvidmv_batch44d/test_predictions.json",
-        "outputs/tapvidmv_batch44d/dev_vlm_predictions.json",
-        "outputs/tapvidmv_batch44d/test_vlm_predictions.json",
-        "outputs/tapvidmv_batch44d/dev_results.json.sha256",
-        "outputs/tapvidmv_batch44d/test_results.json.sha256",
-        "outputs/tapvidmv_batch44d/dev_selection.json.sha256",
-        "outputs/tapvidmv_batch44d/dev_vlm_results.json.sha256",
-        "outputs/tapvidmv_batch44d/dev_vlm_gate.json.sha256",
-        "outputs/tapvidmv_batch44d/test_vlm_results.json.sha256",
-        "outputs/tapvidmv_batch44d/dev_predictions.json.sha256",
-        "outputs/tapvidmv_batch44d/test_predictions.json.sha256",
-        "outputs/tapvidmv_batch44d/dev_vlm_predictions.json.sha256",
-        "outputs/tapvidmv_batch44d/test_vlm_predictions.json.sha256"
+        "outputs/kinetics_batch45/dev_results.json",
+        "outputs/kinetics_batch45/test_results.json",
+        "outputs/kinetics_batch45/dev_selection.json",
+        "outputs/kinetics_batch45/dev_vlm_gate.json",
+        "outputs/kinetics_batch45/dev_vlm_results.json",
+        "outputs/kinetics_batch45/test_vlm_results.json"
       ]
     },
     {
-      "id": "R04_VERIFY_BATCH44D_REPORT_PIN",
+      "id": "R16_EVALUATION_FINAL_PIN_AUDIT",
       "argv": [
         "{python}",
-        "experiments/tapvidmv_batch44d_report.py",
+        "experiments/kinetics_batch45_eval.py",
+        "final-audit"
+      ],
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch45/dev_predictions.json.sha256",
+        "outputs/kinetics_batch45/test_predictions.json.sha256",
+        "outputs/kinetics_batch45/dev_selection.json.sha256"
+      ]
+    },
+    {
+      "id": "R17_VLM_FINAL_GATE_AND_PIN_AUDIT",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch45_vlm.py",
+        "final-audit"
+      ],
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch45/dev_vlm_gate.json.sha256",
+        "outputs/kinetics_batch45/dev_vlm_predictions.json.sha256",
+        "outputs/kinetics_batch45/test_vlm_predictions.json.sha256"
+      ]
+    },
+    {
+      "id": "R18_FULL_PROJECT_REGRESSION_AFTER_EVALUATION",
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "timeout_seconds": 3600,
+      "max_attempts": 1,
+      "requires_files": [
+        "tests/test_kinetics_batch45.py",
+        "outputs/kinetics_batch45/BATCH45_KINETICS_FRESH_HOLDOUT_REPORT.md"
+      ]
+    },
+    {
+      "id": "R19_SOURCE_PUBLICATION_SECURITY_GUARD",
+      "argv": [
+        "{python}",
+        "experiments/source_security_guard.py"
+      ],
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "requires_files": [
+        "experiments/source_security_guard.py",
+        "automation/plan.json"
+      ]
+    },
+    {
+      "id": "R20_FINAL_PUBLIC_AND_PRIVATE_DATA_HASH_AUDIT",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch45_data.py",
+        "audit"
+      ],
+      "timeout_seconds": 3600,
+      "max_attempts": 1,
+      "requires_files": [
+        "data/tapvid_kinetics_batch45/batch45_frozen/manifest.json",
+        "data/tapvid_kinetics_batch45/batch45_frozen/oracle-private.json"
+      ]
+    },
+    {
+      "id": "R21_FINAL_REPORT_PIN_AUDIT",
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch45_report.py",
         "verify"
       ],
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/tapvidmv_batch44d/BATCH44D_TAPVIDMV_MULTIVIEW_REPORT.md",
-        "outputs/tapvidmv_batch44d/BATCH44D_TAPVIDMV_MULTIVIEW_REPORT.md.sha256"
-      ]
-    },
-    {
-      "id": "R05_PUBLICATION_GUARD",
-      "argv": [
-        "{python}",
-        "experiments/source_security_guard.py"
-      ],
-      "timeout_seconds": 1800,
-      "max_attempts": 1,
-      "requires_files": [
-        ".gitignore",
-        "experiments/source_security_guard.py"
-      ]
-    },
-    {
-      "id": "R06_FINAL_BATCH44D_INPUT_AUDIT",
-      "argv": [
-        "{python}",
-        "experiments/tapvidmv_batch44d_report.py",
-        "verify-inputs"
-      ],
-      "timeout_seconds": 1800,
-      "max_attempts": 1,
-      "requires_files": [
-        "configs/batch44e_report_repair.json",
-        "experiments/tapvidmv_batch44d_report.py",
-        "data/tapvidmv_multiview_batch44d/source/source_manifest.json",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/manifest.json",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/queries-public.json",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_00.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_01.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_02.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_03.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_04.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_05.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_06.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_07.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_08.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_09.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_10.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_11.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_12.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_13.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_14.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_15.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_16.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_17.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_18.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_19.npz",
-        "data/tapvidmv_multiview_batch44d/batch44d_frozen/calibration-public/scene_20.npz",
-        "outputs/tapvidmv_batch44d/dev_results.json",
-        "outputs/tapvidmv_batch44d/test_results.json",
-        "outputs/tapvidmv_batch44d/dev_selection.json",
-        "outputs/tapvidmv_batch44d/dev_vlm_results.json",
-        "outputs/tapvidmv_batch44d/dev_vlm_gate.json",
-        "outputs/tapvidmv_batch44d/test_vlm_results.json",
-        "outputs/tapvidmv_batch44d/dev_predictions.json",
-        "outputs/tapvidmv_batch44d/test_predictions.json",
-        "outputs/tapvidmv_batch44d/dev_vlm_predictions.json",
-        "outputs/tapvidmv_batch44d/test_vlm_predictions.json",
-        "outputs/tapvidmv_batch44d/dev_results.json.sha256",
-        "outputs/tapvidmv_batch44d/test_results.json.sha256",
-        "outputs/tapvidmv_batch44d/dev_selection.json.sha256",
-        "outputs/tapvidmv_batch44d/dev_vlm_results.json.sha256",
-        "outputs/tapvidmv_batch44d/dev_vlm_gate.json.sha256",
-        "outputs/tapvidmv_batch44d/test_vlm_results.json.sha256",
-        "outputs/tapvidmv_batch44d/dev_predictions.json.sha256",
-        "outputs/tapvidmv_batch44d/test_predictions.json.sha256",
-        "outputs/tapvidmv_batch44d/dev_vlm_predictions.json.sha256",
-        "outputs/tapvidmv_batch44d/test_vlm_predictions.json.sha256",
-        "outputs/tapvidmv_batch44d/BATCH44D_TAPVIDMV_MULTIVIEW_REPORT.md",
-        "outputs/tapvidmv_batch44d/BATCH44D_TAPVIDMV_MULTIVIEW_REPORT.md.sha256"
+        "outputs/kinetics_batch45/BATCH45_KINETICS_FRESH_HOLDOUT_REPORT.md",
+        "outputs/kinetics_batch45/BATCH45_KINETICS_FRESH_HOLDOUT_REPORT.md.sha256"
       ]
     }
   ]

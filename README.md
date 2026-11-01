@@ -215,3 +215,12 @@ PY
 - Batch44B froze 21 scenes/189 queries and generated 99 DEV RGB predictions, but R06 DEV scoring failed because the pre-query affine metadata is null. The failed log is preserved; no DEV result was sealed and no TEST oracle was read.
 - Batch44C repairs null-safe CPU-latency aggregation and explicitly disables OpenCV OpenCL after Batch44B's CPU stage unexpectedly created an NVIDIA context. Two regression tests cover both defects.
 - The same 21 RRDs are hard-linked into a separate Batch44C namespace; new frozen artifacts and predictions will be regenerated under the new GitHub SHA. No source media or prior outputs are deleted.
+
+
+## Process diary — 2026-11-02 (Batch45 prospective holdout)
+
+- Batch44D's calibrated three-view method still exceeded the TEST occlusion false-accept limit, while the SmolVLM2-500M DEV gate blocked TEST inference after an all-VISIBLE collapse.
+- Batch45 is a new, deterministic Kinetics-700-2020 validation draw: 12 new video IDs from 12 action classes, disjoint from Batch42 and prior project video manifests; 6 DEV / 6 TEST, four first-visible point queries per clip.
+- The new CPU candidate is an illumination-normalized Sobel-gradient identity gate layered on KLT-FB, evaluated against NCC appearance gates and a 2-D affine background proxy. A local SmolVLM2-2.2B baseline receives a marked query frame, a 64×64 reference crop and a later target frame; TEST inference is conditional on the frozen DEV gate.
+- Source code, tests, config and the pre-registered protocol are committed before any new shard download or TEST scoring. All videos, shards, frames, private point tracks, predictions and weights remain local on Tang.
+- [Batch45 prospective protocol](docs/BATCH45_KINETICS_FRESH_CLASS_HOLDOUT_PROTOCOL_2026-11-02.md).
