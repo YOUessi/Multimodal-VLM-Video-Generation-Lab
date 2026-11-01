@@ -81,6 +81,23 @@ def content_key(path: Path) -> str:
     return digest(path)
 
 
+def normalized_to_pixel_points(points: np.ndarray, occluded: np.ndarray, height: int, width: int) -> np.ndarray:
+    """Official TAP-Vid stores (x,y) in 0..1; OpenCV and PCK expect raster pixels.
+
+    Follow the upstream evaluation_datasets.py convention: multiply by [W,H],
+    not by [W-1,H-1]. Occluded-point coordinates are not scored for geometry.
+    Never infer coordinate units from (private) TEST scores.
+    """
+    if not (0 < height and 0 < width and points.ndim == 3 and points.shape[-1] == 2
+            and occluded.shape == points.shape[:2]):
+        raise ValueError("INVALID_TAPVID_COORDINATE_SHAPE")
+    visible = np.asarray(points, dtype=np.float64)[~occluded]
+    if (not np.isfinite(visible).all()
+            or np.any(visible < 0) or np.any(visible > 1)):
+        raise RuntimeError("TAPVID_VISIBLE_POINTS_NOT_NORMALIZED")
+    return np.asarray(points, dtype=np.float64) * np.array([width, height], dtype=np.float64)
+
+
 def prepare() -> None:
     official = DATA / "official.zip"
     records = dict(official_records(official))
@@ -109,8 +126,9 @@ def prepare() -> None:
                 or frames.shape[0] != points.shape[1]):
             raise RuntimeError("OFFICIAL_SAMPLE_SHAPE_MISMATCH:" + key)
         subframes = np.ascontiguousarray(frames[::STRIDE])
-        subpoints = points[:, ::STRIDE, :]
         suboccluded = occluded[:, ::STRIDE]
+        subpoints = normalized_to_pixel_points(
+            points[:, ::STRIDE, :], suboccluded, int(frames.shape[1]), int(frames.shape[2]))
         filename = f"frames/clip_{slot:02d}.npy"
         filepath = target / filename
         if not filepath.exists():
@@ -156,6 +174,9 @@ def prepare() -> None:
         "selection_salt": SALT, "sample_stride": STRIDE,
         "n_total_official": len(records), "n_dev": DEV, "n_test": TEST,
         "query_selection": "hash-only point ids, first visible query on sampled frames",
+        "coordinates": "official normalized (x,y) multiplied by (frame_width,frame_height) into pixels; upstream TAP-Vid reader convention",
+        "oracle_sha256": content_key(target / "oracle-private.json"),
+        "public_queries_sha256": content_key(target / "queries-public.json"),
         "scenes": scenes,
     }
     # Write oracle before manifest, so an interrupted write cannot appear complete.

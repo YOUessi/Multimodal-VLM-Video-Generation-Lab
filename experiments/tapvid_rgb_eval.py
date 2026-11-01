@@ -207,6 +207,9 @@ def predict(split: str):
 
 def score(split: str):
     manifest = src.audit()
+    if (manifest.get("oracle_sha256") != sha_bytes((DATA / "oracle-private.json").read_bytes())
+            or manifest.get("public_queries_sha256") != sha_bytes((DATA / "queries-public.json").read_bytes())):
+        raise RuntimeError("FROZEN_PRIVATE_ORACLE_OR_QUERY_DIGEST_DRIFT")
     oracle = doc(DATA / "oracle-private.json")
     queries = doc(DATA / "queries-public.json")
     p = OUT / f"{split}_predictions.json"

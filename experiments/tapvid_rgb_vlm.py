@@ -156,6 +156,9 @@ def predict(split: str):
 
 def score(split: str):
     man=src.audit()
+    if (man.get("oracle_sha256")!=ev.sha_bytes((DATA/"oracle-private.json").read_bytes())
+            or man.get("public_queries_sha256")!=ev.sha_bytes((DATA/"queries-public.json").read_bytes())):
+        raise RuntimeError("VLM_PRIVATE_ORACLE_OR_PUBLIC_QUERY_DIGEST_DRIFT")
     gold=ev.doc(DATA/"oracle-private.json")
     queries=ev.doc(DATA/"queries-public.json")
     vfile=OUT/f"{split}_vlm_predictions.json"

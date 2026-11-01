@@ -142,6 +142,9 @@ def fake_scoring(tmp_path,monkeypatch,*,after_prediction_mutation=False):
         "xy":[[10,10],[11,11],[12,12],[13,13]],
         "occluded":[False,False,True,False]}}}}
     (d/"oracle-private.json").write_text(json.dumps(truth))
+    manifest["oracle_sha256"] = ev.sha_bytes((d/"oracle-private.json").read_bytes())
+    manifest["public_queries_sha256"] = ev.sha_bytes((d/"queries-public.json").read_bytes())
+    (d/"manifest.json").write_text(json.dumps(manifest))
     trace=[[10.,10.],[11.,11.],[12.,12.],None]
     records=[{"name":"clip_00","tracks":{"p0001":{m:trace for m in ev.METHODS}},
               "cpu_query_ms":{"p0001":{m:6.0 for m in ev.METHODS}}}]
@@ -212,3 +215,41 @@ def test_inference_works_without_private_future_labels(tmp_path,monkeypatch):
     p=tmp_path/"output/dev_predictions.json"
     ev.require_pin(p)
     assert json.loads(p.read_text())["oracle_unread_during_prediction"] is True
+
+def test_official_normalized_xy_to_raster_pixels_not_top_left():
+    # Upstream TAP-Vid stores normalized coordinates and multiplies by (W,H).
+    # In particular, a center point MUST become (128,128), not (0.5,0.5).
+    unit = np.array([[[0.5,0.25],[0.0,1.0],[0.2,0.9]]],dtype=np.float64)
+    occ = np.array([[False,True,False]],dtype=bool)
+    result = data.normalized_to_pixel_points(unit,occ,256,256)
+    assert result[0,0].tolist() == [128.0,64.0]
+    assert result[0,1].tolist() == [0.0,256.0]
+    assert result[0,2].tolist() == [51.2,230.4]
+    np.testing.assert_array_equal(unit[0,0],[0.5,0.25])
+
+
+def test_official_visible_point_out_of_unit_range_fails_closed():
+    bad = np.array([[[1.2,0.4]]])
+    with pytest.raises(RuntimeError,match="NOT_NORMALIZED"):
+        data.normalized_to_pixel_points(bad,np.array([[False]]),256,256)
+    # Occluded coordinates might be offscreen by design: should not be scored.
+    assert data.normalized_to_pixel_points(bad,np.array([[True]]),256,256).shape == (1,1,2)
+
+
+def test_private_oracle_mutation_is_rejected_even_when_prediction_sealed(tmp_path,monkeypatch):
+    out=fake_scoring(tmp_path,monkeypatch)
+    p=tmp_path/"data"/"oracle-private.json"
+    truth=json.loads(p.read_text())
+    truth["clip_00"]["tracks"]["p0001"]["occluded"][1]=True
+    p.write_text(json.dumps(truth))
+    with pytest.raises(RuntimeError,match="PRIVATE_ORACLE"):
+        ev.score("test")
+
+
+def test_upstream_tapvid_jaccard_counts_wrong_visible_false_positives(tmp_path,monkeypatch):
+    out=fake_scoring(tmp_path,monkeypatch)
+    ev.score("test")
+    report=json.loads((out/"test_results.json").read_text())
+    # 2 visible (1 correct, 1 abstained), 1 occluded but predicted visible.
+    # Jaccard at every radius: TP / (GT visible + absent FP + bad-visible FP)
+    assert report["scene_details"]["clip_00"]["stationary_point"]["jaccard_mean_1_2_4_8_16"] == round(1/3,5)
