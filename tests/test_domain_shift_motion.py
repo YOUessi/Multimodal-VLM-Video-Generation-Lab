@@ -97,3 +97,13 @@ def test_small_full_manifest_generation(tmp_path,monkeypatch):
         groups=collections.Counter((r["variant"],r["gold_direction"]) for r in original)
         assert len(groups)==20 and all(n==1 for n in groups.values())
     assert data.build(sample)["source_sha256"]==created["source_sha256"]
+    assert (tmp_path/"dataset/manifest.json").is_file()
+    assert (tmp_path/"outputs/motion_render_shift_v1/manifest.json").exists() is False
+
+def test_dataset_and_prediction_results_roots_are_distinct():
+    import inspect
+    cfg_doc=cfg()
+    assert cfg_doc["dataset_dir"]!=cfg_doc["output_dir"]
+    assert 'ROOT/cfg["dataset_dir"]' in inspect.getsource(data.build)
+    assert 'ROOT/cfg["output_dir"]' not in inspect.getsource(data.build)
+
