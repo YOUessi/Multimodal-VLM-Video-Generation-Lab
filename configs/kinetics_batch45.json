@@ -1,8 +1,8 @@
 {
-  "version": "2026-11-02-batch45d-kinetics-fresh-class-holdout-v4",
-  "dataset_dir": "data/tapvid_kinetics_batch45d",
-  "frozen_subdir": "batch45d_frozen",
-  "output_dir": "outputs/kinetics_batch45d",
+  "version": "2026-11-02-batch45e-kinetics-fresh-class-holdout-v5",
+  "dataset_dir": "data/tapvid_kinetics_batch45e",
+  "frozen_subdir": "batch45e_frozen",
+  "output_dir": "outputs/kinetics_batch45e",
   "source_csv": "data/tapvid_kinetics_batch41/tapvid_kinetics/tapvid_kinetics.csv",
   "source_metadata": "data/tapvid_kinetics_batch41/metadata/k700_2020_val.csv",
   "source_val_ids": "data/tapvid_kinetics_batch41/tapvid_kinetics/val.txt",

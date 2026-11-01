@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 import sys
 
 import cv2
@@ -170,3 +171,15 @@ def test_split_disjointness_rejects_prior_video_and_action_class():
         data.validate_split_disjointness(scenes, {"fresh-a"}, set())
     with pytest.raises(RuntimeError, match="KINETICS_BATCH42_ACTION_CLASS_OVERLAP"):
         data.validate_split_disjointness(scenes, set(), {"fresh-class-b"})
+
+
+def test_plan_pins_all_test_predictions_before_any_test_scoring():
+    plan = json.loads((ROOT / "automation/plan.json").read_text(encoding="utf-8"))
+    ids = [stage["id"] for stage in plan["stages"]]
+    cpu_prediction = ids.index("R11_TEST_CPU_PREDICTIONS_PIN")
+    vlm_prediction = ids.index("R12_TEST_VLM_PREDICTIONS_OR_DEV_GATE_SKIP")
+    cpu_score = ids.index("R13_TEST_CPU_SCORING_ONCE")
+    vlm_score = ids.index("R14_TEST_VLM_SCORING_OR_SKIP")
+    assert max(cpu_prediction, vlm_prediction) < min(cpu_score, vlm_score)
+    vlm_predict_stage = plan["stages"][vlm_prediction]
+    assert not any("oracle-private.json" in path for path in vlm_predict_stage.get("requires_files", []))

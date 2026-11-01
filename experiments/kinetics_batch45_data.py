@@ -21,11 +21,11 @@ import tarfile
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "data/tapvid_kinetics_batch45d"
+DATA = ROOT / "data/tapvid_kinetics_batch45e"
 SOURCE_CSV = ROOT / "data/tapvid_kinetics_batch41/tapvid_kinetics/tapvid_kinetics.csv"
 VAL_METADATA = ROOT / "data/tapvid_kinetics_batch41/metadata/k700_2020_val.csv"
 VAL_IDS = ROOT / "data/tapvid_kinetics_batch41/tapvid_kinetics/val.txt"
-FROZEN = DATA / "batch45d_frozen"
+FROZEN = DATA / "batch45e_frozen"
 PATH_LIST = DATA / "preflight/k700_2020_val_path.txt"
 DOWNLOAD_MANIFEST = DATA / "preflight/download_manifest.json"
 PATH_LIST_URL = "https://s3.amazonaws.com/kinetics/700_2020/val/k700_2020_val_path.txt"
@@ -380,7 +380,7 @@ def prepare() -> None:
 
     selection_sha = sha_file(DATA / "preflight/selection.json")
     manifest = {
-        "version": "BATCH45D-TAPVID-KINETICS-FRESH-CLASS-HOLDOUT-2026-11-02-v4",
+        "version": "BATCH45E-TAPVID-KINETICS-FRESH-CLASS-HOLDOUT-2026-11-02-v5",
         "dataset": "TAP-Vid-Kinetics; natural YouTube/Kinetics video clips",
         "annotation_license": "CC BY 4.0",
         "video_rights": "source videos remain local and retain their individual creator/platform terms",

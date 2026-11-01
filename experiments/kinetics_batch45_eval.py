@@ -15,8 +15,8 @@ import kinetics_batch42_eval as core
 import kinetics_batch45_data as src
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "data/tapvid_kinetics_batch45d/batch45d_frozen"
-OUT = ROOT / "outputs/kinetics_batch45d"
+DATA = ROOT / "data/tapvid_kinetics_batch45e/batch45e_frozen"
+OUT = ROOT / "outputs/kinetics_batch45e"
 _BASE_METHODS = tuple(core.METHODS)
 _BASE_PREDICT_QUERY = core.predict_query
 GRADIENT_METHODS = ("gradient_fb_050", "gradient_fb_065", "gradient_fb_080")
@@ -137,7 +137,7 @@ def final_audit(cfg: dict) -> None:
     config_sha = sha_bytes(json_bytes(cfg))
     manifest_sha = sha_bytes((DATA / "manifest.json").read_bytes())
     if manifest.get("source_commit") != gitsha():
-        raise RuntimeError("KINETICS_BATCH45D_MANIFEST_SOURCE_MISMATCH")
+        raise RuntimeError("KINETICS_BATCH45E_MANIFEST_SOURCE_MISMATCH")
     for split in ("dev", "test"):
         prediction_path = OUT / f"{split}_predictions.json"
         core.require_pin(prediction_path)
@@ -146,24 +146,24 @@ def final_audit(cfg: dict) -> None:
                 or saved.get("manifest_sha256") != manifest_sha
                 or saved.get("config_sha256") != config_sha
                 or saved.get("oracle_unread_during_prediction") is not True):
-            raise RuntimeError("KINETICS_BATCH45D_FINAL_PREDICTION_AUDIT:" + split)
+            raise RuntimeError("KINETICS_BATCH45E_FINAL_PREDICTION_AUDIT:" + split)
         result = core.doc(OUT / f"{split}_results.json")
         if (result.get("prediction_sha256") != sha_bytes(prediction_path.read_bytes())
                 or result.get("source_commit") != gitsha()
                 or result.get("config_sha256") != config_sha
                 or result.get("split") != split):
-            raise RuntimeError("KINETICS_BATCH45D_FINAL_SCORE_AUDIT:" + split)
+            raise RuntimeError("KINETICS_BATCH45E_FINAL_SCORE_AUDIT:" + split)
     selection_path = OUT / "dev_selection.json"
     core.require_pin(selection_path)
     selection = core.doc(selection_path)
     if (selection.get("source_commit") != gitsha()
             or selection.get("config_sha256") != config_sha
             or selection.get("split") != "dev"):
-        raise RuntimeError("KINETICS_BATCH45D_DEV_SELECTION_AUDIT")
+        raise RuntimeError("KINETICS_BATCH45E_DEV_SELECTION_AUDIT")
     test_saved = core.doc(OUT / "test_predictions.json")
     if test_saved.get("dev_selection_sha256") != sha_bytes(selection_path.read_bytes()):
-        raise RuntimeError("KINETICS_BATCH45D_TEST_DEV_SELECTION_SHA_MISMATCH")
-    print("KINETICS_BATCH45D_EVALUATION_FINAL_AUDIT_PASS", gitsha(), flush=True)
+        raise RuntimeError("KINETICS_BATCH45E_TEST_DEV_SELECTION_SHA_MISMATCH")
+    print("KINETICS_BATCH45E_EVALUATION_FINAL_AUDIT_PASS", gitsha(), flush=True)
 
 
 
