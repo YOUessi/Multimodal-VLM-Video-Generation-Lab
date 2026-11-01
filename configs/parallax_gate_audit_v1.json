@@ -1,0 +1,15 @@
+{
+  "version": "2026-11-01-batch35-posthoc-immutable-risk-audit",
+  "source_root": "/home/you/projects/Multimodal-VLM-Video-Generation-Lab/repo-batch34-tested",
+  "study_config": "configs/parallax_identity_v1.json",
+  "output_dir": "outputs/parallax_gate_risk_audit_v1",
+  "source_commit": "2809c0a4eed8453a5f373716a104853f96ff0abb",
+  "source_manifest_rows_sha256": "15a85322176a81d605cc86033acf4bf861eb42ef7d1c09c730bb1b61ae9ce0a5",
+  "artifact_sha256": {
+    "data/parallax_identity_v1/manifest.json": "a3038230d2ceeccbb93ef2b45982252ef19ca0de7b372998c12a2d9dcfb420e9",
+    "outputs/parallax_identity_v1/cv_predictions.json": "7a25fe032e5ae226d921cc4e52ae00f824f03188f08ab5a827cb27f023e6e851",
+    "outputs/parallax_identity_v1/500m.json": "ddcf62db656b895d71a75a6e5715e5f19e45f30ceea2ce64637b29ab5aedf855",
+    "outputs/parallax_identity_v1/2b.json": "5318bd9e34352c413427877d0bd5ba2c35a7e4ae7255b319ac827900ae27176d",
+    "outputs/parallax_identity_v1/results.json": "320f275ba5619ecd58a583941e2dbb0d3ca04f30fd17deab9511ee9ccfa28c99"
+  }
+}

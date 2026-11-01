@@ -56,7 +56,7 @@ def estimate(video, query, cfg, method):
 
 
 def audit(cfg):
-    manifest = base.manifest(cfg, verify_bytes=True)
+    manifest = base.manifest(cfg, verify_bytes=True, root=ROOT)
     pairs = manifest["pairs"]
     if len(pairs) != cfg["test_pairs"] + cfg["dev_pairs"]:
         raise RuntimeError("INDEPENDENT_SCENE_PAIR_COUNT_DRIFT")
@@ -92,7 +92,7 @@ def metrics(rows, all_predictions, method):
 
 
 def dev_only(cfg):
-    source = base.manifest(cfg)
+    source = base.manifest(cfg, root=ROOT)
     rows = [row for row in source["rows"] if row["split"] == "dev"]
     results = {}
     for method in METHODS:
@@ -112,7 +112,7 @@ def dev_only(cfg):
 
 
 def predict_test(cfg):
-    source = base.manifest(cfg)
+    source = base.manifest(cfg, root=ROOT)
     rows = [row for row in source["rows"] if row["split"] == "test"]
     dest = ROOT / cfg["output_dir"] / "cv_predictions.json"
     if dest.exists():
@@ -164,20 +164,24 @@ def reverse_consistency(rows, predicted, method):
 
 
 def report(cfg):
-    source = base.manifest(cfg, verify_bytes=True)
+    source = base.manifest(cfg, verify_bytes=True, root=ROOT)
     rows = [row for row in source["rows"] if row["split"] == "test"]
-    pred_doc = base.read(Path(cfg["output_dir"]) / "cv_predictions.json")
+    pred_doc = base.read(Path(cfg["output_dir"]) / "cv_predictions.json", root=ROOT)
     if pred_doc["source_sha256"] != source["source_sha256"] or (
-            pred_doc["methods"] != list(METHODS)):
+            pred_doc["methods"] != list(METHODS)) or (
+            pred_doc.get("prediction_count") != len(rows)) or (
+            pred_doc.get("no_gold_labels_in_prediction_records") is not True):
         raise RuntimeError("UNFROZEN_TEST_TRACKING")
     predicted = {row["id"]: row for row in pred_doc["records"]}
     if len(predicted) != len(rows) or set(predicted) != {r["id"] for r in rows}:
         raise RuntimeError("INCOMPLETE_TEST_TRACKING")
     models = {}
     for model_name, budgets in cfg["frame_budgets"].items():
-        doc = base.read(Path(cfg["output_dir"]) / (model_name + ".json"))
-        if doc["source_sha256"] != source["source_sha256"]:
-            raise RuntimeError("VLM_SOURCE_SHA_MISMATCH")
+        doc = base.read(Path(cfg["output_dir"]) / (model_name + ".json"), root=ROOT)
+        if (doc["source_sha256"] != source["source_sha256"]
+                or doc.get("model_name") != model_name
+                or doc.get("model_revision") != cfg["models"][model_name]["revision"]):
+            raise RuntimeError("VLM_SOURCE_OR_REVISION_MISMATCH")
         lookup = {(r["id"], r["frames"]): r for r in doc["records"]}
         if len(lookup) != len(rows) * len(budgets) or (
                 set(lookup) != {(r["id"], b) for r in rows for b in budgets}):
@@ -297,7 +301,7 @@ def report(cfg):
 
 
 def viewer(cfg):
-    source = base.manifest(cfg)
+    source = base.manifest(cfg, root=ROOT)
     test = [r for r in source["rows"]
             if r["split"] == "test" and not r["reversed"]]
     selected, groups = collections.Counter(), []

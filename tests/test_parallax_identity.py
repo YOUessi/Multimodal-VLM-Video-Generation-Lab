@@ -160,3 +160,35 @@ def test_new_benchmark_uses_true_forward_reverse_pairs_and_freeze(tmp_path, monk
     c["test_seed"] += 1
     with pytest.raises(RuntimeError, match="CONFIG_DRIFT"):
         generator.build(c)
+
+
+def test_scoped_reads_and_manifest_deny_fallback_to_real_workspace(tmp_path, monkeypatch):
+    # A polluted working directory must never supply another batch's manifest.
+    c = cfg()
+    monkeypatch.chdir(ROOT)
+    with pytest.raises(FileNotFoundError):
+        study.base.manifest(c, root=tmp_path)
+    with pytest.raises(FileNotFoundError):
+        study.base.read(pathlib.Path(c["output_dir"]) / "500m.json", root=tmp_path)
+    (tmp_path / "one.json").write_text('{"evidence": "scoped"}')
+    assert study.base.read("one.json", root=tmp_path) == {"evidence": "scoped"}
+
+
+def test_report_missing_vlm_artifacts_fail_closed_even_with_forged_cv(tmp_path, monkeypatch):
+    c = cfg()
+    monkeypatch.setattr(study, "ROOT", tmp_path)
+    source = {"source_sha256": "frozen", "rows": [
+        {"id": "a", "split": "test"},
+        {"id": "b", "split": "test"},
+    ]}
+    # The CV artifact has correct IDs but no model artifact.
+    out = tmp_path / c["output_dir"]
+    out.mkdir(parents=True)
+    (out / "cv_predictions.json").write_text(json.dumps({
+        "source_sha256": "frozen", "methods": list(study.METHODS),
+        "prediction_count": 2, "no_gold_labels_in_prediction_records": True,
+        "records": [{"id": "a"}, {"id": "b"}],
+    }))
+    monkeypatch.setattr(study.base, "manifest", lambda *args, **kwargs: source)
+    with pytest.raises(FileNotFoundError):
+        study.report(c)

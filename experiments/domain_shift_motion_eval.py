@@ -23,13 +23,16 @@ def put(path,record):
     tmp=path.with_name(path.name+".tmp")
     tmp.write_text(json.dumps(record,indent=2,ensure_ascii=False)+"\n",encoding="utf8")
     tmp.replace(path)
-def read(path):
-    return json.loads((ROOT/path).read_text(encoding="utf8"))
+def read(path, *, root=None):
+    """Load a JSON artifact from an explicit study root, never the caller CWD."""
+    base = ROOT if root is None else Path(root)
+    return json.loads((base / path).read_text(encoding="utf8"))
 def cfg_load(path):
     return read(path)
 
-def manifest(cfg,verify_bytes=False):
-    source=read(Path(cfg["dataset_dir"])/"manifest.json")
+def manifest(cfg,verify_bytes=False, *, root=None):
+    base_root = ROOT if root is None else Path(root)
+    source=read(Path(cfg["dataset_dir"])/"manifest.json", root=base_root)
     if source["protocol_version"]!=cfg["version"]:
         raise RuntimeError("SOURCE_DOMAIN_SHIFT_VERSION_DRIFT")
     rows=source["rows"]
@@ -62,7 +65,7 @@ def manifest(cfg,verify_bytes=False):
     if devsha&testsha:raise RuntimeError("DEV_TEST_EXACT_DUPLICATE_LEAKAGE")
     if verify_bytes:
         for i,row in enumerate(rows):
-            file=ROOT/row["video"]
+            file=base_root/row["video"]
             if not file.is_file() or digest(file)!=row["content_sha256"]:
                 raise RuntimeError("SOURCE_MOTION_VIDEO_CHANGED")
             if (i+1)%80==0:print("DOMAIN_SHIFT_SHA_VERIFIED",i+1,len(rows),flush=True)

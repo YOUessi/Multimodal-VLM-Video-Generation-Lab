@@ -1,165 +1,40 @@
 {
-  "version": "2026-11-01-batch-34",
+  "version": "2026-11-01-batch-35-cross-snapshot-integrity",
   "enabled": true,
-  "description": "PRE-REGISTERED separate independent 2.5D three-depth synthetic parallax and shape-target-identity stress-test, 40 DEV source pairs and 100 unscored TEST source pairs, forward/reverse dependent videos. Compare frozen plain HSV, ORB/RANSAC affine HSV, and query-grounded contour-shape with depth-consensus abstention. All parameters frozen from DEV only. Persist 200 CV predictions and 600 genuine GPU VLM predictions before first test scoring. Pair-cluster bootstrap, full denominator, wrong gate override, latency, and explicit no natural video or 3D-geometry claim. No Batch32/33 TEST tuning. No videos/weights/secrets in GitHub.",
+  "description": "Immutable failure recovery after Batch34 failed S9: isolated source-root manifest/media and frozen CV/VLM model artifact reads, missing-file and identity regressions, strict SHA-pinned read-only post-hoc accepted-gate rescue/harm attribution on already-scored synthetic 200-video / 100-scene-pair heldout. Verify original results agreement and keep Batch34 failure logs intact. No GPU, no retraining or new TEST tuning.",
   "stages": [
     {
-      "id": "S1_freeze_280_new_2p5D_PARALLAX_MPEG4",
+      "id": "T1_original_S9_failure_reproduction_and_new_frozen_scope_regressions",
       "gpu": false,
-      "timeout_seconds": 1200,
+      "timeout_seconds": 360,
       "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/parallax_identity_data.py",
-        "--config",
-        "configs/parallax_identity_v1.json"
-      ]
+      "argv": ["{python}", "-m", "pytest", "-q", "tests/test_parallax_identity.py", "tests/test_parallax_gate_risk_audit.py"]
     },
     {
-      "id": "S2_audit_280_media_SHA_and_independent_pair_grid",
-      "gpu": false,
-      "timeout_seconds": 500,
-      "max_attempts": 1,
-      "requires_files": [
-        "data/parallax_identity_v1/manifest.json"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/parallax_identity_eval.py",
-        "audit",
-        "--config",
-        "configs/parallax_identity_v1.json"
-      ]
-    },
-    {
-      "id": "S3_only_DEV_identity_abstention_and_parallax_preflight",
+      "id": "T2_all_existing_and_new_project_regressions",
       "gpu": false,
       "timeout_seconds": 900,
       "max_attempts": 1,
-      "requires_files": [
-        "data/parallax_identity_v1/manifest.json"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/parallax_identity_eval.py",
-        "dev",
-        "--config",
-        "configs/parallax_identity_v1.json"
-      ]
+      "argv": ["{python}", "-m", "pytest", "-q", "tests"]
     },
     {
-      "id": "S4_save_all_200_blind_test_CV_predictions",
-      "gpu": false,
-      "timeout_seconds": 1300,
-      "max_attempts": 1,
-      "requires_files": [
-        "data/parallax_identity_v1/manifest.json"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/parallax_identity_eval.py",
-        "tracker",
-        "--config",
-        "configs/parallax_identity_v1.json"
-      ]
-    },
-    {
-      "id": "S5_real_GPU_frozen_500M_three_frame_baseline",
-      "gpu": true,
-      "timeout_seconds": 2900,
-      "max_attempts": 1,
-      "min_free_mib": 11000,
-      "requires_files": [
-        "outputs/parallax_identity_v1/cv_predictions.json",
-        "models/SmolVLM2-500M-Video-Instruct/model.safetensors"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/parallax_identity_eval.py",
-        "model",
-        "--model",
-        "500m",
-        "--config",
-        "configs/parallax_identity_v1.json"
-      ]
-    },
-    {
-      "id": "S6_real_GPU_frozen_2B_three_and_five_frame_baselines",
-      "gpu": true,
-      "timeout_seconds": 4500,
-      "max_attempts": 1,
-      "min_free_mib": 12000,
-      "requires_files": [
-        "outputs/parallax_identity_v1/500m.json",
-        "models/SmolVLM2-2.2B-Instruct/model-00001-of-00002.safetensors",
-        "models/SmolVLM2-2.2B-Instruct/model-00002-of-00002.safetensors"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/parallax_identity_eval.py",
-        "model",
-        "--model",
-        "2b",
-        "--config",
-        "configs/parallax_identity_v1.json"
-      ]
-    },
-    {
-      "id": "S7_first_test_scoring_scene_pair_CIs_wrong_override_and_cost",
-      "gpu": false,
-      "timeout_seconds": 900,
-      "max_attempts": 1,
-      "requires_files": [
-        "outputs/parallax_identity_v1/cv_predictions.json",
-        "outputs/parallax_identity_v1/500m.json",
-        "outputs/parallax_identity_v1/2b.json"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/parallax_identity_eval.py",
-        "report",
-        "--config",
-        "configs/parallax_identity_v1.json"
-      ]
-    },
-    {
-      "id": "S8_local_only_forward_reverse_four_nuisance_video_review",
-      "gpu": false,
-      "timeout_seconds": 180,
-      "max_attempts": 1,
-      "requires_files": [
-        "outputs/parallax_identity_v1/results.json"
-      ],
-      "argv": [
-        "{python}",
-        "experiments/parallax_identity_eval.py",
-        "viewer",
-        "--config",
-        "configs/parallax_identity_v1.json"
-      ]
-    },
-    {
-      "id": "S9_all_project_regressions_and_new_identity_tests",
+      "id": "T3_280_video_bytes_and_all_frozen_model_outputs_SHA_pinned_posthoc_risk_audit",
       "gpu": false,
       "timeout_seconds": 600,
       "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "-m",
-        "pytest",
-        "-q",
-        "tests"
-      ]
+      "requires_files": [
+        "configs/parallax_gate_audit_v1.json",
+        "experiments/parallax_gate_risk_audit.py"
+      ],
+      "argv": ["{python}", "experiments/parallax_gate_risk_audit.py", "--config", "configs/parallax_gate_audit_v1.json"]
     },
     {
-      "id": "S10_source_media_weights_credentials_publication_guard",
+      "id": "T4_publication_guard_after_immutable_risk_report",
       "gpu": false,
-      "timeout_seconds": 240,
+      "timeout_seconds": 360,
       "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/source_security_guard.py"
-      ]
+      "requires_files": ["outputs/parallax_gate_risk_audit_v1/aggregate_risk.json", "outputs/parallax_gate_risk_audit_v1/RISK_AUDIT.md"],
+      "argv": ["{python}", "experiments/source_security_guard.py"]
     }
   ]
 }
