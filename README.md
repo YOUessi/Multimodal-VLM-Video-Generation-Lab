@@ -187,3 +187,10 @@ PY
 
 - Sealed Batch43 on fresh TAPVid-MV EgoExo4D/PACE sequences: independent RGB trackers remained high-risk on occlusion (KLT-FB 74.7% occluded false accepts; KLT-Forward 80.0%), calibrated three-view triangulation coverage was only 2/9 and 4/9 groups, and the SmolVLM2-500M DEV gate blocked TEST after a 100% non-visible false-accept rate.
 - Started Batch44 from the remaining unused TAPVid-MV collection groups. The new experiment exports camera pose/intrinsics/resolution as a separately hashed public calibration artifact (without point tracks or depth labels) and tests strict three-view triangulate/reproject consensus at 4/8/12 px thresholds. DEV-only selection and TEST sealing remain mandatory.
+
+
+## Process diary — 2026-11-02 (Batch44B)
+
+- Batch44 R00 successfully downloaded and SHA-256-verified all 21 new TAPVid-MV RRD sequences. R01 failed before scoring because two EgoExo4D sequences did not have three common depth-visible point IDs at frame 0.
+- A read-only query-feasibility preflight found the earliest valid synchronized query frames at 18 for `cmu_soccer09_1` and 30 for `cmu_soccer15_5`; all other selected sequences qualify at frame 0.
+- Batch44B applies one fixed earliest-common-visible-snapshot rule to DEV and TEST, tracks only after that query frame, and excludes pre-query frames from metric denominators. The failed Batch44 state/logs and downloaded RRDs are retained.
