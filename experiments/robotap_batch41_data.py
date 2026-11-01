@@ -377,8 +377,11 @@ def prepare(cfg: dict) -> dict:
                 stream.flush()
                 os.fsync(stream.fileno())
             os.replace(temp, frame_path)
-        elif frame_path.stat().st_size == 0:
-            raise RuntimeError("ROBOTAP_EMPTY_FROZEN_FRAME_FILE")
+        else:
+            existing = np.load(frame_path, mmap_mode="r", allow_pickle=False)
+            if (existing.shape != frames.shape or existing.dtype != frames.dtype
+                    or not np.array_equal(existing, frames)):
+                raise RuntimeError("ROBOTAP_FROZEN_FRAME_CONFLICT:" + scene_id)
         public[scene_id] = queries
         private[scene_id] = {"tracks": private_tracks}
         scenes.append({
