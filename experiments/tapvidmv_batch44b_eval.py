@@ -12,11 +12,11 @@ import time
 import cv2
 import numpy as np
 
-import tapvidmv_batch44bb_data as src
+import tapvidmv_batch44b_data as src
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = src.FROZEN
-OUT = ROOT / "outputs/tapvidmv_batch44bb"
+OUT = ROOT / "outputs/tapvidmv_batch44b"
 BASE_METHODS = (
     "stationary_point", "klt_forward", "klt_fb", "template_recover4",
     "affine_stabilized_klt", "appearance_fb_055", "appearance_fb_070", "appearance_fb_085",
