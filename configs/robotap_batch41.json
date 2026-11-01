@@ -1,7 +1,7 @@
 {
-  "version": "2026-11-02-batch41-robotap-visibility-affine-v1",
+  "version": "2026-11-02-batch41b-robotap-episode-disjoint-v2",
   "dataset_dir": "data/robotap_batch41",
-  "output_dir": "outputs/robotap_batch41",
+  "output_dir": "outputs/robotap_batch41_grouped",
   "archive_url": "https://storage.googleapis.com/dm-tapnet/robotap/robotap.zip",
   "archive_size": 13558087507,
   "archive_etag": "\"08dc00f12b10a7d70e0afd53ab822762\"",
@@ -12,7 +12,10 @@
   "dev_videos": 6,
   "test_videos": 14,
   "max_tracks_per_video": 4,
-  "vlm_target_fractions": [0.5, 0.9],
+  "vlm_target_fractions": [
+    0.5,
+    0.9
+  ],
   "vlm_model_id": "HuggingFaceTB/SmolVLM2-500M-Video-Instruct",
   "vlm_max_new_tokens": 8,
   "vlm_dev_gate": {
@@ -40,7 +43,7 @@
     "affine_min_matches": 12,
     "affine_min_inliers": 8,
     "affine_min_inlier_ratio": 0.25,
-    "affine_ransac_reprojection_px": 3.0
+    "affine_ransac_reprojection_px": 3
   },
   "evaluation": {
     "point_threshold_px": 8,
@@ -51,6 +54,8 @@
     "dataset": "RoboTAP / TAP-Vid",
     "source_type": "synthetic robotics videos; not natural camera footage",
     "license": "CC BY 4.0",
-    "official_reference": "https://github.com/google-deepmind/tapnet"
-  }
+    "official_reference": "https://github.com/google-deepmind/tapnet",
+    "protocol_version": "episode-grouped-one-view-per-recording"
+  },
+  "frozen_subdir": "batch41_grouped_frozen"
 }
