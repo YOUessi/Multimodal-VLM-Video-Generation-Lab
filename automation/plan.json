@@ -1,43 +1,61 @@
 {
-  "version": "2026-11-02-batch40b-davis-appearance-consensus-vlm-visibility-v1",
+  "version": "2026-11-02-batch41-robotap-visibility-affine-v1",
   "enabled": true,
-  "description": "Batch40B recovery of Batch40A plan-marker mismatch; reuse the same SHA-verified scene-disjoint DAVIS freeze, re-run all predictions under the new clean source SHA, correct Path.with_suffix('.sha256') marker requirements, then DEV-only appearance selection and one-time TEST scoring.",
+  "description": "Batch41 uses two official RoboTAP shards (synthetic robotics, CC BY 4.0), a hash-only 6 DEV / 14 TEST video split, first-visible point queries, CPU KLT/template/affine-stabilized baselines, SmolVLM2-500M visibility classification, immutable predictions, one-time TEST scoring, and final source/data audit. TEST labels may not drive any selection.",
   "stages": [
     {
-      "id": "D01_acquire_new_scene_disjoint_DAVIS_frames_and_masks",
+      "id": "R01_range_extract_official_RoboTAP_shards",
       "gpu": false,
-      "timeout_seconds": 5400,
+      "timeout_seconds": 10800,
       "max_attempts": 1,
       "argv": [
         "{python}",
-        "experiments/davis_real_data.py",
-        "acquire",
+        "experiments/robotap_batch41_data.py",
+        "download",
         "--config",
-        "configs/davis_occlusion_v3.json"
+        "configs/robotap_batch41.json"
       ]
     },
     {
-      "id": "D02_full_DAVIS_asset_query_and_private_gold_audit",
+      "id": "R02_prepare_frozen_scene_disjoint_RoboTAP_manifest",
       "gpu": false,
-      "timeout_seconds": 1800,
+      "timeout_seconds": 7200,
       "max_attempts": 1,
       "argv": [
         "{python}",
-        "experiments/davis_real_data.py",
-        "audit",
+        "experiments/robotap_batch41_data.py",
+        "prepare",
         "--config",
-        "configs/davis_occlusion_v3.json"
+        "configs/robotap_batch41.json"
       ],
       "requires_files": [
-        "data/davis_occlusion_v3/manifest.json",
-        "data/davis_occlusion_v3/initial_queries.json",
-        "data/davis_occlusion_v3/gold-private.json"
+        "data/robotap_batch41/download_manifest.json",
+        "data/robotap_batch41/robotap_split0.pkl",
+        "data/robotap_batch41/robotap_split1.pkl"
       ]
     },
     {
-      "id": "D03_full_project_regression_suite",
+      "id": "R03_public_manifest_frame_and_query_audit",
       "gpu": false,
-      "timeout_seconds": 1200,
+      "timeout_seconds": 2400,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/robotap_batch41_data.py",
+        "audit",
+        "--config",
+        "configs/robotap_batch41.json"
+      ],
+      "requires_files": [
+        "data/robotap_batch41/batch41_frozen/manifest.json",
+        "data/robotap_batch41/batch41_frozen/queries-public.json",
+        "data/robotap_batch41/batch41_frozen/oracle-private.json"
+      ]
+    },
+    {
+      "id": "R04_full_project_regression_suite",
+      "gpu": false,
+      "timeout_seconds": 1800,
       "max_attempts": 1,
       "argv": [
         "{python}",
@@ -47,202 +65,197 @@
         "tests"
       ],
       "requires_files": [
-        "tests/test_davis_occlusion_v2.py"
+        "tests/test_robotap_batch41.py"
       ]
     },
     {
-      "id": "D04_DEV_CPU_labelblind_multi_method_predictions",
+      "id": "R05_DEV_CPU_labelblind_point_tracking_predictions",
+      "gpu": false,
+      "timeout_seconds": 5400,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/robotap_batch41_eval.py",
+        "predict-dev",
+        "--config",
+        "configs/robotap_batch41.json"
+      ],
+      "requires_files": [
+        "data/robotap_batch41/batch41_frozen/manifest.json",
+        "data/robotap_batch41/batch41_frozen/queries-public.json"
+      ]
+    },
+    {
+      "id": "R06_DEV_CPU_private_oracle_score",
+      "gpu": false,
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/robotap_batch41_eval.py",
+        "score-dev",
+        "--config",
+        "configs/robotap_batch41.json"
+      ],
+      "requires_files": [
+        "outputs/robotap_batch41/dev_predictions.json.sha256"
+      ]
+    },
+    {
+      "id": "R07_select_tracking_method_from_DEV_only",
+      "gpu": false,
+      "timeout_seconds": 900,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/robotap_batch41_eval.py",
+        "select-dev",
+        "--config",
+        "configs/robotap_batch41.json"
+      ],
+      "requires_files": [
+        "outputs/robotap_batch41/dev_results.json"
+      ]
+    },
+    {
+      "id": "R08_DEV_GPU_SmolVLM2_visibility_predictions",
+      "gpu": true,
+      "timeout_seconds": 7200,
+      "max_attempts": 1,
+      "argv": [
+        "env",
+        "MVVG_VLM_MODEL=../models/SmolVLM2-500M-Video-Instruct",
+        "{python}",
+        "experiments/robotap_batch41_vlm.py",
+        "predict-dev",
+        "--config",
+        "configs/robotap_batch41.json"
+      ],
+      "requires_files": [
+        "../models/SmolVLM2-500M-Video-Instruct/model.safetensors",
+        "data/robotap_batch41/batch41_frozen/queries-public.json"
+      ]
+    },
+    {
+      "id": "R09_DEV_VLM_visibility_score",
+      "gpu": false,
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "argv": [
+        "env",
+        "MVVG_VLM_MODEL=../models/SmolVLM2-500M-Video-Instruct",
+        "{python}",
+        "experiments/robotap_batch41_vlm.py",
+        "score-dev",
+        "--config",
+        "configs/robotap_batch41.json"
+      ],
+      "requires_files": [
+        "outputs/robotap_batch41/vlm_visibility_dev_predictions.json.sha256"
+      ]
+    },
+    {
+      "id": "R10_predeclared_VLM_DEV_interface_gate",
+      "gpu": false,
+      "timeout_seconds": 900,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/robotap_batch41_vlm.py",
+        "dev-gate",
+        "--config",
+        "configs/robotap_batch41.json"
+      ],
+      "requires_files": [
+        "outputs/robotap_batch41/vlm_visibility_dev_results.json.sha256"
+      ]
+    },
+    {
+      "id": "R11_TEST_CPU_labelblind_point_tracking_predictions",
+      "gpu": false,
+      "timeout_seconds": 5400,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/robotap_batch41_eval.py",
+        "predict-test",
+        "--config",
+        "configs/robotap_batch41.json"
+      ],
+      "requires_files": [
+        "outputs/robotap_batch41/dev_selection.json.sha256"
+      ]
+    },
+    {
+      "id": "R12_TEST_GPU_SmolVLM2_visibility_predictions_or_gate_skip",
+      "gpu": true,
+      "timeout_seconds": 7200,
+      "max_attempts": 1,
+      "argv": [
+        "env",
+        "MVVG_VLM_MODEL=../models/SmolVLM2-500M-Video-Instruct",
+        "{python}",
+        "experiments/robotap_batch41_vlm.py",
+        "predict-test",
+        "--config",
+        "configs/robotap_batch41.json"
+      ],
+      "requires_files": [
+        "outputs/robotap_batch41/vlm_visibility_dev_gate.json.sha256",
+        "outputs/robotap_batch41/test_predictions.json.sha256"
+      ]
+    },
+    {
+      "id": "R13_first_only_TEST_CPU_private_oracle_score",
       "gpu": false,
       "timeout_seconds": 2400,
       "max_attempts": 1,
       "argv": [
         "{python}",
-        "experiments/davis_occlusion_eval.py",
-        "predict-dev",
-        "--config",
-        "configs/davis_occlusion_v3.json"
-      ],
-      "requires_files": [
-        "data/davis_occlusion_v3/manifest.json",
-        "data/davis_occlusion_v3/initial_queries.json"
-      ]
-    },
-    {
-      "id": "D05_DEV_CPU_future_mask_score",
-      "gpu": false,
-      "timeout_seconds": 1200,
-      "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/davis_occlusion_eval.py",
-        "score-dev",
-        "--config",
-        "configs/davis_occlusion_v3.json"
-      ],
-      "requires_files": [
-        "outputs/davis_occlusion_v3/dev_predictions.sha256"
-      ]
-    },
-    {
-      "id": "D06_DEV_GPU_SmolVLM2_binary_visibility_predictions",
-      "gpu": true,
-      "min_free_mib": 10000,
-      "timeout_seconds": 3600,
-      "max_attempts": 1,
-      "argv": [
-        "env",
-        "MVVG_VLM_MODEL=../models/SmolVLM2-500M-Video-Instruct",
-        "{python}",
-        "experiments/davis_vlm_visibility.py",
-        "predict-dev",
-        "--config",
-        "configs/davis_occlusion_v3.json"
-      ],
-      "requires_files": [
-        "../models/SmolVLM2-500M-Video-Instruct/model.safetensors",
-        "data/davis_occlusion_v3/initial_queries.json"
-      ]
-    },
-    {
-      "id": "D07_DEV_VLM_visibility_score",
-      "gpu": false,
-      "timeout_seconds": 1200,
-      "max_attempts": 1,
-      "argv": [
-        "env",
-        "MVVG_VLM_MODEL=../models/SmolVLM2-500M-Video-Instruct",
-        "{python}",
-        "experiments/davis_vlm_visibility.py",
-        "score-dev",
-        "--config",
-        "configs/davis_occlusion_v3.json"
-      ],
-      "requires_files": [
-        "outputs/davis_occlusion_v3/vlm_visibility_dev_predictions.sha256"
-      ]
-    },
-    {
-      "id": "D08_select_appearance_threshold_from_DEV_only",
-      "gpu": false,
-      "timeout_seconds": 600,
-      "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/davis_occlusion_eval.py",
-        "select-dev",
-        "--config",
-        "configs/davis_occlusion_v3.json"
-      ],
-      "requires_files": [
-        "outputs/davis_occlusion_v3/dev_results.json"
-      ]
-    },
-    {
-      "id": "D09_predeclared_VLM_visibility_DEV_interface_gate",
-      "gpu": false,
-      "timeout_seconds": 600,
-      "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/davis_vlm_visibility.py",
-        "dev-gate",
-        "--config",
-        "configs/davis_occlusion_v3.json"
-      ],
-      "requires_files": [
-        "outputs/davis_occlusion_v3/vlm_visibility_dev_results.json"
-      ]
-    },
-    {
-      "id": "D10_TEST_CPU_labelblind_multi_method_predictions",
-      "gpu": false,
-      "timeout_seconds": 3600,
-      "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/davis_occlusion_eval.py",
-        "predict-test",
-        "--config",
-        "configs/davis_occlusion_v3.json"
-      ],
-      "requires_files": [
-        "outputs/davis_occlusion_v3/dev_selection.json",
-        "outputs/davis_occlusion_v3/vlm_visibility_dev_gate.json"
-      ]
-    },
-    {
-      "id": "D11_TEST_GPU_SmolVLM2_binary_visibility_predictions",
-      "gpu": true,
-      "min_free_mib": 10000,
-      "timeout_seconds": 3600,
-      "max_attempts": 1,
-      "argv": [
-        "env",
-        "MVVG_VLM_MODEL=../models/SmolVLM2-500M-Video-Instruct",
-        "{python}",
-        "experiments/davis_vlm_visibility.py",
-        "predict-test",
-        "--config",
-        "configs/davis_occlusion_v3.json"
-      ],
-      "requires_files": [
-        "outputs/davis_occlusion_v3/test_predictions.sha256",
-        "outputs/davis_occlusion_v3/vlm_visibility_dev_gate.json",
-        "../models/SmolVLM2-500M-Video-Instruct/model.safetensors"
-      ]
-    },
-    {
-      "id": "D12_first_only_TEST_CPU_future_mask_score",
-      "gpu": false,
-      "timeout_seconds": 1800,
-      "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/davis_occlusion_eval.py",
+        "experiments/robotap_batch41_eval.py",
         "score-test",
         "--config",
-        "configs/davis_occlusion_v3.json"
+        "configs/robotap_batch41.json"
       ],
       "requires_files": [
-        "outputs/davis_occlusion_v3/test_predictions.sha256",
-        "outputs/davis_occlusion_v3/vlm_visibility_test_predictions.sha256"
+        "outputs/robotap_batch41/test_predictions.json.sha256"
       ]
     },
     {
-      "id": "D13_first_only_TEST_VLM_visibility_score",
+      "id": "R14_first_only_TEST_VLM_visibility_score",
       "gpu": false,
-      "timeout_seconds": 1800,
+      "timeout_seconds": 2400,
       "max_attempts": 1,
       "argv": [
         "env",
         "MVVG_VLM_MODEL=../models/SmolVLM2-500M-Video-Instruct",
         "{python}",
-        "experiments/davis_vlm_visibility.py",
+        "experiments/robotap_batch41_vlm.py",
         "score-test",
         "--config",
-        "configs/davis_occlusion_v3.json"
+        "configs/robotap_batch41.json"
       ],
       "requires_files": [
-        "outputs/davis_occlusion_v3/test_results.json"
+        "outputs/robotap_batch41/vlm_visibility_test_predictions.json.sha256"
       ]
     },
     {
-      "id": "D14_source_media_weights_and_secrets_publication_guard",
+      "id": "R15_source_media_weights_and_secrets_publication_guard",
       "gpu": false,
-      "timeout_seconds": 900,
+      "timeout_seconds": 1200,
       "max_attempts": 1,
       "argv": [
         "{python}",
         "experiments/source_security_guard.py"
       ],
       "requires_files": [
-        "outputs/davis_occlusion_v3/vlm_visibility_test_results.json"
+        "outputs/robotap_batch41/test_results.json"
       ]
     },
     {
-      "id": "D15_final_full_regression_suite",
+      "id": "R16_final_full_project_regression_suite",
       "gpu": false,
-      "timeout_seconds": 1200,
+      "timeout_seconds": 1800,
       "max_attempts": 1,
       "argv": [
         "{python}",
@@ -252,42 +265,42 @@
         "tests"
       ],
       "requires_files": [
-        "outputs/davis_occlusion_v3/test_results.json",
-        "outputs/davis_occlusion_v3/vlm_visibility_test_results.json"
+        "outputs/robotap_batch41/test_results.json",
+        "outputs/robotap_batch41/vlm_visibility_test_results.json"
       ]
     },
     {
-      "id": "D16_generate_sealed_Batch40_results_report",
-      "gpu": false,
-      "timeout_seconds": 600,
-      "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/davis_batch40_report.py",
-        "report",
-        "--config",
-        "configs/davis_occlusion_v3.json"
-      ],
-      "requires_files": [
-        "outputs/davis_occlusion_v3/dev_selection.json",
-        "outputs/davis_occlusion_v3/test_results.json",
-        "outputs/davis_occlusion_v3/vlm_visibility_test_results.json"
-      ]
-    },
-    {
-      "id": "D17_final_data_prediction_and_source_SHA_audit",
+      "id": "R17_generate_Batch41_results_report",
       "gpu": false,
       "timeout_seconds": 900,
       "max_attempts": 1,
       "argv": [
         "{python}",
-        "experiments/davis_batch40_report.py",
-        "final-audit",
+        "experiments/robotap_batch41_eval.py",
+        "report",
         "--config",
-        "configs/davis_occlusion_v3.json"
+        "configs/robotap_batch41.json"
       ],
       "requires_files": [
-        "outputs/davis_occlusion_v3/BATCH40_RESULTS.md"
+        "outputs/robotap_batch41/dev_selection.json",
+        "outputs/robotap_batch41/test_results.json",
+        "outputs/robotap_batch41/vlm_visibility_test_results.json"
+      ]
+    },
+    {
+      "id": "R18_final_data_prediction_and_source_SHA_audit",
+      "gpu": false,
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "experiments/robotap_batch41_eval.py",
+        "final-audit",
+        "--config",
+        "configs/robotap_batch41.json"
+      ],
+      "requires_files": [
+        "outputs/robotap_batch41/BATCH41_RESULTS.md"
       ]
     }
   ]
