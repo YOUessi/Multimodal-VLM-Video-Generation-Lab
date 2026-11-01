@@ -1,145 +1,147 @@
 {
-  "version": "2026-11-01-batch-32",
+  "version": "2026-11-01-batch-33",
   "enabled": true,
-  "description": "Batch32 resumes pretested new render-shift study after a source generator DATA_DIR vs OUTPUT_DIR integration error halted batch31. The corrected data generator, full SHA audit and dev-only camera compensation passed; 112 tests; 500M/2.2B 3/5-frame DEV GPU protocol smoke passed. New data manifest 15700b28...; no test labels/accuracy inspected, all 200 heldout clips remain frozen. Re-execute complete pipeline including VLM models, paired cluster CI, local review and security.",
+  "description": "NEW independent synthetic heldout camera rotation, zoom, translation and near-same-color target occlusion. Dev 40 source pairs, heldout 100 source pairs; 280 generated MP4s, reverse-paired. Compare frozen HSV pixel tracker, frozen global phase shift, new ORB+RANSAC partial affine under predeclared thresholds; image-plane/world-relative labels separated. All test predictions saved before answer scoring; 500M and 2.2B actual GPU inference, scene-pair bootstrap CIs, gate wrong override, camera mapping oracle only at final report. No retuning against batch32 heldout, no private videos/weights/keys committed.",
   "stages": [
     {
-      "id": "Q1_generate_frozen_280_new_domain_shift_clips",
+      "id": "R1_frozen_280_new_affine_camera_and_ambiguity_MPEG4",
       "gpu": false,
-      "timeout_seconds": 900,
+      "timeout_seconds": 1000,
       "max_attempts": 1,
       "argv": [
         "{python}",
-        "experiments/domain_shift_motion_data.py",
+        "experiments/affine_domain_data.py",
         "--config",
-        "configs/domain_shift_motion_v1.json"
+        "configs/affine_camera_motion_v1.json"
       ]
     },
     {
-      "id": "Q2_full_video_SHA_pair_and_nuisance_grid_audit",
+      "id": "R2_source_video_SHA_and_reversed_pair_audit",
       "gpu": false,
-      "timeout_seconds": 600,
+      "timeout_seconds": 700,
       "max_attempts": 1,
       "requires_files": [
-        "data/motion_render_shift_v1/manifest.json"
+        "data/affine_camera_motion_v1/manifest.json"
       ],
       "argv": [
         "{python}",
-        "experiments/domain_shift_motion_eval.py",
+        "experiments/affine_motion_eval.py",
         "audit",
         "--config",
-        "configs/domain_shift_motion_v1.json"
+        "configs/affine_camera_motion_v1.json"
       ]
     },
     {
-      "id": "Q3_dev_only_plain_HSV_vs_camera_stabilized_preflight",
+      "id": "R3_new_development_only_geometry_abstention_preflight",
       "gpu": false,
-      "timeout_seconds": 600,
+      "timeout_seconds": 700,
       "max_attempts": 1,
       "requires_files": [
-        "data/motion_render_shift_v1/manifest.json"
+        "data/affine_camera_motion_v1/manifest.json"
       ],
       "argv": [
         "{python}",
-        "experiments/domain_shift_motion_eval.py",
+        "experiments/affine_motion_eval.py",
         "dev",
         "--config",
-        "configs/domain_shift_motion_v1.json"
+        "configs/affine_camera_motion_v1.json"
       ]
     },
     {
-      "id": "Q4_all200_unlabeled_test_pixel_tracking_predictions",
+      "id": "R4_save_all200_pixel_only_three_baselines_before_test_scoring",
       "gpu": false,
       "timeout_seconds": 1000,
       "max_attempts": 1,
       "requires_files": [
-        "data/motion_render_shift_v1/manifest.json"
+        "data/affine_camera_motion_v1/manifest.json"
       ],
       "argv": [
         "{python}",
-        "experiments/domain_shift_motion_eval.py",
+        "experiments/affine_motion_eval.py",
         "tracker",
         "--config",
-        "configs/domain_shift_motion_v1.json"
+        "configs/affine_camera_motion_v1.json"
       ]
     },
     {
-      "id": "Q5_500m_VLM_three_frame_real_GPU_inference",
+      "id": "R5_500M_three_frame_GPU_baseline",
       "gpu": true,
-      "min_free_mib": 11000,
       "timeout_seconds": 2700,
       "max_attempts": 1,
+      "min_free_mib": 11000,
       "requires_files": [
-        "outputs/motion_render_shift_v1/cv_predictions.json",
+        "outputs/affine_camera_motion_v1/cv_predictions.json",
         "models/SmolVLM2-500M-Video-Instruct/model.safetensors"
       ],
       "argv": [
         "{python}",
-        "experiments/domain_shift_motion_eval.py",
+        "experiments/affine_motion_eval.py",
         "model",
         "--model",
         "500m",
         "--config",
-        "configs/domain_shift_motion_v1.json"
+        "configs/affine_camera_motion_v1.json"
       ]
     },
     {
-      "id": "Q6_2b_VLM_3and5_frame_real_GPU_inference",
+      "id": "R6_2B_three_and_five_frame_GPU_baselines",
       "gpu": true,
-      "min_free_mib": 12000,
       "timeout_seconds": 4500,
       "max_attempts": 1,
+      "min_free_mib": 12000,
       "requires_files": [
-        "outputs/motion_render_shift_v1/500m.json",
+        "outputs/affine_camera_motion_v1/500m.json",
         "models/SmolVLM2-2.2B-Instruct/model-00001-of-00002.safetensors",
         "models/SmolVLM2-2.2B-Instruct/model-00002-of-00002.safetensors"
       ],
       "argv": [
         "{python}",
-        "experiments/domain_shift_motion_eval.py",
+        "experiments/affine_motion_eval.py",
         "model",
         "--model",
         "2b",
         "--config",
-        "configs/domain_shift_motion_v1.json"
+        "configs/affine_camera_motion_v1.json"
       ]
     },
     {
-      "id": "Q7_scene_clustered_direct_tracker_vs_gated_VLM_report",
+      "id": "R7_first_and_only_heldout_score_scene_clustered_CIs_and_camera_residuals",
       "gpu": false,
-      "timeout_seconds": 300,
+      "timeout_seconds": 550,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/motion_render_shift_v1/500m.json",
-        "outputs/motion_render_shift_v1/2b.json"
+        "outputs/affine_camera_motion_v1/cv_predictions.json",
+        "outputs/affine_camera_motion_v1/500m.json",
+        "outputs/affine_camera_motion_v1/2b.json"
       ],
       "argv": [
         "{python}",
-        "experiments/domain_shift_motion_eval.py",
+        "experiments/affine_motion_eval.py",
         "report",
         "--config",
-        "configs/domain_shift_motion_v1.json"
+        "configs/affine_camera_motion_v1.json"
       ]
     },
     {
-      "id": "Q8_local_forward_reverse_4_environment_video_viewer",
+      "id": "R8_local_forward_reverse_rotation_zoom_ambiguity_review",
       "gpu": false,
       "timeout_seconds": 300,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/motion_render_shift_v1/results.json"
+        "outputs/affine_camera_motion_v1/results.json"
       ],
       "argv": [
         "{python}",
-        "experiments/domain_shift_review.py",
+        "experiments/affine_motion_eval.py",
+        "viewer",
         "--config",
-        "configs/domain_shift_motion_v1.json"
+        "configs/affine_camera_motion_v1.json"
       ]
     },
     {
-      "id": "Q9_frozen_source_complete_regression_suite",
+      "id": "R9_complete_new_and_old_regression_suite",
       "gpu": false,
-      "timeout_seconds": 300,
+      "timeout_seconds": 500,
       "max_attempts": 1,
       "argv": [
         "{python}",
@@ -150,9 +152,9 @@
       ]
     },
     {
-      "id": "Q10_source_media_weight_secrets_publication_guard",
+      "id": "R10_no_weight_video_or_secret_commit_guard",
       "gpu": false,
-      "timeout_seconds": 120,
+      "timeout_seconds": 180,
       "max_attempts": 1,
       "argv": [
         "{python}",

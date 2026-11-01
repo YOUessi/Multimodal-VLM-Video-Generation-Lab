@@ -1,5 +1,11 @@
 # Multimodal VLM & Video Generation Lab
 
+
+## Prospective batch 33: camera rotation/zoom and color-ambiguous target identity
+
+A **new independent 2D synthetic-world-relative motion** benchmark is implemented and prepared for the first frozen heldout run: 40 development scene pairs and 100 uninspected test scene pairs, each forward/reversed, with translation, rotation, zoom and same-color distractor/occlusion nuisances. The predeclared comparison is the existing HSV screen tracker, existing translation-only phase-compensated HSV, and a new ORB/RANSAC affine-camera-compensated HSV tool, with 500M and 2.2B frozen VLM baselines and scene-pair cluster confidence intervals. **This is not natural captured video and does not prove VLM architecture gains.** On **80 DEV clips only**, geometric registration produced 75/80 correct versus 57/80 plain and 26/80 phase; the 20 occlusion/color-ambiguity DEV clips remained challenging (15/20). No heldout test effectiveness is claimed until frozen predictions and all stages complete. [Precommitted research protocol](docs/BATCH33_AFFINE_CAMERA_PROSPECTIVE_2026-11-01.md).
+
+
 ## Latest execution — batch 32, new locked camera-translation benchmark (2026-11-01)
 
 **10/10 stages completed on Tang; 112/112 regression tests passed.** After a batch31 source-data directory contract error, batch32 was rebuilt from a new frozen SHA, with the error preserved in its logs.
