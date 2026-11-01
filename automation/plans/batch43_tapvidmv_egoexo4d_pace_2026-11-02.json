@@ -1,0 +1,492 @@
+{
+  "version": "batch43-tapvidmv-egoexo4d-pace-multiview-20261102-v1",
+  "enabled": true,
+  "description": "Independent synchronized three-view TAPVid-MV subset evaluation: RGB-only point tracking, exact depth-snapshot visibility/occlusion, calibrated cross-view triangulation, image-affine versus camera-pose motion diagnostics, and DEV-gated SmolVLM2-500M visibility baseline.",
+  "source_of_truth": "GitHub main; the runner freezes the clean checkout SHA into .automation/state.json. Data and model assets remain local symlinked directories.",
+  "source_index_sha256": "eb9ff78058eca50479af98eca5bba21716dcec183ce83d8e70349d9cea58f2f5",
+  "failure_policy": "One attempt per stage; fail closed. Preserve logs and partial outputs. A repair requires a new GitHub source SHA and a new repo-batch43*-tested directory.",
+  "test_policy": "DEV-only method selection and VLM admission gate. CPU TEST scoring occurs once after pinned predictions and DEV selection. TEST VLM inference/scoring is skipped unless every predeclared DEV gate passes. Never tune from TEST outputs.",
+  "gpu_policy": "Use /tmp/tang_shared_gpu_experiments.lock and require no other CUDA compute process plus at least 10 GiB free before each VLM stage.",
+  "max_stages_per_tick": 2,
+  "stages": [
+    {
+      "id": "R00_VERIFY_AND_DOWNLOAD_SOURCE_RRD",
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_batch43_data.py",
+        "download"
+      ],
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "requires_files": [
+        "experiments/tapvidmv_batch43_data.py",
+        "configs/tapvidmv_batch43.json",
+        "requirements/tapvidmv-extractor.txt"
+      ]
+    },
+    {
+      "id": "R01_FREEZE_MULTIVIEW_FRAMES_AND_ORACLES",
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_batch43_data.py",
+        "prepare"
+      ],
+      "timeout_seconds": 3600,
+      "max_attempts": 1,
+      "requires_files": [
+        "data/tapvidmv_multiview_batch43/source/source_manifest.json",
+        "data/tapvidmv_multiview_batch43/source/rrd/cmu_soccer03_1.rrd",
+        "data/tapvidmv_multiview_batch43/source/rrd/cmu_soccer07_1.rrd",
+        "data/tapvidmv_multiview_batch43/source/rrd/iiith_soccer_002_2.rrd",
+        "data/tapvidmv_multiview_batch43/source/rrd/scene00_video05.rrd",
+        "data/tapvidmv_multiview_batch43/source/rrd/scene02_video04.rrd",
+        "data/tapvidmv_multiview_batch43/source/rrd/scene05_video09.rrd",
+        "data/tapvidmv_multiview_batch43/source/rrd/cmu_soccer06_2.rrd",
+        "data/tapvidmv_multiview_batch43/source/rrd/cmu_soccer08_1.rrd",
+        "data/tapvidmv_multiview_batch43/source/rrd/iiith_soccer_004_5.rrd",
+        "data/tapvidmv_multiview_batch43/source/rrd/scene01_video03.rrd",
+        "data/tapvidmv_multiview_batch43/source/rrd/scene04_video02.rrd",
+        "data/tapvidmv_multiview_batch43/source/rrd/scene08_video02.rrd"
+      ]
+    },
+    {
+      "id": "R02_PUBLIC_DATA_AND_QUERY_AUDIT",
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_batch43_data.py",
+        "audit-public"
+      ],
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "requires_files": [
+        "data/tapvidmv_multiview_batch43/batch43_frozen/manifest.json",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/queries-public.json"
+      ]
+    },
+    {
+      "id": "R03_TARGETED_BATCH43_REGRESSION",
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_tapvidmv_batch43.py"
+      ],
+      "timeout_seconds": 600,
+      "max_attempts": 1,
+      "requires_files": [
+        "tests/test_tapvidmv_batch43.py",
+        "experiments/tapvidmv_batch43_data.py",
+        "experiments/tapvidmv_batch43_eval.py",
+        "experiments/tapvidmv_batch43_vlm.py"
+      ]
+    },
+    {
+      "id": "R04_FULL_PROJECT_REGRESSION",
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "requires_files": [
+        "pyproject.toml",
+        "tests/test_tapvidmv_batch43.py"
+      ]
+    },
+    {
+      "id": "R05_DEV_RGB_ONLY_PREDICTIONS",
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_batch43_eval.py",
+        "predict-dev"
+      ],
+      "timeout_seconds": 3600,
+      "max_attempts": 1,
+      "requires_files": [
+        "configs/tapvidmv_batch43.json",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/manifest.json",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/queries-public.json",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_00_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_00_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_00_cam2.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_01_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_01_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_01_cam2.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_02_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_02_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_02_cam2.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_03_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_03_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_03_cam2.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_04_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_04_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_04_cam2.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_05_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_05_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_05_cam2.npy"
+      ]
+    },
+    {
+      "id": "R06_DEV_ONLY_CPU_SCORING",
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_batch43_eval.py",
+        "score-dev"
+      ],
+      "timeout_seconds": 1200,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/tapvidmv_batch43/dev_predictions.json",
+        "outputs/tapvidmv_batch43/dev_predictions.json.sha256",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_00.npz",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_01.npz",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_02.npz",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_03.npz",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_04.npz",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_05.npz"
+      ]
+    },
+    {
+      "id": "R07_DEV_ONLY_TRACKER_SELECTION",
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_batch43_eval.py",
+        "select-dev"
+      ],
+      "timeout_seconds": 300,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/tapvidmv_batch43/dev_results.json",
+        "outputs/tapvidmv_batch43/dev_results.json.sha256",
+        "configs/tapvidmv_batch43.json"
+      ]
+    },
+    {
+      "id": "R08_DEV_SMOLVLM2_500M_PREDICTIONS",
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_batch43_vlm.py",
+        "predict-dev"
+      ],
+      "timeout_seconds": 2400,
+      "max_attempts": 1,
+      "requires_files": [
+        "configs/tapvidmv_batch43.json",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/manifest.json",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/queries-public.json",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_00_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_00_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_00_cam2.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_01_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_01_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_01_cam2.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_02_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_02_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_02_cam2.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_03_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_03_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_03_cam2.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_04_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_04_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_04_cam2.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_05_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_05_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_05_cam2.npy",
+        "models/SmolVLM2-500M-Video-Instruct/config.json",
+        "models/SmolVLM2-500M-Video-Instruct/model.safetensors",
+        "models/SmolVLM2-500M-Video-Instruct/preprocessor_config.json",
+        "models/SmolVLM2-500M-Video-Instruct/processor_config.json",
+        "models/SmolVLM2-500M-Video-Instruct/tokenizer.json",
+        "models/SmolVLM2-500M-Video-Instruct/tokenizer_config.json",
+        "models/SmolVLM2-500M-Video-Instruct/special_tokens_map.json",
+        "models/SmolVLM2-500M-Video-Instruct/chat_template.json"
+      ],
+      "gpu": true,
+      "min_free_mib": 10000
+    },
+    {
+      "id": "R09_DEV_VLM_VISIBILITY_SCORING",
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_batch43_vlm.py",
+        "score-dev"
+      ],
+      "timeout_seconds": 1200,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/tapvidmv_batch43/dev_vlm_predictions.json",
+        "outputs/tapvidmv_batch43/dev_vlm_predictions.json.sha256",
+        "outputs/tapvidmv_batch43/dev_predictions.json",
+        "outputs/tapvidmv_batch43/dev_predictions.json.sha256",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_00.npz",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_01.npz",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_02.npz",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_03.npz",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_04.npz",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_05.npz"
+      ]
+    },
+    {
+      "id": "R10_DEV_VLM_ADMISSION_GATE",
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_batch43_vlm.py",
+        "dev-gate"
+      ],
+      "timeout_seconds": 300,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/tapvidmv_batch43/dev_vlm_results.json",
+        "outputs/tapvidmv_batch43/dev_vlm_results.json.sha256",
+        "configs/tapvidmv_batch43.json"
+      ]
+    },
+    {
+      "id": "R11_TEST_RGB_ONLY_PREDICTIONS",
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_batch43_eval.py",
+        "predict-test"
+      ],
+      "timeout_seconds": 3600,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/tapvidmv_batch43/dev_selection.json",
+        "outputs/tapvidmv_batch43/dev_selection.json.sha256",
+        "outputs/tapvidmv_batch43/dev_results.json",
+        "outputs/tapvidmv_batch43/dev_results.json.sha256",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/manifest.json",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/queries-public.json",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_06_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_06_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_06_cam2.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_07_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_07_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_07_cam2.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_08_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_08_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_08_cam2.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_09_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_09_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_09_cam2.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_10_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_10_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_10_cam2.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_11_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_11_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_11_cam2.npy"
+      ]
+    },
+    {
+      "id": "R12_TEST_CPU_SCORING_ONCE",
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_batch43_eval.py",
+        "score-test"
+      ],
+      "timeout_seconds": 1200,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/tapvidmv_batch43/test_predictions.json",
+        "outputs/tapvidmv_batch43/test_predictions.json.sha256",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_06.npz",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_07.npz",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_08.npz",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_09.npz",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_10.npz",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_11.npz"
+      ]
+    },
+    {
+      "id": "R13_TEST_VLM_PREDICTIONS_DEV_GATED",
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_batch43_vlm.py",
+        "predict-test"
+      ],
+      "timeout_seconds": 2400,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/tapvidmv_batch43/dev_vlm_gate.json",
+        "outputs/tapvidmv_batch43/dev_vlm_gate.json.sha256",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/manifest.json",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/queries-public.json",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_06_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_06_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_06_cam2.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_07_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_07_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_07_cam2.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_08_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_08_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_08_cam2.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_09_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_09_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_09_cam2.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_10_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_10_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_10_cam2.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_11_cam0.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_11_cam1.npy",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/frames/scene_11_cam2.npy",
+        "models/SmolVLM2-500M-Video-Instruct/config.json",
+        "models/SmolVLM2-500M-Video-Instruct/model.safetensors",
+        "models/SmolVLM2-500M-Video-Instruct/preprocessor_config.json",
+        "models/SmolVLM2-500M-Video-Instruct/processor_config.json",
+        "models/SmolVLM2-500M-Video-Instruct/tokenizer.json",
+        "models/SmolVLM2-500M-Video-Instruct/tokenizer_config.json",
+        "models/SmolVLM2-500M-Video-Instruct/special_tokens_map.json",
+        "models/SmolVLM2-500M-Video-Instruct/chat_template.json"
+      ],
+      "gpu": true,
+      "min_free_mib": 10000
+    },
+    {
+      "id": "R14_TEST_VLM_SCORING_OR_SKIP",
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_batch43_vlm.py",
+        "score-test"
+      ],
+      "timeout_seconds": 1200,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/tapvidmv_batch43/test_vlm_predictions.json",
+        "outputs/tapvidmv_batch43/test_vlm_predictions.json.sha256",
+        "outputs/tapvidmv_batch43/test_predictions.json",
+        "outputs/tapvidmv_batch43/test_predictions.json.sha256",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_06.npz",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_07.npz",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_08.npz",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_09.npz",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_10.npz",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/oracle-private/scene_11.npz"
+      ]
+    },
+    {
+      "id": "R15_BUILD_SEALED_BATCH43_REPORT",
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_batch43_report.py",
+        "build"
+      ],
+      "timeout_seconds": 300,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/tapvidmv_batch43/dev_results.json",
+        "outputs/tapvidmv_batch43/test_results.json",
+        "outputs/tapvidmv_batch43/dev_selection.json",
+        "outputs/tapvidmv_batch43/dev_vlm_gate.json",
+        "outputs/tapvidmv_batch43/dev_vlm_results.json",
+        "outputs/tapvidmv_batch43/test_vlm_results.json"
+      ]
+    },
+    {
+      "id": "R16_FULL_REGRESSION_AFTER_SCORING",
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "requires_files": [
+        "pyproject.toml",
+        "tests/test_tapvidmv_batch43.py"
+      ]
+    },
+    {
+      "id": "R17_PUBLICATION_GUARD",
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_source_security_guard.py"
+      ],
+      "timeout_seconds": 600,
+      "max_attempts": 1,
+      "requires_files": [
+        "experiments/source_security_guard.py",
+        "tests/test_source_security_guard.py"
+      ]
+    },
+    {
+      "id": "R18_FINAL_SOURCE_AND_ORACLE_HASH_AUDIT",
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_batch43_data.py",
+        "audit"
+      ],
+      "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "requires_files": [
+        "data/tapvidmv_multiview_batch43/batch43_frozen/manifest.json",
+        "data/tapvidmv_multiview_batch43/batch43_frozen/queries-public.json",
+        "data/tapvidmv_multiview_batch43/source/source_manifest.json"
+      ]
+    },
+    {
+      "id": "R19_FINAL_CPU_SOURCE_AND_TEST_PIN_AUDIT",
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_batch43_eval.py",
+        "final-audit"
+      ],
+      "timeout_seconds": 600,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/tapvidmv_batch43/dev_predictions.json",
+        "outputs/tapvidmv_batch43/dev_predictions.json.sha256",
+        "outputs/tapvidmv_batch43/test_predictions.json",
+        "outputs/tapvidmv_batch43/test_predictions.json.sha256",
+        "outputs/tapvidmv_batch43/dev_results.json",
+        "outputs/tapvidmv_batch43/dev_results.json.sha256",
+        "outputs/tapvidmv_batch43/test_results.json",
+        "outputs/tapvidmv_batch43/test_results.json.sha256",
+        "outputs/tapvidmv_batch43/dev_selection.json",
+        "outputs/tapvidmv_batch43/dev_selection.json.sha256"
+      ]
+    },
+    {
+      "id": "R20_FINAL_VLM_GATE_AND_PIN_AUDIT",
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_batch43_vlm.py",
+        "final-audit"
+      ],
+      "timeout_seconds": 600,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/tapvidmv_batch43/dev_vlm_predictions.json",
+        "outputs/tapvidmv_batch43/dev_vlm_predictions.json.sha256",
+        "outputs/tapvidmv_batch43/test_vlm_predictions.json",
+        "outputs/tapvidmv_batch43/test_vlm_predictions.json.sha256",
+        "outputs/tapvidmv_batch43/dev_vlm_results.json",
+        "outputs/tapvidmv_batch43/dev_vlm_results.json.sha256",
+        "outputs/tapvidmv_batch43/test_vlm_results.json",
+        "outputs/tapvidmv_batch43/test_vlm_results.json.sha256",
+        "outputs/tapvidmv_batch43/dev_vlm_gate.json",
+        "outputs/tapvidmv_batch43/dev_vlm_gate.json.sha256"
+      ]
+    },
+    {
+      "id": "R21_FINAL_REPORT_PIN_AUDIT",
+      "argv": [
+        "{python}",
+        "experiments/tapvidmv_batch43_report.py",
+        "verify"
+      ],
+      "timeout_seconds": 300,
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/tapvidmv_batch43/BATCH43_TAPVIDMV_MULTIVIEW_REPORT.md",
+        "outputs/tapvidmv_batch43/BATCH43_TAPVIDMV_MULTIVIEW_REPORT.md.sha256"
+      ]
+    }
+  ]
+}
