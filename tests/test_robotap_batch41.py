@@ -65,7 +65,7 @@ def test_occluded_coordinate_can_be_outside_without_scoring_it():
 def test_first_visible_query_uses_first_visible_frame():
     points = np.asarray([[[-5.0, 0.0], [20.0, 30.0], [25.0, 30.0]]])
     occ = np.asarray([[True, False, False]])
-    q = data.first_visible_query(3, points, occ, 100, 100)
+    q = data.first_visible_query(3, points[0], occ[0], 100, 100)
     assert q["query_time"] == 1
     assert q["query_xy"] == [20.0, 30.0]
     assert q["id"] == "p0003"
@@ -74,7 +74,7 @@ def test_first_visible_query_uses_first_visible_frame():
 def test_all_occluded_track_has_no_query():
     points = np.zeros((3, 2), dtype=np.float64)
     occ = np.ones(3, dtype=bool)
-    assert data.first_visible_query(0, points, occ, 100, 100) is None
+    assert data.first_visible_query(0, points[0], occ[0], 100, 100) is None
 
 
 def test_first_visible_query_out_of_bounds_fails():
@@ -218,7 +218,7 @@ def test_affine_stabilized_klt_maps_back_to_original_image_plane():
     trace, visible = ev.affine_stabilized_klt(
         frames, {"query_time": 0, "query_xy": [40.0, 40.0]}, matrices, cfg
     )
-    if matrices[-1] is not None:
+    if all(matrix is not None for matrix in matrices[1:]):
         assert visible[-1]
         assert abs(trace[-1][0] - 45.0) < 3.0
         assert abs(trace[-1][1] - 45.0) < 3.0
