@@ -463,3 +463,58 @@ def test_vlm_test_is_skipped_when_dev_gate_is_blocked(tmp_path, monkeypatch):
     assert result["status"] == "skipped_dev_gate"
     assert result["records"] == []
     ev.require_pin(out / "vlm_visibility_test_predictions.json")
+
+
+def test_cpu_predictor_reads_queries_from_configured_frozen_subdir(tmp_path, monkeypatch):
+    custom_frozen = tmp_path / "data" / "batch41_grouped_frozen"
+    legacy_frozen = tmp_path / "data" / "batch41_frozen"
+    (custom_frozen / "frames").mkdir(parents=True)
+    legacy_frozen.mkdir(parents=True)
+    frames = np.stack([
+        np.stack([x, x, x], axis=-1) for x in textured_video(n=5, dx=1, dy=0)
+    ]).astype(np.uint8)
+    np.save(custom_frozen / "frames/scene_000.npy", frames, allow_pickle=False)
+    manifest = {
+        "scenes": [{
+            "name": "scene_000", "split": "dev",
+            "frames": "frames/scene_000.npy", "nframes": 5, "nqueries": 1,
+        }]
+    }
+    (custom_frozen / "manifest.json").write_text(json.dumps(manifest))
+    custom_queries = {
+        "scene_000": [{
+            "id": "p0000", "query_time": 0, "query_xy": [40.0, 40.0],
+        }]
+    }
+    (custom_frozen / "queries-public.json").write_text(json.dumps(custom_queries))
+    # A stale default-path decoy makes accidental fallback observable.
+    (legacy_frozen / "queries-public.json").write_text(json.dumps({
+        "scene_000": [{
+            "id": "legacy_wrong", "query_time": 0, "query_xy": [40.0, 40.0],
+        }]
+    }))
+    monkeypatch.setattr(ev, "ROOT", tmp_path)
+    monkeypatch.setattr(data, "ROOT", tmp_path)
+    monkeypatch.setattr(ev, "current_sha", lambda: "testsha")
+    monkeypatch.setattr(data, "audit", lambda cfg: manifest)
+    cfg = {
+        "dataset_dir": "data", "frozen_subdir": "batch41_grouped_frozen",
+        "output_dir": "out",
+        "tracker": {
+            "fb_error_px": 1.5, "patch_size": 21,
+            "template_search_radius_px": 32, "template_ncc_min": 0.75,
+            "template_max_consecutive_misses": 4, "affine_min_matches": 12,
+            "affine_min_inliers": 8, "affine_min_inlier_ratio": 0.25,
+            "affine_ransac_reprojection_px": 3.0,
+        },
+    }
+
+    ev.predict("dev", cfg)
+
+    prediction = json.loads((tmp_path / "out/dev_predictions.json").read_text())
+    assert prediction["records"][0]["queries"][0]["query_id"] == "p0000"
+    assert prediction["public_query_sha256"] == ev.sha_file(
+        custom_frozen / "queries-public.json"
+    )
+    assert prediction["oracle_unread_during_prediction"] is True
+    ev.require_pin(tmp_path / "out/dev_predictions.json")
