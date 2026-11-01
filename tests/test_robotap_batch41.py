@@ -302,6 +302,7 @@ def test_cpu_predictor_does_not_require_oracle_file(tmp_path, monkeypatch):
         "scene_000": [{"id": "p0000", "query_time": 0, "query_xy": [40.0, 40.0]}]
     }))
     monkeypatch.setattr(ev, "ROOT", tmp_path)
+    monkeypatch.setattr(data, "ROOT", tmp_path)
     monkeypatch.setattr(ev, "current_sha", lambda: "testsha")
     monkeypatch.setattr(data, "audit", lambda cfg: manifest)
     cfg = {
@@ -333,6 +334,7 @@ def test_score_uses_private_occlusion_only_after_prediction_is_pinned(tmp_path, 
         "scene_test": [{"id": "p0000", "query_time": 0, "query_xy": [10.0, 10.0]}]
     }))
     monkeypatch.setattr(ev, "ROOT", tmp_path)
+    monkeypatch.setattr(data, "ROOT", tmp_path)
     monkeypatch.setattr(ev, "current_sha", lambda: "testsha")
     monkeypatch.setattr(data, "audit", lambda cfg: manifest_doc)
     gold = {"scene_test": {"tracks": {"p0000": {
@@ -423,6 +425,7 @@ def test_vlm_test_is_skipped_when_dev_gate_is_blocked(tmp_path, monkeypatch):
     (frozen / "queries-public.json").write_text(json.dumps({}))
     monkeypatch.setattr(vlm, "ROOT", tmp_path)
     monkeypatch.setattr(ev, "ROOT", tmp_path)
+    monkeypatch.setattr(data, "ROOT", tmp_path)
     monkeypatch.setattr(ev, "current_sha", lambda: "testsha")
     monkeypatch.setattr(data, "audit", lambda cfg: {"scenes": []})
     gate_path = out / "vlm_visibility_dev_gate.json"
