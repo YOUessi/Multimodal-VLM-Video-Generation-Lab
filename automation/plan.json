@@ -1,76 +1,49 @@
 {
-  "version": "2026-11-02-batch41b-robotap-episode-disjoint-v2",
+  "version": "2026-11-02-batch41e-robotap-query-path-repair-v1",
   "enabled": true,
-  "description": "Batch41B uses two official RoboTAP shards (synthetic robotics, CC BY 4.0), groups camera views by recording episode before hash sampling, chooses one view per episode, freezes 6 DEV / 14 TEST episodes, evaluates CPU KLT/template/affine-stabilized baselines and SmolVLM2-500M visibility classification, pins predictions, scores TEST once, and audits source/data hashes. The rejected view-level freeze is preserved separately; TEST labels may not drive selection.",
+  "description": "Batch41E repairs the configured RoboTAP frozen-subdirectory query lookup, adds a decoy-path regression, isolates all outputs, reuses only the untouched episode-disjoint Batch41B freeze after Batch41D stopped before DEV scoring and before any TEST read, then performs DEV-only CPU selection, a DEV-gated SmolVLM2-500M visibility baseline, pinned TEST predictions, first-only TEST scoring, security checks, and final hash audits. RoboTAP is synthetic robotics video, not natural camera footage.",
   "stages": [
     {
-      "id": "R00_install_optional_mediapy_pickle_dependency",
+      "id": "R00_verify_RoboTAP_source_shards_and_frozen_manifest",
       "gpu": false,
-      "timeout_seconds": 1200,
-      "max_attempts": 1,
-      "argv": [
-        "env",
-        "PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple",
-        "{python}",
-        "-m",
-        "pip",
-        "install",
-        "mediapy>=1.2.7,<2"
-      ]
-    },
-    {
-      "id": "R01_range_extract_official_RoboTAP_shards",
-      "gpu": false,
-      "timeout_seconds": 10800,
+      "timeout_seconds": 3600,
       "max_attempts": 1,
       "argv": [
         "{python}",
         "experiments/robotap_batch41_data.py",
-        "download",
+        "final-audit",
         "--config",
-        "configs/robotap_batch41.json"
-      ]
-    },
-    {
-      "id": "R02_prepare_episode_disjoint_RoboTAP_manifest",
-      "gpu": false,
-      "timeout_seconds": 7200,
-      "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/robotap_batch41_data.py",
-        "prepare",
-        "--config",
-        "configs/robotap_batch41.json"
+        "configs/robotap_batch41e.json"
       ],
       "requires_files": [
         "data/robotap_batch41/download_manifest.json",
         "data/robotap_batch41/robotap_split0.pkl",
-        "data/robotap_batch41/robotap_split1.pkl"
-      ]
-    },
-    {
-      "id": "R03_episode_split_public_frame_and_query_audit",
-      "gpu": false,
-      "timeout_seconds": 2400,
-      "max_attempts": 1,
-      "argv": [
-        "{python}",
-        "experiments/robotap_batch41_data.py",
-        "audit",
-        "--config",
-        "configs/robotap_batch41.json"
-      ],
-      "requires_files": [
+        "data/robotap_batch41/robotap_split1.pkl",
         "data/robotap_batch41/batch41_grouped_frozen/manifest.json",
         "data/robotap_batch41/batch41_grouped_frozen/queries-public.json",
         "data/robotap_batch41/batch41_grouped_frozen/oracle-private.json"
       ]
     },
     {
-      "id": "R04_full_project_regression_suite",
+      "id": "R01_targeted_RoboTAP_query_path_regression",
       "gpu": false,
       "timeout_seconds": 1800,
+      "max_attempts": 1,
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_robotap_batch41.py"
+      ],
+      "requires_files": [
+        "tests/test_robotap_batch41.py"
+      ]
+    },
+    {
+      "id": "R02_full_project_regression_suite",
+      "gpu": false,
+      "timeout_seconds": 2400,
       "max_attempts": 1,
       "argv": [
         "{python}",
@@ -84,7 +57,7 @@
       ]
     },
     {
-      "id": "R05_DEV_CPU_labelblind_point_tracking_predictions",
+      "id": "R03_DEV_CPU_labelblind_predictions",
       "gpu": false,
       "timeout_seconds": 5400,
       "max_attempts": 1,
@@ -93,7 +66,7 @@
         "experiments/robotap_batch41_eval.py",
         "predict-dev",
         "--config",
-        "configs/robotap_batch41.json"
+        "configs/robotap_batch41e.json"
       ],
       "requires_files": [
         "data/robotap_batch41/batch41_grouped_frozen/manifest.json",
@@ -101,7 +74,7 @@
       ]
     },
     {
-      "id": "R06_DEV_CPU_private_oracle_score",
+      "id": "R04_DEV_CPU_private_oracle_score",
       "gpu": false,
       "timeout_seconds": 1800,
       "max_attempts": 1,
@@ -110,14 +83,14 @@
         "experiments/robotap_batch41_eval.py",
         "score-dev",
         "--config",
-        "configs/robotap_batch41.json"
+        "configs/robotap_batch41e.json"
       ],
       "requires_files": [
-        "outputs/robotap_batch41_grouped/dev_predictions.json.sha256"
+        "outputs/robotap_batch41e_grouped/dev_predictions.json.sha256"
       ]
     },
     {
-      "id": "R07_select_tracking_method_from_DEV_only",
+      "id": "R05_select_tracking_method_from_DEV_only",
       "gpu": false,
       "timeout_seconds": 900,
       "max_attempts": 1,
@@ -126,14 +99,14 @@
         "experiments/robotap_batch41_eval.py",
         "select-dev",
         "--config",
-        "configs/robotap_batch41.json"
+        "configs/robotap_batch41e.json"
       ],
       "requires_files": [
-        "outputs/robotap_batch41_grouped/dev_results.json"
+        "outputs/robotap_batch41e_grouped/dev_results.json"
       ]
     },
     {
-      "id": "R08_DEV_GPU_SmolVLM2_visibility_predictions",
+      "id": "R06_DEV_GPU_SmolVLM2_visibility_predictions",
       "gpu": true,
       "timeout_seconds": 7200,
       "max_attempts": 1,
@@ -144,7 +117,7 @@
         "experiments/robotap_batch41_vlm.py",
         "predict-dev",
         "--config",
-        "configs/robotap_batch41.json"
+        "configs/robotap_batch41e.json"
       ],
       "requires_files": [
         "../models/SmolVLM2-500M-Video-Instruct/model.safetensors",
@@ -153,7 +126,7 @@
       "min_free_mib": 10000
     },
     {
-      "id": "R09_DEV_VLM_visibility_score",
+      "id": "R07_DEV_VLM_visibility_score",
       "gpu": false,
       "timeout_seconds": 1800,
       "max_attempts": 1,
@@ -164,14 +137,14 @@
         "experiments/robotap_batch41_vlm.py",
         "score-dev",
         "--config",
-        "configs/robotap_batch41.json"
+        "configs/robotap_batch41e.json"
       ],
       "requires_files": [
-        "outputs/robotap_batch41_grouped/vlm_visibility_dev_predictions.json.sha256"
+        "outputs/robotap_batch41e_grouped/vlm_visibility_dev_predictions.json.sha256"
       ]
     },
     {
-      "id": "R10_predeclared_VLM_DEV_interface_gate",
+      "id": "R08_predeclared_VLM_DEV_interface_gate",
       "gpu": false,
       "timeout_seconds": 900,
       "max_attempts": 1,
@@ -180,30 +153,30 @@
         "experiments/robotap_batch41_vlm.py",
         "dev-gate",
         "--config",
-        "configs/robotap_batch41.json"
+        "configs/robotap_batch41e.json"
       ],
       "requires_files": [
-        "outputs/robotap_batch41_grouped/vlm_visibility_dev_results.json.sha256"
+        "outputs/robotap_batch41e_grouped/vlm_visibility_dev_results.json.sha256"
       ]
     },
     {
-      "id": "R11_TEST_CPU_labelblind_point_tracking_predictions",
+      "id": "R09_TEST_CPU_labelblind_predictions",
       "gpu": false,
-      "timeout_seconds": 5400,
+      "timeout_seconds": 7200,
       "max_attempts": 1,
       "argv": [
         "{python}",
         "experiments/robotap_batch41_eval.py",
         "predict-test",
         "--config",
-        "configs/robotap_batch41.json"
+        "configs/robotap_batch41e.json"
       ],
       "requires_files": [
-        "outputs/robotap_batch41_grouped/dev_selection.json.sha256"
+        "outputs/robotap_batch41e_grouped/dev_selection.json.sha256"
       ]
     },
     {
-      "id": "R12_TEST_GPU_SmolVLM2_visibility_predictions_or_gate_skip",
+      "id": "R10_TEST_GPU_SmolVLM2_visibility_predictions_or_gate_skip",
       "gpu": true,
       "timeout_seconds": 7200,
       "max_attempts": 1,
@@ -214,16 +187,16 @@
         "experiments/robotap_batch41_vlm.py",
         "predict-test",
         "--config",
-        "configs/robotap_batch41.json"
+        "configs/robotap_batch41e.json"
       ],
       "requires_files": [
-        "outputs/robotap_batch41_grouped/vlm_visibility_dev_gate.json.sha256",
-        "outputs/robotap_batch41_grouped/test_predictions.json.sha256"
+        "outputs/robotap_batch41e_grouped/vlm_visibility_dev_gate.json.sha256",
+        "outputs/robotap_batch41e_grouped/test_predictions.json.sha256"
       ],
       "min_free_mib": 10000
     },
     {
-      "id": "R13_first_only_TEST_CPU_private_oracle_score",
+      "id": "R11_first_only_TEST_CPU_private_oracle_score",
       "gpu": false,
       "timeout_seconds": 2400,
       "max_attempts": 1,
@@ -232,14 +205,14 @@
         "experiments/robotap_batch41_eval.py",
         "score-test",
         "--config",
-        "configs/robotap_batch41.json"
+        "configs/robotap_batch41e.json"
       ],
       "requires_files": [
-        "outputs/robotap_batch41_grouped/test_predictions.json.sha256"
+        "outputs/robotap_batch41e_grouped/test_predictions.json.sha256"
       ]
     },
     {
-      "id": "R14_first_only_TEST_VLM_visibility_score",
+      "id": "R12_first_only_TEST_VLM_visibility_score",
       "gpu": false,
       "timeout_seconds": 2400,
       "max_attempts": 1,
@@ -250,14 +223,14 @@
         "experiments/robotap_batch41_vlm.py",
         "score-test",
         "--config",
-        "configs/robotap_batch41.json"
+        "configs/robotap_batch41e.json"
       ],
       "requires_files": [
-        "outputs/robotap_batch41_grouped/vlm_visibility_test_predictions.json.sha256"
+        "outputs/robotap_batch41e_grouped/vlm_visibility_test_predictions.json.sha256"
       ]
     },
     {
-      "id": "R15_source_media_weights_and_secrets_publication_guard",
+      "id": "R13_source_media_weights_and_secrets_publication_guard",
       "gpu": false,
       "timeout_seconds": 1200,
       "max_attempts": 1,
@@ -266,13 +239,13 @@
         "experiments/source_security_guard.py"
       ],
       "requires_files": [
-        "outputs/robotap_batch41_grouped/test_results.json"
+        "outputs/robotap_batch41e_grouped/test_results.json"
       ]
     },
     {
-      "id": "R16_final_full_project_regression_suite",
+      "id": "R14_final_full_project_regression_suite",
       "gpu": false,
-      "timeout_seconds": 1800,
+      "timeout_seconds": 2400,
       "max_attempts": 1,
       "argv": [
         "{python}",
@@ -282,12 +255,12 @@
         "tests"
       ],
       "requires_files": [
-        "outputs/robotap_batch41_grouped/test_results.json",
-        "outputs/robotap_batch41_grouped/vlm_visibility_test_results.json"
+        "outputs/robotap_batch41e_grouped/test_results.json",
+        "outputs/robotap_batch41e_grouped/vlm_visibility_test_results.json"
       ]
     },
     {
-      "id": "R17_generate_Batch41B_results_report",
+      "id": "R15_generate_Batch41E_results_report",
       "gpu": false,
       "timeout_seconds": 900,
       "max_attempts": 1,
@@ -296,16 +269,16 @@
         "experiments/robotap_batch41_eval.py",
         "report",
         "--config",
-        "configs/robotap_batch41.json"
+        "configs/robotap_batch41e.json"
       ],
       "requires_files": [
-        "outputs/robotap_batch41_grouped/dev_selection.json",
-        "outputs/robotap_batch41_grouped/test_results.json",
-        "outputs/robotap_batch41_grouped/vlm_visibility_test_results.json"
+        "outputs/robotap_batch41e_grouped/dev_selection.json",
+        "outputs/robotap_batch41e_grouped/test_results.json",
+        "outputs/robotap_batch41e_grouped/vlm_visibility_test_results.json"
       ]
     },
     {
-      "id": "R18_final_episode_data_prediction_and_source_SHA_audit",
+      "id": "R16_final_episode_data_prediction_and_source_SHA_audit",
       "gpu": false,
       "timeout_seconds": 1800,
       "max_attempts": 1,
@@ -314,10 +287,10 @@
         "experiments/robotap_batch41_eval.py",
         "final-audit",
         "--config",
-        "configs/robotap_batch41.json"
+        "configs/robotap_batch41e.json"
       ],
       "requires_files": [
-        "outputs/robotap_batch41_grouped/BATCH41_RESULTS.md"
+        "outputs/robotap_batch41e_grouped/BATCH41_RESULTS.md"
       ]
     }
   ]
