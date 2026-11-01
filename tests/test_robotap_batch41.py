@@ -56,6 +56,29 @@ def test_scene_selection_fails_closed_when_too_few_videos():
         data.selected_video_keys([("only", {})], 20)
 
 
+def test_episode_id_uses_recording_prefix_not_camera_view():
+    assert data.episode_id_from_key(
+        "robotap_split0.pkl::gear_v2_17-basket_front_left_rgb_img-2"
+    ) == "gear_v2_17"
+
+
+def test_scene_selection_keeps_camera_views_from_one_episode_together():
+    records = [
+        ("split0::gear_v2_17-wrist_front", {}),
+        ("split1::gear_v2_17-basket_left", {}),
+        ("split0::plush1-camera0", {}),
+        ("split1::plush1-camera1", {}),
+        ("split0::nist_nuts_bolts2-camera0", {}),
+        ("split1::sketchy2-usbcam0", {}),
+    ]
+    selected = data.selected_video_keys(records, 4)
+    episodes = [data.episode_id_from_key(key) for key in selected]
+    assert len(selected) == 4
+    assert len(set(episodes)) == 4
+    assert sum(episode == "gear_v2_17" for episode in episodes) <= 1
+    assert sum(episode == "plush1" for episode in episodes) <= 1
+
+
 def test_normalized_points_convert_using_width_and_height():
     points = np.asarray([[[0.5, 0.25], [0.2, 0.9]]], dtype=np.float64)
     occ = np.asarray([[False, True]], dtype=bool)
