@@ -1,0 +1,364 @@
+{
+  "data_policy": "Before any shard download, use only historical public manifest metadata to exclude all 60 prior distinct video IDs AND 60 action classes across batches 42/45E/46E/48B/53B. No historical TEST oracle or score is ever read. Original video data, private annotation, predictions, model weights remain local on Tang. Invalid geometry excludes whole track for DEV and TEST identically; never clip or rewrite labels.",
+  "description": "FROZEN: Twelve new Kinetics video IDs and action classes disjoint from Batch42+45E+46E+48B+53B; 6 DEV/6 TEST, 4 official point queries/video, geometric invalidity rule from Batch53B, unchanged CPU/VLM methods, selection rules and TEST prediction seal; no opened TEST retuning.",
+  "enabled": true,
+  "failure_policy": "Fail closed after one attempt, retain existing shards/media and exact failure logs. Any repair requires an entirely new tested GitHub main SHA and independently frozen checkout. GPU exclusive.",
+  "gpu_policy": "VLM inference stages use /tmp/tang_shared_gpu_experiments.lock; require no other CUDA compute process and at least 11,000 MiB free. CPU stages explicitly disable OpenCV OpenCL.",
+  "max_stages_per_tick": 2,
+  "source_of_truth": "GitHub main; runner freezes clean checkout SHA in .automation/state.json. Raw videos, shards, frames, private point tracks, predictions and model weights remain local on Tang.",
+  "stages": [
+    {
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch55_data.py",
+        "download"
+      ],
+      "id": "R00_SELECT_AND_DOWNLOAD_12_FRESH_CLASS_SHARDS",
+      "max_attempts": 1,
+      "requires_files": [
+        "experiments/kinetics_batch55_data.py",
+        "configs/kinetics_batch55.json",
+        "data/tapvid_kinetics_batch41/tapvid_kinetics/tapvid_kinetics.csv",
+        "data/tapvid_kinetics_batch41/metadata/k700_2020_val.csv",
+        "data/tapvid_kinetics_batch41/tapvid_kinetics/val.txt"
+      ],
+      "timeout_seconds": 173400
+    },
+    {
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_kinetics_batch55.py",
+        "tests/test_kinetics_batch53.py",
+        "tests/test_kinetics_annotation_geometry_guard.py",
+        "tests/test_kinetics_remote_head_retry.py",
+        "tests/test_kinetics_shard_resume.py",
+        "tests/test_kinetics_long_progress_shard_budget.py"
+      ],
+      "id": "R01_TARGETED_BATCH55_REGRESSION",
+      "max_attempts": 1,
+      "requires_files": [
+        "tests/test_kinetics_batch55.py",
+        "tests/test_kinetics_annotation_geometry_guard.py",
+        "experiments/kinetics_batch55_data.py"
+      ],
+      "timeout_seconds": 1800
+    },
+    {
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "id": "R02_FULL_PROJECT_REGRESSION",
+      "max_attempts": 1,
+      "requires_files": [
+        "pyproject.toml",
+        "tests/test_kinetics_batch55.py"
+      ],
+      "timeout_seconds": 3600
+    },
+    {
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch55_data.py",
+        "prepare"
+      ],
+      "id": "R03_FREEZE_12_FRESH_VIDEO_FRAMES_AND_PRIVATE_ORACLE",
+      "max_attempts": 1,
+      "requires_files": [
+        "data/tapvid_kinetics_batch55/preflight/selection.json",
+        "data/tapvid_kinetics_batch55/preflight/download_manifest.json",
+        "data/tapvid_kinetics_batch45e/preflight/k700_2020_val_path.txt"
+      ],
+      "timeout_seconds": 10800
+    },
+    {
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch55_data.py",
+        "audit-public"
+      ],
+      "id": "R04_PUBLIC_DATA_AND_COORDINATE_AUDIT",
+      "max_attempts": 1,
+      "requires_files": [
+        "data/tapvid_kinetics_batch55/batch55_frozen/manifest.json",
+        "data/tapvid_kinetics_batch55/batch55_frozen/queries-public.json"
+      ],
+      "timeout_seconds": 3600
+    },
+    {
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch55_eval.py",
+        "predict-dev"
+      ],
+      "id": "R05_DEV_CPU_TRACKER_PREDICTIONS",
+      "max_attempts": 1,
+      "requires_files": [
+        "configs/kinetics_batch55.json",
+        "data/tapvid_kinetics_batch55/batch55_frozen/manifest.json",
+        "data/tapvid_kinetics_batch55/batch55_frozen/queries-public.json"
+      ],
+      "timeout_seconds": 10800
+    },
+    {
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch55_eval.py",
+        "score-dev"
+      ],
+      "id": "R06_DEV_CPU_SCORING",
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch55/dev_predictions.json",
+        "outputs/kinetics_batch55/dev_predictions.json.sha256",
+        "data/tapvid_kinetics_batch55/batch55_frozen/oracle-private.json"
+      ],
+      "timeout_seconds": 3600
+    },
+    {
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch55_eval.py",
+        "select-dev"
+      ],
+      "id": "R07_NEW_DEV_SAFETY_METHOD_SELECTION",
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch55/dev_results.json",
+        "configs/kinetics_batch55.json"
+      ],
+      "timeout_seconds": 1800
+    },
+    {
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch55_vlm.py",
+        "predict-dev"
+      ],
+      "gpu": true,
+      "id": "R08_DEV_SMOLVLM2_2_2B_REFERENCE_CROP_PREDICTIONS",
+      "max_attempts": 1,
+      "min_free_mib": 11000,
+      "requires_files": [
+        "configs/kinetics_batch55.json",
+        "data/tapvid_kinetics_batch55/batch55_frozen/manifest.json",
+        "data/tapvid_kinetics_batch55/batch55_frozen/queries-public.json",
+        "outputs/kinetics_batch55/dev_selection.json",
+        "outputs/kinetics_batch55/dev_selection.json.sha256",
+        "models/SmolVLM2-2.2B-Instruct/model.safetensors.index.json",
+        "models/SmolVLM2-2.2B-Instruct/model-00001-of-00002.safetensors",
+        "models/SmolVLM2-2.2B-Instruct/model-00002-of-00002.safetensors"
+      ],
+      "timeout_seconds": 10800
+    },
+    {
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch55_vlm.py",
+        "score-dev"
+      ],
+      "id": "R09_DEV_VLM_SCORING",
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch55/dev_vlm_predictions.json",
+        "outputs/kinetics_batch55/dev_vlm_predictions.json.sha256",
+        "outputs/kinetics_batch55/dev_predictions.json",
+        "outputs/kinetics_batch55/dev_predictions.json.sha256"
+      ],
+      "timeout_seconds": 1800
+    },
+    {
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch55_vlm.py",
+        "dev-gate"
+      ],
+      "id": "R10_DEV_VLM_ADMISSION_GATE",
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch55/dev_vlm_results.json",
+        "configs/kinetics_batch55.json"
+      ],
+      "timeout_seconds": 1800
+    },
+    {
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch55_eval.py",
+        "predict-test"
+      ],
+      "id": "R11_TEST_CPU_PREDICTIONS_PIN",
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch55/dev_selection.json",
+        "outputs/kinetics_batch55/dev_selection.json.sha256",
+        "data/tapvid_kinetics_batch55/batch55_frozen/manifest.json"
+      ],
+      "timeout_seconds": 10800
+    },
+    {
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch55_vlm.py",
+        "predict-test"
+      ],
+      "gpu": true,
+      "id": "R12_TEST_VLM_PREDICTIONS_OR_DEV_GATE_SKIP",
+      "max_attempts": 1,
+      "min_free_mib": 11000,
+      "requires_files": [
+        "outputs/kinetics_batch55/dev_vlm_gate.json",
+        "outputs/kinetics_batch55/dev_vlm_gate.json.sha256",
+        "outputs/kinetics_batch55/test_predictions.json",
+        "outputs/kinetics_batch55/test_predictions.json.sha256",
+        "models/SmolVLM2-2.2B-Instruct/model.safetensors.index.json",
+        "models/SmolVLM2-2.2B-Instruct/model-00001-of-00002.safetensors",
+        "models/SmolVLM2-2.2B-Instruct/model-00002-of-00002.safetensors"
+      ],
+      "timeout_seconds": 10800
+    },
+    {
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch55_eval.py",
+        "score-test"
+      ],
+      "id": "R13_TEST_CPU_SCORING_ONCE",
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch55/test_predictions.json",
+        "outputs/kinetics_batch55/test_predictions.json.sha256",
+        "outputs/kinetics_batch55/dev_selection.json",
+        "data/tapvid_kinetics_batch55/batch55_frozen/oracle-private.json"
+      ],
+      "timeout_seconds": 3600
+    },
+    {
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch55_vlm.py",
+        "score-test"
+      ],
+      "id": "R14_TEST_VLM_SCORING_OR_SKIP",
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch55/test_vlm_predictions.json",
+        "outputs/kinetics_batch55/test_vlm_predictions.json.sha256",
+        "outputs/kinetics_batch55/test_predictions.json",
+        "outputs/kinetics_batch55/test_predictions.json.sha256"
+      ],
+      "timeout_seconds": 1800
+    },
+    {
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch55_report.py",
+        "build"
+      ],
+      "id": "R15_BUILD_AGGREGATED_BATCH55_REPORT",
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch55/dev_results.json",
+        "outputs/kinetics_batch55/test_results.json",
+        "outputs/kinetics_batch55/dev_selection.json",
+        "outputs/kinetics_batch55/dev_vlm_gate.json",
+        "outputs/kinetics_batch55/dev_vlm_results.json",
+        "outputs/kinetics_batch55/test_vlm_results.json"
+      ],
+      "timeout_seconds": 1800
+    },
+    {
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch55_eval.py",
+        "final-audit"
+      ],
+      "id": "R16_EVALUATION_FINAL_PIN_AUDIT",
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch55/dev_predictions.json.sha256",
+        "outputs/kinetics_batch55/test_predictions.json.sha256",
+        "outputs/kinetics_batch55/dev_selection.json.sha256"
+      ],
+      "timeout_seconds": 1800
+    },
+    {
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch55_vlm.py",
+        "final-audit"
+      ],
+      "id": "R17_VLM_FINAL_GATE_AND_PIN_AUDIT",
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch55/dev_vlm_gate.json.sha256",
+        "outputs/kinetics_batch55/dev_vlm_predictions.json.sha256",
+        "outputs/kinetics_batch55/test_vlm_predictions.json.sha256"
+      ],
+      "timeout_seconds": 1800
+    },
+    {
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "id": "R18_FULL_PROJECT_REGRESSION_AFTER_EVALUATION",
+      "max_attempts": 1,
+      "requires_files": [
+        "tests/test_kinetics_batch55.py",
+        "outputs/kinetics_batch55/BATCH55_FRESH_SAFETY_REPORT.md"
+      ],
+      "timeout_seconds": 3600
+    },
+    {
+      "argv": [
+        "{python}",
+        "experiments/source_security_guard.py"
+      ],
+      "id": "R19_SOURCE_PUBLICATION_SECURITY_GUARD",
+      "max_attempts": 1,
+      "requires_files": [
+        "experiments/source_security_guard.py",
+        "automation/plan.json"
+      ],
+      "timeout_seconds": 1800
+    },
+    {
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch55_data.py",
+        "audit"
+      ],
+      "id": "R20_FINAL_PUBLIC_AND_PRIVATE_DATA_HASH_AUDIT",
+      "max_attempts": 1,
+      "requires_files": [
+        "data/tapvid_kinetics_batch55/batch55_frozen/manifest.json",
+        "data/tapvid_kinetics_batch55/batch55_frozen/oracle-private.json"
+      ],
+      "timeout_seconds": 3600
+    },
+    {
+      "argv": [
+        "{python}",
+        "experiments/kinetics_batch55_report.py",
+        "verify"
+      ],
+      "id": "R21_FINAL_REPORT_PIN_AUDIT",
+      "max_attempts": 1,
+      "requires_files": [
+        "outputs/kinetics_batch55/BATCH55_FRESH_SAFETY_REPORT.md",
+        "outputs/kinetics_batch55/BATCH55_FRESH_SAFETY_REPORT.md.sha256"
+      ],
+      "timeout_seconds": 1800
+    }
+  ],
+  "test_policy": "Identical frozen Batch53 DEV-only method selection with >=30% visible coverage and <=10% occluded false acceptance; TEST scored only after prediction seal. Frozen SmolVLM2 DEV admission rule gates all TEST VLM compute.",
+  "version": "batch55-independent-kinetics-60-historical-classes-occlusion-risk-transfer-20261103-v1"
+}

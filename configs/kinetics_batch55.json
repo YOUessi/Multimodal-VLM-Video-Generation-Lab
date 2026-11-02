@@ -1,0 +1,104 @@
+{
+  "dataset_dir": "data/tapvid_kinetics_batch55",
+  "dev_selection": {
+    "candidate_methods": [
+      "klt_fb",
+      "template_recover4",
+      "affine_stabilized_klt",
+      "appearance_fb_055",
+      "appearance_fb_070",
+      "appearance_fb_085",
+      "gradient_fb_050",
+      "gradient_fb_065",
+      "gradient_fb_080"
+    ],
+    "fallback_method": "appearance_fb_085",
+    "max_invisible_false_accept_rate": 0.1,
+    "min_visible_coverage": 0.3,
+    "objective": "maximize scene-macro Jaccard among candidates with coverage >=0.30 and occluded false-accept <=0.10; fallback is fixed and reported as ineligible",
+    "selection_source": "NEW_BATCH55_DEV_ONLY"
+  },
+  "dev_videos": 6,
+  "evaluation": {
+    "bootstrap_replicates": 2000,
+    "bootstrap_seed": 20261103,
+    "point_threshold_px": 8,
+    "radii_px": [
+      1,
+      2,
+      4,
+      8,
+      16
+    ]
+  },
+  "frame_rate": 25,
+  "frame_size": [
+    256,
+    256
+  ],
+  "frozen_subdir": "batch55_frozen",
+  "max_frames": 250,
+  "official_shard_path_list": "https://s3.amazonaws.com/kinetics/700_2020/val/k700_2020_val_path.txt",
+  "output_dir": "outputs/kinetics_batch55",
+  "provenance": {
+    "annotation_license": "CC BY 4.0",
+    "camera_motion_note": "2D screen/background affine proxy only, not calibrated camera pose or physical background-relative motion",
+    "dataset": "TAP-Vid-Kinetics / Kinetics-700-2020 validation",
+    "official_reference": "https://github.com/google-deepmind/tapnet/tree/main/tapnet/tapvid",
+    "source_type": "12 new natural Kinetics videos; all IDs/action classes disjoint from 60 previously used classes/IDs (Batch42/45E/46E/48B/53B)",
+    "test_policy": "Exactly frozen nine CPU candidates and SmolVLM2-2.2B DEV gate; choose on the six new DEV only, pin TEST predictions before TEST scoring; previous TEST results cannot tune.",
+    "video_rights": "individual source-video terms; videos and frames remain local and are not republished"
+  },
+  "queries_per_video": 4,
+  "query_protocol": "official TAP-Vid first-visible point; deterministic hash-selected track ids; 6 DEV / 6 TEST",
+  "source_csv": "data/tapvid_kinetics_batch41/tapvid_kinetics/tapvid_kinetics.csv",
+  "source_metadata": "data/tapvid_kinetics_batch41/metadata/k700_2020_val.csv",
+  "source_val_ids": "data/tapvid_kinetics_batch41/tapvid_kinetics/val.txt",
+  "test_videos": 6,
+  "tracker": {
+    "affine_max_reprojection_p50_px": 2.5,
+    "affine_max_rotation_deg": 25,
+    "affine_min_inlier_ratio": 0.25,
+    "affine_min_inliers": 8,
+    "affine_min_matches": 12,
+    "affine_orb_features": 700,
+    "affine_ransac_reprojection_px": 3,
+    "affine_ratio": 0.75,
+    "affine_scale_max": 1.33,
+    "affine_scale_min": 0.75,
+    "appearance_thresholds": [
+      0.55,
+      0.7,
+      0.85
+    ],
+    "fb_error_px": 1.5,
+    "gradient_thresholds": [
+      0.5,
+      0.65,
+      0.8
+    ],
+    "patch_size": 21,
+    "template_max_consecutive_misses": 4,
+    "template_ncc_min": 0.75,
+    "template_search_radius_px": 32
+  },
+  "version": "2026-11-03-batch55-12-new-videos-disjoint-from-60-history-v2",
+  "vlm": {
+    "dev_gate": {
+      "max_invalid_rate": 0.2,
+      "max_not_visible_false_accept_rate": 0.25,
+      "min_balanced_accuracy": 0.55,
+      "min_coverage": 0.5,
+      "min_not_visible_support": 8,
+      "min_visible_support": 8
+    },
+    "max_new_tokens": 12,
+    "model_id": "HuggingFaceTB/SmolVLM2-2.2B-Instruct",
+    "model_path": "../models/SmolVLM2-2.2B-Instruct",
+    "reference_crop_size": 64,
+    "target_fractions": [
+      0.5,
+      0.9
+    ]
+  }
+}
