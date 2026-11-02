@@ -244,3 +244,11 @@ PY
 
 
 - Batch45 preflight regression (2026-11-02): the initial VLM parser incorrectly accepted "probably visible" because it searched for a label substring. The failing log was preserved; Batch45B switches to a full-string label parser and uses a new frozen source directory rather than reusing the failed snapshot.
+
+## Process diary — 2026-11-02 (Batch46B download-timeout repair)
+
+- Batch46 R00 had a 5,400 s stage timeout but sequentially downloads 12 shards, each with a 2,460 s subprocess cap. After two shards were verified and the third was partially downloaded, the run was deliberately preempted before timeout; its failed-stage log and partial archive were preserved.
+- Batch46B raises the stage budget to 36,000 s and adds a regression guard for the complete sequential download budget. The existing `curl -C -` resume path was exercised on the preserved shard-620 partial.
+- The exact Batch46B freeze `82a0bda1a542d4d0219abb1d4d0d81af2635f806` passed 8/8 targeted tests and 444/444 full-project tests (three existing Pillow deprecation warnings). The 10-minute cron marker now points to `repo-batch46b-tested`.
+- Batch46B R00 is running; no new DEV/TEST scores exist yet. The original 12-class, 6-DEV/6-TEST selection and prior DEV-only tracker choice remain unchanged. Raw media, private annotations, predictions and weights remain on Tang.
+- [Batch46B timeout-repair record](docs/BATCH46B_DOWNLOAD_TIMEOUT_REPAIR_2026-11-02.md).
