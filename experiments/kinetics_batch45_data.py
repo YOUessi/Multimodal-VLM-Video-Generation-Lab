@@ -138,6 +138,39 @@ def parse_track_row(row: list[str]) -> tuple[np.ndarray, np.ndarray]:
     return xy, occluded
 
 
+
+def usable_track_for_freeze(
+    row: list[str], frame_count: int, original_width: int, original_height: int
+) -> tuple[np.ndarray, np.ndarray, np.ndarray] | None:
+    """Skip unusable *entire* annotation tracks, never invent/clip TEST labels.
+
+    This is a dataset-integrity gate applied identically to DEV and TEST,
+    before deterministic hash-based point-query selection. Visible coordinates
+    outside the supplied video raster have no valid image-plane target.
+    Malformed occlusion/non-finite annotations remain fatal (fail closed).
+    """
+    try:
+        xy_norm, occluded = parse_track_row(row)
+    except RuntimeError as exc:
+        if str(exc) == "KINETICS_VISIBLE_COORDINATE_NOT_NORMALIZED":
+            return None
+        raise
+    if not 1 <= frame_count <= len(xy_norm):
+        raise ValueError("KINETICS_INVALID_DECODED_FRAME_COUNT")
+    xy = normalized_to_resized_pixels(
+        xy_norm[:frame_count], original_width, original_height
+    )
+    occ = occluded[:frame_count]
+    visible_xy = xy[~occ]
+    if visible_xy.size and (
+        np.any(visible_xy < -0.5)
+        or np.any(visible_xy[:, 0] >= WIDTH)
+        or np.any(visible_xy[:, 1] >= HEIGHT)
+    ):
+        return None
+    return xy, occ, xy_norm[:frame_count]
+
+
 def normalized_to_resized_pixels(
     points: np.ndarray, original_width: int, original_height: int
 ) -> np.ndarray:
@@ -320,23 +353,27 @@ def prepare() -> None:
                 np.save(f, frames, allow_pickle=False)
 
         all_tracks = []
+        schema_excluded_tracks = 0
         for track_index, row in enumerate(rows_by_video[video_id]):
-            xy_norm, occluded = parse_track_row(row)
-            n = len(frames)
-            xy = normalized_to_resized_pixels(xy_norm[:n], probe["width"], probe["height"])
-            occ = occluded[:n]
-            visible_xy = xy[~occ]
-            if visible_xy.size and (
-                np.any(visible_xy < -0.5) or np.any(visible_xy[:, 0] >= WIDTH)
-                or np.any(visible_xy[:, 1] >= HEIGHT)
-            ):
-                raise RuntimeError("KINETICS_VISIBLE_TRACK_OUT_OF_FRAME:" + video_id)
-            all_tracks.append((track_index, xy, occ, xy_norm[:n]))
+            track = usable_track_for_freeze(
+                row, len(frames), probe["width"], probe["height"]
+            )
+            if track is None:
+                schema_excluded_tracks += 1
+                continue
+            xy, occ, xy_norm = track
+            all_tracks.append((track_index, xy, occ, xy_norm))
 
         candidates = []
         for track_index, xy, occ, xy_norm in all_tracks:
-            query = first_visible_query(track_index, xy_norm, occ,
-                                         probe["width"], probe["height"])
+            try:
+                query = first_visible_query(track_index, xy_norm, occ,
+                                            probe["width"], probe["height"])
+            except RuntimeError as exc:
+                if str(exc) != "KINETICS_QUERY_POINT_OUT_OF_FRAME":
+                    raise
+                schema_excluded_tracks += 1
+                continue
             if query is not None and query["query_time"] < len(frames) - 1:
                 rank = hashlib.sha256(
                     f"{SALT}|{video_id}|{track_index}".encode()
@@ -377,11 +414,14 @@ def prepare() -> None:
             "frame_count": int(len(frames)),
             "frame_rate_sampling": FPS,
             "frame_resolution": [HEIGHT, WIDTH],
-            "track_rows": len(all_tracks),
+            "track_rows": len(rows_by_video[video_id]),
+            "valid_track_rows": len(all_tracks),
+            "schema_excluded_track_rows": schema_excluded_tracks,
             "query_count": len(queries),
         })
         print("KINETICS_FROZEN_SCENE", scene, meta["split"], video_id,
-              "frames", len(frames), "queries", len(queries), flush=True)
+              "frames", len(frames), "queries", len(queries),
+              "schema_excluded_tracks", schema_excluded_tracks, flush=True)
 
     selection_sha = sha_file(DATA / "preflight/selection.json")
     manifest = {
