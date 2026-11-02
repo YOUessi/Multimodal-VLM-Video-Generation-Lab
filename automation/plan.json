@@ -16,7 +16,7 @@
         "experiments/kinetics_batch46_data.py",
         "download"
       ],
-      "timeout_seconds": 87000,
+      "timeout_seconds": 173400,
       "max_attempts": 1,
       "requires_files": [
         "experiments/kinetics_batch46_data.py",

@@ -691,13 +691,15 @@ def build_selection(path_lines: list[str]) -> dict:
 
 
 # One shard gets a bounded total budget, subdivided into resumable attempts.
-# Batch46C exhausted the old 2460s cap at 71.4/74.2 MB despite continuous
-# download progress. Permit slower transfers while retaining fail-closed
-# zero-progress and checksum gates; the frozen R00 stage has its own hard cap.
+# Batch48 R00's 90 MB shard still made steady progress after 13 timed slices,
+# but the former 16-attempt / 7200-second ceiling risked stopping before
+# completeness. Raise BOTH caps for future frozen runs; never change a live
+# freeze. Three zero-progress attempts, source identity, gzip CRC, full size,
+# and the runner's independent stage-level timeout still fail closed.
 # Never discard failed downloads: previous .partial bytes are preserved.
-SHARD_BUDGET_SECONDS = 7200
+SHARD_BUDGET_SECONDS = 14400
 SHARD_CURL_SLICE_SECONDS = 420
-SHARD_MAX_ATTEMPTS = 16
+SHARD_MAX_ATTEMPTS = 48
 SHARD_STALL_SECONDS = 75
 SHARD_MIN_BYTES_PER_SECOND = 2048
 
