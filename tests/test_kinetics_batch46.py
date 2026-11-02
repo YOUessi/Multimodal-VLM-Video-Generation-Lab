@@ -97,6 +97,15 @@ def test_report_transfer_method_constant():
     assert report.METHOD == evaluation.FROZEN_METHOD
     assert report.METHOD in evaluation.previous.METHODS
 
+def test_frozen_plan_download_timeout_covers_all_shard_attempt_budgets():
+    plan = json.loads((Path(__file__).resolve().parents[1] /
+                       "automation/plan.json").read_text())
+    stage = next(x for x in plan["stages"]
+                 if x["id"] == "R00_SELECT_AND_DOWNLOAD_12_FRESH_CLASS_SHARDS")
+    # Twelve sequential shard attempts can each consume the 2,460 s curl cap.
+    assert stage["timeout_seconds"] >= 12 * 2460 + 600
+
+
 def test_frozen_plan_paths_match_new_dataset_and_outputs():
     plan = json.loads((Path(__file__).resolve().parents[1] /
                        "automation/plan.json").read_text())
