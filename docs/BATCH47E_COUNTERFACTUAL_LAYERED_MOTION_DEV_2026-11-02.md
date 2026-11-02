@@ -29,3 +29,19 @@ The next real validation requires a newly frozen DEV split with real target anno
 ## Execution and artifacts
 
 Freeze the GitHub main SHA in an isolated clean repo-batch47e-tested. Execute plan automation/plans/batch47e_dev_counterfactual_layers_2026-11-02.json using automation/runner_batch47e.py. Stage sequence: focused tests; all tests; deterministic six-clip counterfactual experiment; evidence and source pin audit. Fail closed, write-once output, preserve logs, no duplicate tasks. Private media, ground-truth grid, generated pairs, weights and secrets stay on Tang under outputs/research; do not commit them.
+
+## Executed DEV preflight observations (exploratory, not TEST)
+
+Before freezing the run, the fully implemented protocol was executed on all 240 generated pairs and the evidence audit passed (6 scenes, 240 cases; no sealed TEST access). Each condition has 48 cases, with 48/48 affine fits valid, so these are defined coverage comparisons on this synthetic design, **not** independent video-domain evaluation.
+
+| Condition | Raw affine estimates wrong (>2px) | Proposed spatial gate accepted | Wrong among accepted | Accepted coverage |
+|---|---:|---:|---:|---:|
+| clean_affine | 0/48 | 36/48 | 0/36 | 75.0% |
+| lighting_shift | 0/48 | 35/48 | 0/35 | 72.9% |
+| local_foreground | 41/48 | 0/48 | 0/0 (undefined) | 0.0% |
+| dominant_foreground | **48/48** | **26/48** | **26/26** | 54.2% |
+| foreground_and_occlusion | 47/48 | 0/48 | 0/0 (undefined) | 0.0% |
+
+The failure is more important than the apparent successes: a large coherently moving foreground spans multiple spatial regions and can pass quadrant holdout validation even while the estimated warp is wrong for the background. The gate's **conditional wrong-accept fraction is 100%** on accepted dominant-foreground examples. For localized foreground and foreground+occlusion, it abstains entirely, so it is not a usable tracker without separate target coverage evaluation.
+
+This disproves the assumption that quadrant crossfit alone certifies *background* motion. A next candidate needs an independent cue that separates background support from dominant coherent foreground, rather than merely decreasing a spatial residual threshold. Synthetic truth may guide controlled analysis on DEV only; a new independent DEV plus fresh sealed TEST are still required for any performance claim.
