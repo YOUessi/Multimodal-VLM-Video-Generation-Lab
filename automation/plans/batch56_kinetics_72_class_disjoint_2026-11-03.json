@@ -375,7 +375,6 @@
       "timeout_seconds": 10800
     }
   ],
-  "test_policy": "Identical frozen Batch53 DEV-only method selection with >=30% visible coverage and <=10% occluded false acceptance; TEST scored only after prediction seal. Frozen SmolVLM2 DEV admission rule gates all TEST VLM compute.",
-  "version": "batch56-independent-kinetics-60-historical-classes-occlusion-risk-transfer-20261103-v1",
-  "plan_version": "batch56-36dev-6test-72-historical-classes-20261103-v1"
+  "test_policy": "Identical predeclared Batch55 DEV-only candidate selection: >=30% visible coverage and <=10% occluded false acceptance; all 36 DEV scores and independent cluster audit precede prediction sealing and one-time scoring of six TEST scenes. Unchanged SmolVLM2 DEV admission rule gates TEST VLM compute.",
+  "version": "batch56-36dev-6test-72-historical-classes-20261103-v1"
 }

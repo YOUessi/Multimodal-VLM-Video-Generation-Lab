@@ -290,3 +290,11 @@ def test_frozen_plan_audits_independent_dev_scenes_before_test():
     assert names.index("R07_NEW_DEV_SAFETY_METHOD_SELECTION") < names.index("R07A_DEV_SCENE_CLUSTER_RISK_AUDIT")
     assert names.index("R07A_DEV_SCENE_CLUSTER_RISK_AUDIT") < names.index("R11_TEST_CPU_PREDICTIONS_PIN")
     assert "test" not in plan["stages"][8]["argv"][-1].lower()
+
+
+def test_plan_version_is_the_actual_runtime_version_not_an_unused_alias():
+    p = ROOT / "automation/plans/batch56_kinetics_72_class_disjoint_2026-11-03.json"
+    plan = json.loads(p.read_text())
+    assert plan["version"] == "batch56-36dev-6test-72-historical-classes-20261103-v1"
+    assert "plan_version" not in plan
+    assert len(plan["stages"]) == 23
