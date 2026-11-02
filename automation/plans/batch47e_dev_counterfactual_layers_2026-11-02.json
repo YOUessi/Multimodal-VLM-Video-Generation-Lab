@@ -1,0 +1,72 @@
+{
+  "version": "batch47e-dev-counterfactual-layered-motion-frozen-20261102-v1",
+  "enabled": true,
+  "description": "Frozen DEV-only synthetic 2D translation versus moving foreground and occlusion from six SHA-pinned DEV videos, no TEST or GPU.",
+  "source_of_truth": "GitHub main clean frozen SHA; no injection into earlier batches.",
+  "data_policy": "Read only six whitelisted DEV members whose SHA256 match frozen manifest; use generated 2D truth only for post-hoc scoring, never TEST or private target labels.",
+  "failure_policy": "One attempt per stage; preserve state/logs and repair with new GitHub SHA.",
+  "test_policy": "Predeclared 5 conditions x 8 anchors x 6 DEV scenes = 240 synthetic pairs; not independent TEST.",
+  "gpu_policy": "CPU-only, no GPU processes.",
+  "max_stages_per_tick": 2,
+  "stages": [
+    {
+      "id": "R00_TARGETED_TESTS",
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_dev_counterfactual_motion_layers.py"
+      ],
+      "timeout_seconds": 300,
+      "max_attempts": 1
+    },
+    {
+      "id": "R01_FULL_REGRESSION",
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests"
+      ],
+      "timeout_seconds": 900,
+      "max_attempts": 1
+    },
+    {
+      "id": "R02_FROZEN_DEV_KNOWN_MOTION_STRESS",
+      "argv": [
+        "{python}",
+        "experiments/dev_counterfactual_motion_layers.py",
+        "--selection",
+        "../data/tapvid_kinetics_batch46/preflight/selection.json",
+        "--shards",
+        "../data/tapvid_kinetics_batch46/shards",
+        "--output",
+        "../outputs/research/batch47e_frozen_synthetic_dev.json"
+      ],
+      "requires_files": [
+        "../data/tapvid_kinetics_batch46/preflight/selection.json",
+        "../data/tapvid_kinetics_batch46/preflight/download_manifest.json"
+      ],
+      "timeout_seconds": 2400,
+      "max_attempts": 1
+    },
+    {
+      "id": "R03_EVIDENCE_PIN_AUDIT",
+      "argv": [
+        "{python}",
+        "experiments/dev_counterfactual_motion_audit.py",
+        "--report",
+        "../outputs/research/batch47e_frozen_synthetic_dev.json",
+        "--selection",
+        "../data/tapvid_kinetics_batch46/preflight/selection.json"
+      ],
+      "requires_files": [
+        "../outputs/research/batch47e_frozen_synthetic_dev.json"
+      ],
+      "timeout_seconds": 300,
+      "max_attempts": 1
+    }
+  ]
+}
