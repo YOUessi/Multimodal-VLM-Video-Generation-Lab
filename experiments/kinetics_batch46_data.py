@@ -7,9 +7,29 @@ weakening the independence contract.
 """
 from __future__ import annotations
 from pathlib import Path
+import importlib.util
 import json
-import kinetics_batch45_data as base
 
+
+def _isolated_batch45_data():
+    """Load a private data-module instance: Batch46 must never patch Batch45.
+
+    Batch45's functions reference module globals (DATA, FROZEN, SALT and the
+    selector). Import-time monkeypatching the *shared* module silently changes
+    Batch45 tests and any simultaneous in-process Batch45 research. Loading
+    the source under a different module namespace preserves the original API
+    without mutating another experiment's namespace.
+    """
+    path = Path(__file__).with_name("kinetics_batch45_data.py")
+    spec = importlib.util.spec_from_file_location("_batch46_private_kinetics_batch45_data", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("BATCH46_PRIVATE_BASE_MODULE_LOAD_FAILED")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+base = _isolated_batch45_data()
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data/tapvid_kinetics_batch46"
 FROZEN = DATA / "batch46_frozen"

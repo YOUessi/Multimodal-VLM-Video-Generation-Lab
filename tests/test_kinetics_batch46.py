@@ -9,6 +9,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "experiments"))
 import kinetics_batch46_data as data
 import kinetics_batch46_eval as evaluation
 import kinetics_batch46_report as report
+import kinetics_batch45_data as original_batch45
+
+
+def test_batch46_import_does_not_mutate_batch45_shared_selection_or_paths():
+    """Fresh clones must pass without Batch42/45 private local data present."""
+    assert data.base is not original_batch45
+    assert original_batch45.deterministic_class_selection is not data.new_class_selection
+    assert original_batch45.DATA != data.base.DATA
+    assert original_batch45.FROZEN != data.base.FROZEN
+    assert original_batch45.deterministic_class_selection.__code__.co_code == data.ORIGINAL_SELECT.__code__.co_code
 
 
 def _manifest(path, labels, ids):
