@@ -1,0 +1,73 @@
+{
+  "version": "batch47d-temporal-bridging-dev-only-frozen-20261102-v1",
+  "enabled": true,
+  "description": "Execute a predeclared direct-vs-bridged KLT diagnostic on six existing DEV clips. No TEST media, oracle, hyperparameter selection or GPU work.",
+  "source_of_truth": "GitHub main frozen clean checkout SHA. Outputs, frames, videos and private answers remain only on Tang.",
+  "failure_policy": "One attempt per stage, stop on failure, retain state/logs/output, repair only with new GitHub SHA and new tested directory.",
+  "test_policy": "DEV-only diagnostic: independent already-scored Batch46 TEST is prohibited for any threshold tuning. Spatial cross-fit and paired support are diagnostic, not target ground truth.",
+  "gpu_policy": "CPU-only stages; do not compete with GPU and keep global experiment lock semantics unchanged.",
+  "data_policy": "Read only SHA-pinned official Kinetics Batch46 DEV archive members; do not read TEST media, oracles, weights, secrets.",
+  "max_stages_per_tick": 2,
+  "stages": [
+    {
+      "id": "R00_BRIDGE_TARGETED_REGRESSION",
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_dev_temporal_bridge_affine.py",
+        "tests/test_dev_temporal_bridge_audit.py"
+      ],
+      "timeout_seconds": 300,
+      "max_attempts": 1
+    },
+    {
+      "id": "R01_FULL_PROJECT_REGRESSION",
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests"
+      ],
+      "timeout_seconds": 900,
+      "max_attempts": 1
+    },
+    {
+      "id": "R02_SIX_DEV_CLIP_TEMPORAL_BRIDGE_EVIDENCE",
+      "argv": [
+        "{python}",
+        "experiments/dev_temporal_bridge_affine.py",
+        "--selection",
+        "../data/tapvid_kinetics_batch46/preflight/selection.json",
+        "--shards",
+        "../data/tapvid_kinetics_batch46/shards",
+        "--output",
+        "../outputs/research/batch47d_frozen_bridge_dev.json"
+      ],
+      "requires_files": [
+        "../data/tapvid_kinetics_batch46/preflight/selection.json",
+        "../data/tapvid_kinetics_batch46/preflight/download_manifest.json"
+      ],
+      "timeout_seconds": 2400,
+      "max_attempts": 1
+    },
+    {
+      "id": "R03_DEV_ONLY_EVIDENCE_PIN_AUDIT",
+      "argv": [
+        "{python}",
+        "experiments/dev_temporal_bridge_audit.py",
+        "--report",
+        "../outputs/research/batch47d_frozen_bridge_dev.json",
+        "--selection",
+        "../data/tapvid_kinetics_batch46/preflight/selection.json"
+      ],
+      "requires_files": [
+        "../outputs/research/batch47d_frozen_bridge_dev.json"
+      ],
+      "timeout_seconds": 300,
+      "max_attempts": 1
+    }
+  ]
+}
