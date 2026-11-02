@@ -111,6 +111,11 @@ def test_frozen_plan_paths_match_new_dataset_and_outputs():
     plan = json.loads((Path(__file__).resolve().parents[1] /
                        "automation/plan.json").read_text())
     entries = json.dumps(plan["stages"])
+    first_regression = next(
+        x for x in plan["stages"] if x["id"] == "R01_TARGETED_BATCH46_REGRESSION"
+    )
+    assert "tests/test_kinetics_remote_head_retry.py" in first_regression["argv"]
+    assert "tests/test_kinetics_shard_resume.py" in first_regression["argv"]
     assert "kinetics_batch46e" not in entries
     assert "data/tapvid_kinetics_batch46/batch46_frozen" in entries
     assert "outputs/kinetics_batch46/test_predictions.json.sha256" in entries

@@ -33,12 +33,16 @@
         "-m",
         "pytest",
         "-q",
-        "tests/test_kinetics_batch46.py"
+        "tests/test_kinetics_batch46.py",
+        "tests/test_kinetics_remote_head_retry.py",
+        "tests/test_kinetics_shard_resume.py"
       ],
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
         "tests/test_kinetics_batch46.py",
+        "tests/test_kinetics_remote_head_retry.py",
+        "tests/test_kinetics_shard_resume.py",
         "experiments/kinetics_batch46_data.py",
         "experiments/kinetics_batch46_eval.py",
         "experiments/kinetics_batch46_vlm.py"

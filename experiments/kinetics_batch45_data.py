@@ -19,6 +19,8 @@ import shutil
 import subprocess
 import tarfile
 import time
+from http.client import RemoteDisconnected
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 import numpy as np
@@ -700,18 +702,52 @@ SHARD_STALL_SECONDS = 75
 SHARD_MIN_BYTES_PER_SECOND = 2048
 
 
+# HEAD is a metadata check, not a download. The remote Kinetics S3 endpoint
+# occasionally closes a HEAD connection before returning headers. Retry only
+# transport errors and explicitly transient HTTP statuses, never malformed
+# identity headers or mismatched ETags. A failed check never touches media.
+SHARD_HEAD_MAX_ATTEMPTS = 5
+SHARD_HEAD_BACKOFF_SECONDS = (1, 2, 4, 8)
+SHARD_HEAD_RETRY_HTTP_CODES = frozenset({408, 429, 500, 502, 503, 504})
+
+
 def remote_shard_identity(url: str) -> tuple[int, str]:
-    """Freeze the immutable S3 object's size and ETag while resuming byte ranges."""
-    with urlopen(Request(url, method="HEAD"), timeout=25) as response:
-        length = response.headers.get("Content-Length")
-        etag = response.headers.get("ETag")
-        ranges = response.headers.get("Accept-Ranges", "").lower()
-        if response.status != 200 or not length or not etag or ranges != "bytes":
-            raise RuntimeError("KINETICS_SHARD_REMOTE_IDENTITY_MISSING")
-        size = int(length)
-        if size <= 0:
-            raise RuntimeError("KINETICS_SHARD_REMOTE_SIZE_INVALID")
-        return size, etag
+    """Read a fail-closed (Content-Length, ETag) pair with bounded HEAD retries.
+
+    Each successful HEAD independently validates all immutable-object headers.
+    Any later HEAD showing changed identity still fails the caller's drift gate.
+    This function neither writes partial files nor downloads unverified bytes.
+    """
+    for attempt in range(SHARD_HEAD_MAX_ATTEMPTS):
+        try:
+            with urlopen(Request(url, method="HEAD"), timeout=25) as response:
+                length = response.headers.get("Content-Length")
+                etag = response.headers.get("ETag")
+                ranges = response.headers.get("Accept-Ranges", "").lower()
+                if response.status != 200 or not length or not etag or ranges != "bytes":
+                    raise RuntimeError("KINETICS_SHARD_REMOTE_IDENTITY_MISSING")
+                try:
+                    size = int(length)
+                except ValueError as exc:
+                    raise RuntimeError("KINETICS_SHARD_REMOTE_SIZE_INVALID") from exc
+                if size <= 0:
+                    raise RuntimeError("KINETICS_SHARD_REMOTE_SIZE_INVALID")
+                return size, etag
+        except HTTPError as exc:
+            if exc.code not in SHARD_HEAD_RETRY_HTTP_CODES:
+                raise RuntimeError(
+                    f"KINETICS_SHARD_REMOTE_HEAD_HTTP_FATAL:{exc.code}"
+                ) from exc
+            failure = exc
+        except (URLError, RemoteDisconnected, TimeoutError, ConnectionResetError,
+                BrokenPipeError) as exc:
+            failure = exc
+        if attempt == SHARD_HEAD_MAX_ATTEMPTS - 1:
+            raise RuntimeError(
+                f"KINETICS_SHARD_HEAD_RETRY_EXHAUSTED:{type(failure).__name__}"
+            ) from failure
+        time.sleep(SHARD_HEAD_BACKOFF_SECONDS[attempt])
+    raise AssertionError("unreachable")
 
 
 def verify_complete_gzip(path: Path) -> None:
