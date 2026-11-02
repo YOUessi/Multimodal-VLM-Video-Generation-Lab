@@ -1,5 +1,15 @@
 # Multimodal VLM & Video Generation Lab
 
+## Latest independent natural-video evaluation — Batch45E (2026-11-02)
+
+**22/22 frozen stages completed; 13 targeted and 436 full-project regression tests passed; all prediction, source, data and report-pin audits passed.** The new within-family holdout contains 12 previously unused TAP-Vid-Kinetics/Kinetics-700-2020 videos from 12 action classes (6 DEV / 6 TEST; four first-visible point queries per video). It is not an external dataset-family generalization claim.
+
+DEV-only selection chose `affine_stabilized_klt` (PCK@8 **38.4%**, visible coverage **45.4%**, accepted precision **85.6%**, invisible false accept **4.5%**, Jaccard **0.251**). On the sealed TEST, that frozen selection reached PCK@8 **44.2%**, coverage **58.1%**, accepted precision **67.8%**, invisible false accept **20.8%**, Jaccard **0.316**. KLT-FB scored higher TEST Jaccard (**0.347**) and PCK@8 (**48.1%**) at similar coverage (**58.7%**) and false-accept rate (**20.6%**); KLT-Forward reached **56.6%** PCK but had **43.4%** invisible false accepts. This DEV-to-TEST rank reversal shows that six DEV scenes were not enough for stable method selection.
+
+The gradient-identity gate at threshold 0.65 reached **98.6%** accepted precision and **0.4%** invisible false accepts on TEST, but only **31.9%** coverage and **0.287** Jaccard. It was not eligible under the predeclared DEV coverage constraint; this TEST result is a post-score diagnostic, not a replacement selection. The affine residual is only a 2-D dominant-background proxy, not calibrated camera pose, depth-aware parallax or 3-D world motion.
+
+**VLM negative result:** SmolVLM2-2.2B achieved **11/48** correct on DEV, balanced accuracy **23.9%**, coverage **64.6%**, non-visible false accept **80.0%**, invalid format **0%**. The predeclared DEV gate blocked; TEST VLM inference/scoring was skipped and the TEST VLM oracle was not read. [Complete sealed Batch45E report](docs/BATCH45E_KINETICS_FRESH_HOLDOUT_REPORT_2026-11-02.md) · [pre-registered protocol](docs/BATCH45_KINETICS_FRESH_CLASS_HOLDOUT_PROTOCOL_2026-11-02.md).
+
 ## Latest multi-view motion evaluation — Batch44D; report repair Batch44E (2026-11-02)
 
 Batch44D's RGB/cross-view research stages R00–R20 completed. The final report-pin stage found a copied Batch44B filename in the report builder; Batch44E fixes the filename and adds input-pin verification without rerunning any prediction or TEST scoring. The old Batch44D state/logs and the incorrectly named report are preserved. Batch44E is a **report-only** repair: 7/7 stages, 32 targeted tests and 423 full-project tests passed; no private TEST oracle was reopened and no GPU was used.
@@ -216,6 +226,13 @@ PY
 - Batch44C repairs null-safe CPU-latency aggregation and explicitly disables OpenCV OpenCL after Batch44B's CPU stage unexpectedly created an NVIDIA context. Two regression tests cover both defects.
 - The same 21 RRDs are hard-linked into a separate Batch44C namespace; new frozen artifacts and predictions will be regenerated under the new GitHub SHA. No source media or prior outputs are deleted.
 
+
+## Process diary — 2026-11-02 (Batch45E sealed)
+
+- The stale Batch45B preflight was superseded after its PAUSE marker; its seven verified shards, one partial shard, state and logs were retained. Batch45E froze the corrected GitHub-main source SHA and reused only immutable preflight/archive bytes—no Batch45B predictions or TEST labels existed. All 12 selected shards were SHA-verified.
+- Batch45E completed all 22 stages. The targeted suite passed 13/13; the full project passed 436/436 both before and after evaluation (three existing Pillow deprecation warnings). The 12-video manifest, public queries, private oracle, DEV/TEST prediction files, DEV selection, VLM gate, skip payload and aggregate report were SHA-pinned and audited.
+- TEST CPU predictions were pinned before the one-time CPU TEST scoring. SmolVLM2-2.2B failed the DEV admission gate; TEST VLM inference and scoring were explicitly skipped, so no TEST VLM answer was read.
+- The next bottleneck is DEV-to-TEST selection instability plus confidence calibration: affine-stabilized KLT won on six DEV scenes but KLT-FB had higher TEST Jaccard. The gradient gate showed high TEST precision only at reduced coverage, while the VLM visibility classifier had an 80% DEV non-visible false-accept rate.
 
 ## Process diary — 2026-11-02 (Batch45 prospective holdout)
 
