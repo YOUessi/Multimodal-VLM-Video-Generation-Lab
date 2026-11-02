@@ -689,8 +689,11 @@ def build_selection(path_lines: list[str]) -> dict:
 
 
 # One shard gets a bounded total budget, subdivided into resumable attempts.
-# Never discard a failed download: previous .partial bytes are preserved.
-SHARD_BUDGET_SECONDS = 2460
+# Batch46C exhausted the old 2460s cap at 71.4/74.2 MB despite continuous
+# download progress. Permit slower transfers while retaining fail-closed
+# zero-progress and checksum gates; the frozen R00 stage has its own hard cap.
+# Never discard failed downloads: previous .partial bytes are preserved.
+SHARD_BUDGET_SECONDS = 7200
 SHARD_CURL_SLICE_SECONDS = 420
 SHARD_MAX_ATTEMPTS = 16
 SHARD_STALL_SECONDS = 75

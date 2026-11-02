@@ -102,8 +102,9 @@ def test_frozen_plan_download_timeout_covers_all_shard_attempt_budgets():
                        "automation/plan.json").read_text())
     stage = next(x for x in plan["stages"]
                  if x["id"] == "R00_SELECT_AND_DOWNLOAD_12_FRESH_CLASS_SHARDS")
-    # Twelve sequential shard attempts can each consume the 2,460 s curl cap.
-    assert stage["timeout_seconds"] >= 12 * 2460 + 600
+    # The wall-time ceiling must cover the worst case for every selected shard.
+    # Use the real downloader constant to reject future timing drift.
+    assert stage["timeout_seconds"] >= 12 * data.base.SHARD_BUDGET_SECONDS + 600
 
 
 def test_frozen_plan_paths_match_new_dataset_and_outputs():

@@ -196,3 +196,31 @@ def test_stall_counter_resets_after_new_bytes(tmp_path, monkeypatch):
     subject.download_one_shard(shard, "https://example.test/file")
     assert len(calls) == 5
     assert shard.read_bytes() == b"abcdefgh"
+
+
+def test_slow_but_continuous_progress_can_finish_beyond_previous_2460s_cap(
+    tmp_path, monkeypatch
+):
+    shard = tmp_path / "k700_val_292.tar.gz"
+    _mock_head(monkeypatch, identity=(9, '"etag-1"'))
+    clock = {"t": 0.0}
+    monkeypatch.setattr(subject.time, "monotonic", lambda: clock["t"])
+    assert subject.SHARD_BUDGET_SECONDS > 9 * 330
+    calls = []
+
+    def call(cmd, **kwargs):
+        calls.append(cmd)
+        with _partial(shard).open("ab") as stream:
+            stream.write(b"x")
+        clock["t"] += 330
+        return SimpleNamespace(returncode=0 if len(calls) == 9 else 28,
+                               stderr="slow but still making progress")
+
+    monkeypatch.setattr(subject.subprocess, "run", call)
+    assert subject.download_one_shard(shard, "https://example.test/file") == (
+        9, '"etag-1"'
+    )
+    assert len(calls) == 9
+    assert clock["t"] > 2460
+    assert shard.read_bytes() == b"x" * 9
+    assert not _partial(shard).exists()
