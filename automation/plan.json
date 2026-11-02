@@ -1,47 +1,47 @@
 {
-  "version": "batch45e-kinetics-fresh-class-disjoint-gradient-vlm-test-firewall-20261102-v5",
+  "version": "batch46-fresh-kinetics-cross-batch-class-disjoint-preregistered-transfer-20261102-v1",
   "enabled": true,
-  "description": "Batch45E final pre-registered freeze: fresh TAP-Vid-Kinetics holdout, 12 new video IDs/classes, 6 DEV / 6 TEST; strict VLM parser, manifest provenance, overlap audit and all CPU+VLM TEST predictions pinned before any TEST oracle scoring.",
+  "description": "Twelve new natural Kinetics videos across twelve classes disjoint from Batch42 and Batch45E; replicate the old DEV-selected affine tracker with no new method tuning. Strict TEST prediction freeze, CPU and VLM admission gates and private-media embargo.",
   "source_of_truth": "GitHub main; runner freezes clean checkout SHA in .automation/state.json. Raw videos, shards, frames, private point tracks, predictions and model weights remain local on Tang.",
   "failure_policy": "Single attempt per frozen stage; fail closed. Preserve failed logs and partial downloads. Any repair requires a new GitHub source SHA and a new repo-batch*-tested directory. Never tune on TEST.",
-  "test_policy": "Selection and VLM admission use DEV only. CPU and VLM TEST predictions are both generated and SHA-pinned before either TEST scoring stage opens the private oracle. VLM prediction code reads only public queries and RGB frames. If the VLM DEV gate blocks, TEST VLM inference is skipped and the TEST VLM oracle is never opened.",
+  "test_policy": "Fix tracker at Batch45E DEV SHA-pinned choice; Batch46 DEV descriptive only; both TEST prediction files must be SHA-pinned before either TEST score opens private labels.",
   "gpu_policy": "VLM inference stages use /tmp/tang_shared_gpu_experiments.lock; require no other CUDA compute process and at least 11,000 MiB free. CPU stages explicitly disable OpenCV OpenCL.",
-  "data_policy": "Download only the 12 selected class shards from the official CVDF S3 path list. Preserve existing media and partial downloads. No video, frame, shard, private oracle, weight, generated media or secret may be committed.",
+  "data_policy": "Reuse only Kinetics metadata and URL list. Download new class shards to a new batch46 private directory; all old data and failure logs immutable. Do not publish media/weights/private labels.",
   "max_stages_per_tick": 2,
   "stages": [
     {
       "id": "R00_SELECT_AND_DOWNLOAD_12_FRESH_CLASS_SHARDS",
       "argv": [
         "{python}",
-        "experiments/kinetics_batch45_data.py",
+        "experiments/kinetics_batch46_data.py",
         "download"
       ],
       "timeout_seconds": 5400,
       "max_attempts": 1,
       "requires_files": [
-        "experiments/kinetics_batch45_data.py",
-        "configs/kinetics_batch45.json",
+        "experiments/kinetics_batch46_data.py",
+        "configs/kinetics_batch46.json",
         "data/tapvid_kinetics_batch41/tapvid_kinetics/tapvid_kinetics.csv",
         "data/tapvid_kinetics_batch41/metadata/k700_2020_val.csv",
         "data/tapvid_kinetics_batch41/tapvid_kinetics/val.txt"
       ]
     },
     {
-      "id": "R01_TARGETED_BATCH45_REGRESSION",
+      "id": "R01_TARGETED_BATCH46_REGRESSION",
       "argv": [
         "{python}",
         "-m",
         "pytest",
         "-q",
-        "tests/test_kinetics_batch45.py"
+        "tests/test_kinetics_batch46.py"
       ],
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "tests/test_kinetics_batch45.py",
-        "experiments/kinetics_batch45_data.py",
-        "experiments/kinetics_batch45_eval.py",
-        "experiments/kinetics_batch45_vlm.py"
+        "tests/test_kinetics_batch46.py",
+        "experiments/kinetics_batch46_data.py",
+        "experiments/kinetics_batch46_eval.py",
+        "experiments/kinetics_batch46_vlm.py"
       ]
     },
     {
@@ -56,21 +56,21 @@
       "max_attempts": 1,
       "requires_files": [
         "pyproject.toml",
-        "tests/test_kinetics_batch45.py"
+        "tests/test_kinetics_batch46.py"
       ]
     },
     {
       "id": "R03_FREEZE_12_FRESH_VIDEO_FRAMES_AND_PRIVATE_ORACLE",
       "argv": [
         "{python}",
-        "experiments/kinetics_batch45_data.py",
+        "experiments/kinetics_batch46_data.py",
         "prepare"
       ],
       "timeout_seconds": 10800,
       "max_attempts": 1,
       "requires_files": [
-        "data/tapvid_kinetics_batch45e/preflight/selection.json",
-        "data/tapvid_kinetics_batch45e/preflight/download_manifest.json",
+        "data/tapvid_kinetics_batch46/preflight/selection.json",
+        "data/tapvid_kinetics_batch46/preflight/download_manifest.json",
         "data/tapvid_kinetics_batch45e/preflight/k700_2020_val_path.txt"
       ]
     },
@@ -78,65 +78,65 @@
       "id": "R04_PUBLIC_DATA_AND_COORDINATE_AUDIT",
       "argv": [
         "{python}",
-        "experiments/kinetics_batch45_data.py",
+        "experiments/kinetics_batch46_data.py",
         "audit-public"
       ],
       "timeout_seconds": 3600,
       "max_attempts": 1,
       "requires_files": [
-        "data/tapvid_kinetics_batch45e/batch45e_frozen/manifest.json",
-        "data/tapvid_kinetics_batch45e/batch45e_frozen/queries-public.json"
+        "data/tapvid_kinetics_batch46/batch46_frozen/manifest.json",
+        "data/tapvid_kinetics_batch46/batch46_frozen/queries-public.json"
       ]
     },
     {
       "id": "R05_DEV_CPU_TRACKER_PREDICTIONS",
       "argv": [
         "{python}",
-        "experiments/kinetics_batch45_eval.py",
+        "experiments/kinetics_batch46_eval.py",
         "predict-dev"
       ],
       "timeout_seconds": 10800,
       "max_attempts": 1,
       "requires_files": [
-        "configs/kinetics_batch45.json",
-        "data/tapvid_kinetics_batch45e/batch45e_frozen/manifest.json",
-        "data/tapvid_kinetics_batch45e/batch45e_frozen/queries-public.json"
+        "configs/kinetics_batch46.json",
+        "data/tapvid_kinetics_batch46/batch46_frozen/manifest.json",
+        "data/tapvid_kinetics_batch46/batch46_frozen/queries-public.json"
       ]
     },
     {
       "id": "R06_DEV_CPU_SCORING",
       "argv": [
         "{python}",
-        "experiments/kinetics_batch45_eval.py",
+        "experiments/kinetics_batch46_eval.py",
         "score-dev"
       ],
       "timeout_seconds": 3600,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45e/dev_predictions.json",
-        "outputs/kinetics_batch45e/dev_predictions.json.sha256",
-        "data/tapvid_kinetics_batch45e/batch45e_frozen/oracle-private.json"
+        "outputs/kinetics_batch46/dev_predictions.json",
+        "outputs/kinetics_batch46/dev_predictions.json.sha256",
+        "data/tapvid_kinetics_batch46/batch46_frozen/oracle-private.json"
       ]
     },
     {
-      "id": "R07_DEV_ONLY_TRACKER_SELECTION",
+      "id": "R07_FROZEN_BATCH45E_DEV_METHOD_TRANSFER",
       "argv": [
         "{python}",
-        "experiments/kinetics_batch45_eval.py",
+        "experiments/kinetics_batch46_eval.py",
         "select-dev"
       ],
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45e/dev_results.json",
-        "configs/kinetics_batch45.json"
+        "outputs/kinetics_batch46/dev_results.json",
+        "configs/kinetics_batch46.json"
       ]
     },
     {
       "id": "R08_DEV_SMOLVLM2_2_2B_REFERENCE_CROP_PREDICTIONS",
       "argv": [
         "{python}",
-        "experiments/kinetics_batch45_vlm.py",
+        "experiments/kinetics_batch46_vlm.py",
         "predict-dev"
       ],
       "timeout_seconds": 10800,
@@ -144,11 +144,11 @@
       "gpu": true,
       "min_free_mib": 11000,
       "requires_files": [
-        "configs/kinetics_batch45.json",
-        "data/tapvid_kinetics_batch45e/batch45e_frozen/manifest.json",
-        "data/tapvid_kinetics_batch45e/batch45e_frozen/queries-public.json",
-        "outputs/kinetics_batch45e/dev_selection.json",
-        "outputs/kinetics_batch45e/dev_selection.json.sha256",
+        "configs/kinetics_batch46.json",
+        "data/tapvid_kinetics_batch46/batch46_frozen/manifest.json",
+        "data/tapvid_kinetics_batch46/batch46_frozen/queries-public.json",
+        "outputs/kinetics_batch46/dev_selection.json",
+        "outputs/kinetics_batch46/dev_selection.json.sha256",
         "models/SmolVLM2-2.2B-Instruct/model.safetensors.index.json",
         "models/SmolVLM2-2.2B-Instruct/model-00001-of-00002.safetensors",
         "models/SmolVLM2-2.2B-Instruct/model-00002-of-00002.safetensors"
@@ -158,52 +158,52 @@
       "id": "R09_DEV_VLM_SCORING",
       "argv": [
         "{python}",
-        "experiments/kinetics_batch45_vlm.py",
+        "experiments/kinetics_batch46_vlm.py",
         "score-dev"
       ],
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45e/dev_vlm_predictions.json",
-        "outputs/kinetics_batch45e/dev_vlm_predictions.json.sha256",
-        "outputs/kinetics_batch45e/dev_predictions.json",
-        "outputs/kinetics_batch45e/dev_predictions.json.sha256"
+        "outputs/kinetics_batch46/dev_vlm_predictions.json",
+        "outputs/kinetics_batch46/dev_vlm_predictions.json.sha256",
+        "outputs/kinetics_batch46/dev_predictions.json",
+        "outputs/kinetics_batch46/dev_predictions.json.sha256"
       ]
     },
     {
       "id": "R10_DEV_VLM_ADMISSION_GATE",
       "argv": [
         "{python}",
-        "experiments/kinetics_batch45_vlm.py",
+        "experiments/kinetics_batch46_vlm.py",
         "dev-gate"
       ],
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45e/dev_vlm_results.json",
-        "configs/kinetics_batch45.json"
+        "outputs/kinetics_batch46/dev_vlm_results.json",
+        "configs/kinetics_batch46.json"
       ]
     },
     {
       "id": "R11_TEST_CPU_PREDICTIONS_PIN",
       "argv": [
         "{python}",
-        "experiments/kinetics_batch45_eval.py",
+        "experiments/kinetics_batch46_eval.py",
         "predict-test"
       ],
       "timeout_seconds": 10800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45e/dev_selection.json",
-        "outputs/kinetics_batch45e/dev_selection.json.sha256",
-        "data/tapvid_kinetics_batch45e/batch45e_frozen/manifest.json"
+        "outputs/kinetics_batch46/dev_selection.json",
+        "outputs/kinetics_batch46/dev_selection.json.sha256",
+        "data/tapvid_kinetics_batch46/batch46_frozen/manifest.json"
       ]
     },
     {
       "id": "R12_TEST_VLM_PREDICTIONS_OR_DEV_GATE_SKIP",
       "argv": [
         "{python}",
-        "experiments/kinetics_batch45_vlm.py",
+        "experiments/kinetics_batch46_vlm.py",
         "predict-test"
       ],
       "timeout_seconds": 10800,
@@ -211,10 +211,10 @@
       "gpu": true,
       "min_free_mib": 11000,
       "requires_files": [
-        "outputs/kinetics_batch45e/dev_vlm_gate.json",
-        "outputs/kinetics_batch45e/dev_vlm_gate.json.sha256",
-        "outputs/kinetics_batch45e/test_predictions.json",
-        "outputs/kinetics_batch45e/test_predictions.json.sha256",
+        "outputs/kinetics_batch46/dev_vlm_gate.json",
+        "outputs/kinetics_batch46/dev_vlm_gate.json.sha256",
+        "outputs/kinetics_batch46/test_predictions.json",
+        "outputs/kinetics_batch46/test_predictions.json.sha256",
         "models/SmolVLM2-2.2B-Instruct/model.safetensors.index.json",
         "models/SmolVLM2-2.2B-Instruct/model-00001-of-00002.safetensors",
         "models/SmolVLM2-2.2B-Instruct/model-00002-of-00002.safetensors"
@@ -224,80 +224,80 @@
       "id": "R13_TEST_CPU_SCORING_ONCE",
       "argv": [
         "{python}",
-        "experiments/kinetics_batch45_eval.py",
+        "experiments/kinetics_batch46_eval.py",
         "score-test"
       ],
       "timeout_seconds": 3600,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45e/test_predictions.json",
-        "outputs/kinetics_batch45e/test_predictions.json.sha256",
-        "outputs/kinetics_batch45e/dev_selection.json",
-        "data/tapvid_kinetics_batch45e/batch45e_frozen/oracle-private.json"
+        "outputs/kinetics_batch46/test_predictions.json",
+        "outputs/kinetics_batch46/test_predictions.json.sha256",
+        "outputs/kinetics_batch46/dev_selection.json",
+        "data/tapvid_kinetics_batch46/batch46_frozen/oracle-private.json"
       ]
     },
     {
       "id": "R14_TEST_VLM_SCORING_OR_SKIP",
       "argv": [
         "{python}",
-        "experiments/kinetics_batch45_vlm.py",
+        "experiments/kinetics_batch46_vlm.py",
         "score-test"
       ],
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45e/test_vlm_predictions.json",
-        "outputs/kinetics_batch45e/test_vlm_predictions.json.sha256",
-        "outputs/kinetics_batch45e/test_predictions.json",
-        "outputs/kinetics_batch45e/test_predictions.json.sha256"
+        "outputs/kinetics_batch46/test_vlm_predictions.json",
+        "outputs/kinetics_batch46/test_vlm_predictions.json.sha256",
+        "outputs/kinetics_batch46/test_predictions.json",
+        "outputs/kinetics_batch46/test_predictions.json.sha256"
       ]
     },
     {
-      "id": "R15_BUILD_AGGREGATED_BATCH45_REPORT",
+      "id": "R15_BUILD_AGGREGATED_BATCH46_REPORT",
       "argv": [
         "{python}",
-        "experiments/kinetics_batch45_report.py",
+        "experiments/kinetics_batch46_report.py",
         "build"
       ],
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45e/dev_results.json",
-        "outputs/kinetics_batch45e/test_results.json",
-        "outputs/kinetics_batch45e/dev_selection.json",
-        "outputs/kinetics_batch45e/dev_vlm_gate.json",
-        "outputs/kinetics_batch45e/dev_vlm_results.json",
-        "outputs/kinetics_batch45e/test_vlm_results.json"
+        "outputs/kinetics_batch46/dev_results.json",
+        "outputs/kinetics_batch46/test_results.json",
+        "outputs/kinetics_batch46/dev_selection.json",
+        "outputs/kinetics_batch46/dev_vlm_gate.json",
+        "outputs/kinetics_batch46/dev_vlm_results.json",
+        "outputs/kinetics_batch46/test_vlm_results.json"
       ]
     },
     {
       "id": "R16_EVALUATION_FINAL_PIN_AUDIT",
       "argv": [
         "{python}",
-        "experiments/kinetics_batch45_eval.py",
+        "experiments/kinetics_batch46_eval.py",
         "final-audit"
       ],
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45e/dev_predictions.json.sha256",
-        "outputs/kinetics_batch45e/test_predictions.json.sha256",
-        "outputs/kinetics_batch45e/dev_selection.json.sha256"
+        "outputs/kinetics_batch46/dev_predictions.json.sha256",
+        "outputs/kinetics_batch46/test_predictions.json.sha256",
+        "outputs/kinetics_batch46/dev_selection.json.sha256"
       ]
     },
     {
       "id": "R17_VLM_FINAL_GATE_AND_PIN_AUDIT",
       "argv": [
         "{python}",
-        "experiments/kinetics_batch45_vlm.py",
+        "experiments/kinetics_batch46_vlm.py",
         "final-audit"
       ],
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45e/dev_vlm_gate.json.sha256",
-        "outputs/kinetics_batch45e/dev_vlm_predictions.json.sha256",
-        "outputs/kinetics_batch45e/test_vlm_predictions.json.sha256"
+        "outputs/kinetics_batch46/dev_vlm_gate.json.sha256",
+        "outputs/kinetics_batch46/dev_vlm_predictions.json.sha256",
+        "outputs/kinetics_batch46/test_vlm_predictions.json.sha256"
       ]
     },
     {
@@ -311,8 +311,8 @@
       "timeout_seconds": 3600,
       "max_attempts": 1,
       "requires_files": [
-        "tests/test_kinetics_batch45.py",
-        "outputs/kinetics_batch45e/BATCH45E_KINETICS_FRESH_HOLDOUT_REPORT.md"
+        "tests/test_kinetics_batch46.py",
+        "outputs/kinetics_batch46/BATCH46_INDEPENDENT_TRANSFER_REPORT.md"
       ]
     },
     {
@@ -332,28 +332,28 @@
       "id": "R20_FINAL_PUBLIC_AND_PRIVATE_DATA_HASH_AUDIT",
       "argv": [
         "{python}",
-        "experiments/kinetics_batch45_data.py",
+        "experiments/kinetics_batch46_data.py",
         "audit"
       ],
       "timeout_seconds": 3600,
       "max_attempts": 1,
       "requires_files": [
-        "data/tapvid_kinetics_batch45e/batch45e_frozen/manifest.json",
-        "data/tapvid_kinetics_batch45e/batch45e_frozen/oracle-private.json"
+        "data/tapvid_kinetics_batch46/batch46_frozen/manifest.json",
+        "data/tapvid_kinetics_batch46/batch46_frozen/oracle-private.json"
       ]
     },
     {
       "id": "R21_FINAL_REPORT_PIN_AUDIT",
       "argv": [
         "{python}",
-        "experiments/kinetics_batch45_report.py",
+        "experiments/kinetics_batch46_report.py",
         "verify"
       ],
       "timeout_seconds": 1800,
       "max_attempts": 1,
       "requires_files": [
-        "outputs/kinetics_batch45e/BATCH45E_KINETICS_FRESH_HOLDOUT_REPORT.md",
-        "outputs/kinetics_batch45e/BATCH45E_KINETICS_FRESH_HOLDOUT_REPORT.md.sha256"
+        "outputs/kinetics_batch46/BATCH46_INDEPENDENT_TRANSFER_REPORT.md",
+        "outputs/kinetics_batch46/BATCH46_INDEPENDENT_TRANSFER_REPORT.md.sha256"
       ]
     }
   ]
