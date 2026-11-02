@@ -1,0 +1,95 @@
+{
+  "data_policy": "Never read test_results/test_predictions/private oracle/frame/video/model assets. Report preexisting DEV numerical summaries only. Keep output write-once.",
+  "description": "Five frozen DEV-only stages to assess effective independent occlusion-support scenes on completed Batch48B and Batch53B; no TEST annotations, predictions or scores are read.",
+  "enabled": true,
+  "failure_policy": "One attempt per stage. Stop on failed provenance, unsupported scenes or changed source. Keep logs and outputs, repair by new source SHA and worktree.",
+  "gpu_policy": "No GPU stages; all are deterministic read-only/CPU.",
+  "max_stages_per_tick": 2,
+  "source_of_truth": "GitHub main source commit; immutable SHA verified by runner. Never tune trackers or thresholds on opened TEST.",
+  "stages": [
+    {
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_dev_cluster_occlusion_certificate.py",
+        "tests/test_batch54_frozen_audit_plan.py"
+      ],
+      "id": "R00_TARGETED_DEV_ONLY_REGRESSION",
+      "max_attempts": 1,
+      "requires_files": [
+        "tests/test_dev_cluster_occlusion_certificate.py"
+      ],
+      "timeout_seconds": 1200
+    },
+    {
+      "argv": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "id": "R01_FULL_PROJECT_REGRESSION",
+      "max_attempts": 1,
+      "requires_files": [
+        "experiments/dev_cluster_occlusion_certificate.py"
+      ],
+      "timeout_seconds": 1800
+    },
+    {
+      "argv": [
+        "{python}",
+        "experiments/dev_cluster_occlusion_certificate.py",
+        "--frozen-batch-root",
+        "../repo-batch48b-tested",
+        "--output",
+        "outputs/research/batch54_dev_cluster/batch48b_dev_cluster.json"
+      ],
+      "id": "R02_FROZEN_BATCH48B_DEV_CLUSTER_RISK",
+      "max_attempts": 1,
+      "requires_files": [
+        "../repo-batch48b-tested/outputs/kinetics_batch48/dev_results.json",
+        "../repo-batch48b-tested/outputs/kinetics_batch48/dev_selection.json"
+      ],
+      "timeout_seconds": 600
+    },
+    {
+      "argv": [
+        "{python}",
+        "experiments/dev_cluster_occlusion_certificate.py",
+        "--frozen-batch-root",
+        "../repo-batch53b-tested",
+        "--output",
+        "outputs/research/batch54_dev_cluster/batch53b_dev_cluster.json"
+      ],
+      "id": "R03_FROZEN_BATCH53B_DEV_CLUSTER_RISK",
+      "max_attempts": 1,
+      "requires_files": [
+        "../repo-batch53b-tested/outputs/kinetics_batch53/dev_results.json",
+        "../repo-batch53b-tested/outputs/kinetics_batch53/dev_selection.json"
+      ],
+      "timeout_seconds": 600
+    },
+    {
+      "argv": [
+        "{python}",
+        "automation/verify_batch54_audits.py",
+        "--work-root",
+        "..",
+        "--audit-dir",
+        "outputs/research/batch54_dev_cluster"
+      ],
+      "id": "R04_BOTH_DEV_REPORTS_RECOMPUTE_AND_PIN_AUDIT",
+      "max_attempts": 1,
+      "requires_files": [
+        "automation/verify_batch54_audits.py",
+        "outputs/research/batch54_dev_cluster/batch48b_dev_cluster.json",
+        "outputs/research/batch54_dev_cluster/batch53b_dev_cluster.json"
+      ],
+      "timeout_seconds": 600
+    }
+  ],
+  "test_policy": "Only frozen DEV results and DEV selection; 10% safety budget and nine candidates inherited from each original freeze; alpha=0.05, no parameter selection or model promotion.",
+  "version": "batch54-dev-only-clustered-natural-scene-occlusion-audit-20261103-v1"
+}
