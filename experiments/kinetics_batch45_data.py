@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gzip
 import hashlib
 import json
 import math
@@ -17,6 +18,8 @@ from pathlib import Path
 import shutil
 import subprocess
 import tarfile
+import time
+from urllib.request import Request, urlopen
 
 import numpy as np
 
@@ -685,6 +688,130 @@ def build_selection(path_lines: list[str]) -> dict:
     return selection
 
 
+# One shard gets a bounded total budget, subdivided into resumable attempts.
+# Never discard a failed download: previous .partial bytes are preserved.
+SHARD_BUDGET_SECONDS = 2460
+SHARD_CURL_SLICE_SECONDS = 420
+SHARD_MAX_ATTEMPTS = 16
+SHARD_STALL_SECONDS = 75
+SHARD_MIN_BYTES_PER_SECOND = 2048
+
+
+def remote_shard_identity(url: str) -> tuple[int, str]:
+    """Freeze the immutable S3 object's size and ETag while resuming byte ranges."""
+    with urlopen(Request(url, method="HEAD"), timeout=25) as response:
+        length = response.headers.get("Content-Length")
+        etag = response.headers.get("ETag")
+        ranges = response.headers.get("Accept-Ranges", "").lower()
+        if response.status != 200 or not length or not etag or ranges != "bytes":
+            raise RuntimeError("KINETICS_SHARD_REMOTE_IDENTITY_MISSING")
+        size = int(length)
+        if size <= 0:
+            raise RuntimeError("KINETICS_SHARD_REMOTE_SIZE_INVALID")
+        return size, etag
+
+
+def verify_complete_gzip(path: Path) -> None:
+    """Read the entire compressed archive, validating gzip CRC and trailer."""
+    try:
+        with gzip.open(path, "rb") as stream:
+            for _ in iter(lambda: stream.read(1024 * 1024), b""):
+                pass
+    except (OSError, EOFError, ValueError) as exc:
+        raise RuntimeError(
+            "KINETICS_SHARD_GZIP_INTEGRITY_FAILED:" + path.name
+        ) from exc
+
+
+def download_one_shard(shard: Path, url: str) -> tuple[int, str]:
+    """Bounded retries with *persistent* partial bytes and fail-closed integrity.
+
+    A failed attempt may append bytes, but it never publishes a final .tar.gz.
+    curl -C - is used ONLY when a nonempty partial already exists. Verified
+    content length and ETag prevent silent acceptance of truncated/mixed data.
+    """
+    size, etag = remote_shard_identity(url)
+    if shard.is_file():
+        if shard.stat().st_size != size:
+            raise RuntimeError("KINETICS_SHARD_FINAL_SIZE_MISMATCH:" + shard.name)
+        return size, etag
+
+    tmp = shard.with_suffix(".tar.gz.partial")  # keep prior batch's exact path
+    if tmp.is_file() and tmp.stat().st_size > size:
+        raise RuntimeError("KINETICS_SHARD_PARTIAL_OVERSIZE:" + tmp.name)
+    started = time.monotonic()
+    last_error = ""
+    consecutive_stalls = 0
+    for attempt in range(1, SHARD_MAX_ATTEMPTS + 1):
+        budget_left = SHARD_BUDGET_SECONDS - (time.monotonic() - started)
+        if budget_left < 30:
+            break
+        before = tmp.stat().st_size if tmp.is_file() else 0
+        if before == size:
+            # curl might have received the final bytes just before a timeout.
+            # Verify the entire archive rather than abandoning a valid partial.
+            if remote_shard_identity(url) != (size, etag):
+                raise RuntimeError("KINETICS_SHARD_REMOTE_IDENTITY_DRIFT:" + shard.name)
+            verify_complete_gzip(tmp)
+            os.replace(tmp, shard)
+            return size, etag
+        max_seconds = min(SHARD_CURL_SLICE_SECONDS, int(budget_left) - 20)
+        command = [
+            "curl", "-fL", "--retry", "0", "--connect-timeout", "25",
+            "--max-time", str(max_seconds), "--speed-limit",
+            str(SHARD_MIN_BYTES_PER_SECOND), "--speed-time",
+            str(SHARD_STALL_SECONDS),
+        ]
+        if before:
+            command += ["-C", "-"]
+        command += ["-o", str(tmp), url]
+        try:
+            proc = subprocess.run(
+                command, capture_output=True, text=True, timeout=max_seconds + 12
+            )
+            code = proc.returncode
+            last_error = proc.stderr[-350:]
+        except subprocess.TimeoutExpired as exc:
+            code = 28
+            last_error = "subprocess_timeout:" + str(exc.timeout)
+        after = tmp.stat().st_size if tmp.is_file() else 0
+        if after > size or after < before:
+            raise RuntimeError(
+                f"KINETICS_SHARD_RESUME_SIZE_INVALID:{shard.name}:{before}->{after}/{size}"
+            )
+        if code == 0:
+            if after != size:
+                raise RuntimeError(
+                    f"KINETICS_SHARD_TRUNCATED_SUCCESS:{shard.name}:{after}/{size}"
+                )
+            if remote_shard_identity(url) != (size, etag):
+                raise RuntimeError("KINETICS_SHARD_REMOTE_IDENTITY_DRIFT:" + shard.name)
+            verify_complete_gzip(tmp)
+            os.replace(tmp, shard)
+            return size, etag
+        # Only transient connection/partial-transfer/timeout errors are retryable.
+        if code not in (7, 18, 28, 52, 55, 56):
+            raise RuntimeError(
+                f"KINETICS_SHARD_NONRETRYABLE:{shard.name}:rc={code}:{last_error}"
+            )
+        print(
+            f"KINETICS_SHARD_RESUME_PROGRESS {shard.name} "
+            f"attempt={attempt} rc={code} bytes={after}/{size}",
+            flush=True,
+        )
+        # Three *consecutive* zero-progress attempts signal a dead source.
+        # Keep all bytes and fail without burning another 40 minutes spinning.
+        consecutive_stalls = consecutive_stalls + 1 if after == before else 0
+        if consecutive_stalls >= 3:
+            raise RuntimeError(
+                f"KINETICS_SHARD_NO_PROGRESS:{shard.name}:{last_error}"
+            )
+    raise RuntimeError(
+        f"KINETICS_SHARD_RETRY_EXHAUSTED:{shard.name}:"
+        f"{tmp.stat().st_size if tmp.is_file() else 0}/{size}:{last_error}"
+    )
+
+
 def download_shards(selection: dict) -> dict:
     DATA.joinpath("shards").mkdir(parents=True, exist_ok=True)
     current = {"version": "BATCH45-SHARD-DOWNLOADS-v1", "shards": {}}
@@ -694,19 +821,7 @@ def download_shards(selection: dict) -> dict:
         index = int(item["shard_index"])
         key = f"{index:03d}"
         shard = DATA / "shards" / f"k700_val_{key}.tar.gz"
-        if not shard.is_file():
-            tmp = shard.with_suffix(".tar.gz.partial")
-            command = [
-                "curl", "-fL", "--retry", "3", "--retry-delay", "2",
-                "--connect-timeout", "30", "--max-time", "2400",
-            ]
-            if tmp.exists():
-                command += ["-C", "-"]
-            command += ["-o", str(tmp), item["shard_url"]]
-            proc = subprocess.run(command, capture_output=True, text=True, timeout=2460)
-            if proc.returncode:
-                raise RuntimeError("KINETICS_SHARD_DOWNLOAD_FAILED:" + key + ":" + proc.stderr[-500:])
-            os.replace(tmp, shard)
+        size, etag = download_one_shard(shard, item["shard_url"])
         try:
             with tarfile.open(shard, "r:gz") as archive:
                 member = archive.getmember(item["archive_member"])
@@ -716,12 +831,18 @@ def download_shards(selection: dict) -> dict:
             raise RuntimeError("KINETICS_SHARD_OR_MEMBER_INVALID:" + key + ":" + repr(exc))
         digest = sha_file(shard)
         old = current["shards"].get(key)
-        if old and old.get("sha256") != digest:
-            raise RuntimeError("KINETICS_SHARD_SHA_CONFLICT:" + key)
+        if old and (
+            old.get("sha256") != digest
+            or old.get("url") != item["shard_url"]
+            or old.get("archive_member") != item["archive_member"]
+        ):
+            raise RuntimeError("KINETICS_SHARD_PIN_CONFLICT:" + key)
         current["shards"][key] = {
             "url": item["shard_url"],
             "sha256": digest,
             "archive_member": item["archive_member"],
+            "content_length": size,
+            "etag": etag,
         }
         write_json_atomic(DOWNLOAD_MANIFEST, current)
         print("KINETICS_BATCH45_SHARD_READY", key, digest, flush=True)
