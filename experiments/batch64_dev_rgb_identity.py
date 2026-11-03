@@ -21,8 +21,8 @@ from experiments import batch63_dev_temporal_consensus as b63
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "outputs/research"
-FEATURES = OUT / "batch64_unlabeled_dev_rgb_identity.json"
-REPORT = OUT / "batch64_dev_rgb_identity_report.json"
+FEATURES = OUT / "batch64b_unlabeled_dev_rgb_identity.json"
+REPORT = OUT / "batch64b_dev_rgb_identity_report.json"
 BINS = 8
 RADIUS = 7
 # A priori descriptive grid, NOT fitted after looking at labels.
@@ -124,8 +124,19 @@ def frame_scores(frames: np.ndarray, queries: list[dict], pred_scene: dict) -> d
     return results
 
 
-def validate_public(pred: dict, sel: dict, dev: dict, queries: dict, manifest: dict) -> None:
-    b62.validate_sources(pred, sel, dev, queries)
+def validate_public(pred: dict, queries: dict, manifest: dict) -> None:
+    # Phase 1 must not even load DEV-derived score/selection artifacts.
+    # Only the frozen public query/manifest and pre-scoring predictions are read.
+    if (pred.get("split") != "dev" or
+        pred.get("oracle_unread_during_prediction") is not True or
+        pred.get("manifest_sha256") != sha_file(b62.DATA / "manifest.json") or
+        pred.get("public_query_sha256") != sha_file(b62.DATA / "queries-public.json") or
+        b62.BASE not in pred.get("methods", ()) or
+        "template_recover4" not in pred.get("methods", ()) or
+        len(pred.get("records", ())) != 36 or
+        {r.get("name") for r in pred["records"]} != set(b62.SCENES) or
+        not set(b62.SCENES).issubset(queries)):
+        raise RuntimeError("BATCH64_PUBLIC_PHASE_FIREWALL")
     records = manifest["scenes"]
     items = {r["name"]: r for r in records if r["split"] == "dev"}
     if set(items) != set(b62.SCENES) or any(
@@ -136,8 +147,8 @@ def validate_public(pred: dict, sel: dict, dev: dict, queries: dict, manifest: d
         raise RuntimeError("BATCH64_QUERY_COUNT_DRIFT")
 
 
-def extract(pred: dict, sel: dict, dev: dict, queries: dict, manifest: dict) -> dict:
-    validate_public(pred, sel, dev, queries, manifest)
+def extract(pred: dict, queries: dict, manifest: dict) -> dict:
+    validate_public(pred, queries, manifest)
     by_scene = {}
     hashes = {}
     records = {r["name"]: r for r in pred["records"]}
@@ -296,19 +307,20 @@ def main() -> None:
     p.add_argument("phase", choices=("features", "score"))
     args = p.parse_args()
     pred = pinned(b62.IN / "dev_predictions.json")
-    sel = pinned(b62.IN / "dev_selection.json")
-    raw = (b62.IN / "dev_results.json").read_bytes()
-    if hashlib.sha256(raw).hexdigest() != sel["dev_results_sha256"]:
-        raise RuntimeError("BATCH64_DEV_RESULTS_PIN_DRIFT")
-    dev = json.loads(raw)
     queries = json.loads((b62.DATA / "queries-public.json").read_bytes())
     if args.phase == "features":
+        # No DEV oracle, DEV outcomes, DEV selection or TEST artifacts opened.
         manifest = json.loads((b62.DATA / "manifest.json").read_bytes())
-        payload = extract(pred, sel, dev, queries, manifest)
+        payload = extract(pred, queries, manifest)
         print(json.dumps({"phase": "features", "sha256": pin_write(FEATURES, payload),
                           "scenes": len(payload["score_by_scene"])}))
     else:
         features = pinned(FEATURES)
+        sel = pinned(b62.IN / "dev_selection.json")
+        raw = (b62.IN / "dev_results.json").read_bytes()
+        if hashlib.sha256(raw).hexdigest() != sel["dev_results_sha256"]:
+            raise RuntimeError("BATCH64_DEV_RESULTS_PIN_DRIFT")
+        dev = json.loads(raw)
         oracle = b62.load_dev_only_oracle(b62.DATA / "oracle-private.json", b62.SCENES)
         report = evaluate(pred, sel, dev, queries, features, oracle)
         digest = pin_write(REPORT, report)

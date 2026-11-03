@@ -247,3 +247,43 @@ def test_real_dev_only_pinned_artifacts_when_present():
     assert result["features_pinned_before_dev_oracle_read"] is True
     assert result["summary"]["baseline"]["scene_budget_violation_count"] == 4
     assert result["summary"]["template_4px"]["scene_budget_violation_count"] == 1
+
+
+def test_public_phase_rejects_nondev_split(monkeypatch):
+    names = b62.SCENES
+    pred = {
+        "split": "test", "oracle_unread_during_prediction": True,
+        "manifest_sha256": "x", "public_query_sha256": "x",
+        "methods": [b62.BASE, "template_recover4"],
+        "records": [{"name": s} for s in names],
+    }
+    query = {s: [] for s in names}
+    manifest = {"scenes": [{
+        "name": s, "split": "dev", "query_count": 4,
+        "frame_file": f"data/tapvid_kinetics_batch56/batch56_frozen/frames/{s}.npy"
+    } for s in names]}
+    monkeypatch.setattr(b64, "sha_file", lambda path: "x")
+    with pytest.raises(RuntimeError, match="PUBLIC_PHASE_FIREWALL"):
+        b64.validate_public(pred, query, manifest)
+    pred["split"] = "dev"
+    b64.validate_public(pred, query, manifest)
+    pred["oracle_unread_during_prediction"] = False
+    with pytest.raises(RuntimeError, match="PUBLIC_PHASE_FIREWALL"):
+        b64.validate_public(pred, query, manifest)
+
+
+def test_public_phase_rejects_manifest_file_mismatch(monkeypatch):
+    names = b62.SCENES
+    pred = {"split": "dev", "oracle_unread_during_prediction": True,
+            "manifest_sha256": "x", "public_query_sha256": "x",
+            "methods": [b62.BASE, "template_recover4"],
+            "records": [{"name": s} for s in names]}
+    query = {s: [] for s in names}
+    manifest = {"scenes": [{
+        "name": s, "split": "dev", "query_count": 4,
+        "frame_file": f"data/tapvid_kinetics_batch56/batch56_frozen/frames/{s}.npy"
+    } for s in names]}
+    monkeypatch.setattr(b64, "sha_file", lambda path: "x")
+    manifest["scenes"][0]["frame_file"] = "test/secret.npy"
+    with pytest.raises(RuntimeError, match="DEV_MANIFEST_DRIFT"):
+        b64.validate_public(pred, query, manifest)

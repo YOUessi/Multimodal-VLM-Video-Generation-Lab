@@ -8,7 +8,7 @@
 * Input DEV predictions: Batch 56 frozen `dev_predictions.json` with its SHA-256 sidecar; DEV evaluation/selection pins rechecked, 36 DEV scenes and four queries each.
 * Input image evidence: Batch 56 frozen RGB frame arrays from `frames/kinetics_00.npy` through `frames/kinetics_35.npy`; every file SHA-256 verified against the **public** frozen manifest.
 * Query data: `queries-public.json`; only the DEV prefixes are consumed.
-* **Phase 1** extracts query-reference RGB and predicted-location RGB histograms without opening any oracle labels. The feature object is written in exclusive-create mode and SHA-256 pinned.
+* **Phase 1** extracts query-reference RGB and predicted-location RGB histograms without opening any oracle labels, DEV scoring results or DEV method-selection artifact. The feature object is written in exclusive-create mode and SHA-256 pinned.
 * **Phase 2** verifies the feature pin, then loads the DEV-only prefix of the oracle through the existing tested DEV firewall. The private oracle reader stops at `kinetics_35` without reading or parsing a TEST object. The report is also exclusive-create pinned.
 * Neither phase reads Batch 56 TEST predictions/labels; neither phase accesses Batch 59 TEST or alters any prior frozen tracker or cron.
 
@@ -58,9 +58,9 @@ From the repository checkout on Tang, with existing pinned Batch 56 DEV data ava
 ../.venv/bin/python -m pytest -q
 ```
 
-The feature and scored report are **immutable on first write**; reruns should use a new independent research checkout/output directory, rather than overwriting pinned results. Only three source/test/doc files are committed; no videos, model weights, private oracles, feature result JSON, tokens, or private media are committed.
+An earlier v1 exploratory artifact remains preserved locally. The v2 feature and scored report are **immutable on first write**; reruns should use a new independent research checkout/output directory, rather than overwriting pinned results. Only three source/test/doc files are committed; no videos, model weights, private oracles, feature result JSON, tokens, or private media are committed.
 
 Pinned local (uncommitted) artifacts:
 
-* `outputs/research/batch64_unlabeled_dev_rgb_identity.json` SHA-256 `64584880fd987a9d8125c7a0fb0b2b51348a42199ccda22cfc1c76b2912dca4c`.
-* `outputs/research/batch64_dev_rgb_identity_report.json` SHA-256 `db313a11b1e87318b7b106362dc32f5f812e6cfab9d2ed089c00f83f2f0ccb06`.
+* `outputs/research/batch64b_unlabeled_dev_rgb_identity.json` SHA-256 `0c291760de84fe09b8f31758954c818000b36487ec70120bc58f2f372b714929`.
+* `outputs/research/batch64b_dev_rgb_identity_report.json` SHA-256 `dce060a9ca4a069a84c44afc3441a703951d9feac11d936cff0c50829de1ee96`.
