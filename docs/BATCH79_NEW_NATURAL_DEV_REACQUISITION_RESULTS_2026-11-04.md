@@ -56,7 +56,9 @@ The failure and success command outputs were preserved locally in `/tmp/mvvg_bat
 
 After the 42 video archives downloaded and DEV CPU stages finished, Batch 77 paused before its VLM stage with a **missing required model path**. The two SmolVLM2-2.2B model shards (4.96 GB and 4.03 GB) and safetensors index already existed in the project's shared `models/` directory; the frozen repo had no `models` link.
 
-A local, **gitignored** `repo-batch77-tested/models -> ../models` symlink was created after checking GPU compute was idle, and file existence was verified. This adds no new weights, no tracked source change, and no GPU competitor. A single guarded frozen runner tick was started; subsequent state reported `RUNNING:R08_DEV_SMOLVLM2_2_2B_REFERENCE_CROP_PREDICTIONS`. At report time, there is **no verified VLM result yet**. The unique `MVVG_PROJECT4_10MIN` cron remains the same. Do not mistake a running R08 for a completed VLM benchmark.
+A local, **gitignored** `repo-batch77-tested/models -> ../models` symlink was created after checking GPU compute was idle, and file existence was verified. This adds no new weights, no tracked source change, and no GPU competitor. A single guarded frozen runner tick was started; subsequent state reported `RUNNING:R08_DEV_SMOLVLM2_2_2B_REFERENCE_CROP_PREDICTIONS`. At report time, there is **no verified VLM result yet**. Do not mistake a running R08 for a completed VLM benchmark.
+
+**Subsequent safety correction (2026-11-04 03:28 UTC+8):** The Tang host rebooted at 03:19, and at 03:20 an explicit ignored `.automation/PAUSE` marker was created with `.automation/crontab_before_user_pause.txt`; the user crontab was deliberately cleared. The manual one-stage R08 tick above was started after that marker, before this pause was discovered. It remains restricted to `--max-stages 1`. **Do not recreate cron or remove PAUSE without an explicit new authorization.** This later evidence supersedes any earlier statement that the Tang 10-minute cron remains active.
 
 ## Decision
 
