@@ -60,12 +60,16 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 nice -n 10 \
   --manifest "$R/data/tapvid_kinetics_batch56/batch56_frozen/manifest.json" \
   --data-root "$R" \
   --source-predictions "$R/repo-batch56b-tested/outputs/kinetics_batch56/dev_predictions.json" \
-  --output "$R/repo-batch78-dev/outputs/research/batch78_dev_unlabeled_image_flow.json" \
+  --output "$R/repo-batch78-dev/outputs/research/batch78_dev_unlabeled_image_flow_frozen.json" \
   --stride 10
 ```
 
-Pinned result SHA-256:
-`75c339c368cd109e80c71478cdf2339ab5e7a6f0c97a8ffbb747333bc1b34f07`.
+Frozen-source run output SHA-256:
+`731f11e85a3a96d4db6fc8e0abfeccc5fb9444beafeb8767959b5b8871fa1755`.
+The code+tests were published to GitHub `main` at
+`309c4b8cf6bb4f4a6ad9ed8354b52db61cce51e9` before this final DEV
+reproduction. The earlier exploratory run was also pinned on Tang, but this
+report uses the **re-run under frozen source**. No source edits followed it.
 
 | Measurement | Observed |
 | --- | ---: |
@@ -77,8 +81,8 @@ Pinned result SHA-256:
 | Median per-scene dominant image displacement | 2.319 native pixels per 10 frames |
 | Median per-scene Laplacian texture variance | 906.84 |
 | Public track query-pair comparisons with support and two accepted positions | 875 |
-| Sum of per-scene feature-computation time | 2,133 ms |
-| Whole audit wall time, including file reads and SHA-256 verification | 3,403 ms |
+| Sum of per-scene feature-computation time | 2,120 ms |
+| Whole audit wall time, including file reads and SHA-256 verification | 3,398 ms |
 | GPU utilization required by this experiment | None |
 
 Seven DEV scenes had <75% trusted-pair coverage: `kinetics_04`
